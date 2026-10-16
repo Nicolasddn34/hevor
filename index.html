@@ -51,7 +51,8 @@ img{max-width:100%}
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:14px; color-scheme:dark;
 }
-html,body{height:100%}
+html{height:100%}
+body{min-height:100%;overflow-x:hidden}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select{font:inherit;color:inherit}
@@ -65,8 +66,8 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .top>.backb+div{flex:1;min-width:0}
 .brand{font-family:var(--f-display);font-weight:800;font-style:italic;font-size:34px;letter-spacing:.03em;text-transform:uppercase;line-height:1}
 .logo-row{display:flex;align-items:center;gap:10px}
-.logo{width:40px;height:40px;border-radius:10px;background:var(--brand);display:grid;place-items:center;flex:none}
-.logo svg,.logo img{width:70%;height:70%;display:block}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--brand);display:block;overflow:hidden;flex:none}
+.logo img{width:100%;height:100%;display:block;object-fit:cover}
 .logo.xl{width:96px;height:96px;border-radius:22px}
 h3,.folder-title,.sheet-h h2,.modal .big,.tpl h3{font-style:italic}
 .sub{color:var(--muted);font-size:13px;text-transform:capitalize}
@@ -172,7 +173,7 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 /* editor */
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.field input,.field select{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 12px;font-size:16px}
+.field input,.field select{width:100%;max-width:100%;min-width:0;min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 12px;font-size:16px}
 .field input:focus,.field select:focus{border-color:var(--accent);outline:none}
 .ed-item{display:flex;flex-direction:column;gap:10px}
 .ed-top{display:flex;gap:10px;align-items:center}
@@ -286,7 +287,7 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 
 /* tab bar */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;transform:translateZ(0);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
 .tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
 .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 7px;font-size:11.5px;font-weight:600;color:var(--muted)}
 .tab svg{width:24px;height:24px}
@@ -345,7 +346,7 @@ const ICON={
   check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 };
 
-const LOGO='<img src="icons/logo.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block">';
+const LOGO='<img src="icons/logo.png" alt="">';
 /* ---------- pictogram poses (100×100, ground at y=94) ---------- */
 const STD='H50,14 N50,25 E51,40 W52,55 P50,53 K51,72 F50,92';
 const FRONT='H50,13 N50,25 S44,27 E42,41 W41,55 P50,53 Q46,54 K46,72 F45,92';
@@ -771,7 +772,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.0.2';
+const APP_VERSION='1.0.3';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
