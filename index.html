@@ -50,8 +50,12 @@ img{max-width:100%}
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:14px; color-scheme:dark;
 }
-html,body{height:100%;overflow:hidden;overscroll-behavior:none}
-#view{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-top:env(safe-area-inset-top,0px)}
+:root{padding-top:env(safe-area-inset-top,0px)}
+html{min-height:100%}
+body{overflow-x:hidden}
+/* iPhone : la barre du bas ne se cale tout en bas que si la page dépasse l'écran, donc chaque page est un peu plus haute que l'écran */
+#view>.wrap{min-height:calc(100vh + 2px)}
+@supports (height:100lvh){#view>.wrap{min-height:calc(100lvh + 2px)}}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select{font:inherit;color:inherit}
@@ -299,7 +303,7 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .confirm .r{display:flex;gap:8px}
 .confirm .r .btn{flex:1}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
-.login{min-height:calc(100% - 40px);display:flex;flex-direction:column;justify-content:center;gap:18px;max-width:400px;margin:0 auto}
+.login{min-height:calc(100vh - 60px);display:flex;flex-direction:column;justify-content:center;gap:18px;max-width:400px;margin:0 auto}
 .login .logo{margin:0 auto}
 .login .brand{text-align:center;font-size:44px}
 .login .sub{text-align:center;text-transform:none}
@@ -773,7 +777,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.0.4';
+const APP_VERSION='1.0.5';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -781,7 +785,7 @@ function goBack(){
   if($('#modal')){closeModal();return true}
   const sheets=[...document.querySelectorAll('.sheet')];
   if(sheets.length){const top=sheets.sort((a,b)=>(+b.style.zIndex)-(+a.style.zIndex))[0];const b=top.querySelector('[data-back]');if(b){b.click()}else top.remove();return true}
-  if(navStack.length){VIEW=navStack.pop();try{localStorage.setItem('fonte.view',VIEW)}catch(e){}render();($('#view').scrollTop=0);return true}
+  if(navStack.length){VIEW=navStack.pop();try{localStorage.setItem('fonte.view',VIEW)}catch(e){}render();window.scrollTo(0,0);return true}
   if(VIEW==='lib'&&libB.folder){libB.folder=null;render();return true}
   return false;
 }
@@ -1210,7 +1214,7 @@ function addSamples(){
 
 /* ---------- actions ---------- */
 const ACT={
-  tab:d=>{if(d.v!==VIEW){navStack.push(VIEW);pushNav()}VIEW=d.v;try{localStorage.setItem('fonte.view',VIEW)}catch(e){}closeSheet('exo');render();($('#view').scrollTop=0)},
+  tab:d=>{if(d.v!==VIEW){navStack.push(VIEW);pushNav()}VIEW=d.v;try{localStorage.setItem('fonte.view',VIEW)}catch(e){}closeSheet('exo');render();window.scrollTo(0,0)},
   'new-tpl':()=>openEditor(null), edit:d=>openEditor(d.id), samples:addSamples,
   start:d=>startSession(d.id), resume:()=>openSession(),
   'ed-close':()=>{closeSheet('editor');ed=null},
@@ -1229,7 +1233,7 @@ const ACT={
   'pick-done':()=>{const ids=[...pick.sel],st=S.settings;
     if(pick.target==='editor'){ids.forEach(id=>ed.items.push(newItem(id)));closeSheet('picker');pick=null;renderEditor()}
     else{ids.forEach(id=>S.active.items.push({...newItem(id),name:exo(id).name,weight:'',done:[false,false,false],repsDone:['','','']}));closeSheet('picker');pick=null;touchActive(0);renderSession()}},
-  'lib-folder':d=>{libB.folder=d.id||null;$('#lib-res').innerHTML=browseRes(libB,'lib');($('#view').scrollTop=0)},
+  'lib-folder':d=>{libB.folder=d.id||null;$('#lib-res').innerHTML=browseRes(libB,'lib');window.scrollTo(0,0)},
   'exo-open':d=>openExo(d.id), 'exo-close':()=>closeSheet('exo'),
   'custom-new':()=>openCustom(), 'custom-close':()=>closeSheet('custom'),
   'custom-save':()=>{const name=$('#cu-name').value.trim();if(!name){$('#cu-name').focus();toast("Donne un nom à l'exercice");return}
