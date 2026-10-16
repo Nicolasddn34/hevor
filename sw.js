@@ -1,9 +1,9 @@
 /* Service worker Hevor : garde l'appli sur le téléphone pour l'ouvrir sans réseau.
    Change VERSION à chaque mise à jour pour renouveler le cache. */
-const VERSION = 'hevor-1.0.1';
+const VERSION = 'hevor-1.0.2';
 const CORE = [
   './', './index.html', './config.js', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png',
+  './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png', './icons/logo.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
