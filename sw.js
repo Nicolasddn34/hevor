@@ -1,6 +1,6 @@
 /* Service worker Hevor : garde l'appli sur le téléphone pour l'ouvrir sans réseau.
    Change VERSION à chaque mise à jour pour renouveler le cache. */
-const VERSION = 'hevor-1.0.5';
+const VERSION = 'hevor-1.0.6';
 const CORE = [
   './', './index.html', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png', './icons/logo.png',
@@ -21,7 +21,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url); if (!CACHEABLE(url)) return;
   // Pages et config : réseau d'abord (pour recevoir les mises à jour), cache si hors ligne
   if (req.mode === 'navigate' || url.pathname.endsWith('/config.js') || url.pathname.endsWith('/index.html')) {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req.mode === 'navigate' ? './index.html' : req, copy)); return r; })
+    e.respondWith(fetch(req, { cache: 'no-store' }).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req.mode === 'navigate' ? './index.html' : req, copy)); return r; })
       .catch(() => caches.match(req.mode === 'navigate' ? './index.html' : req).then(r => r || caches.match('./'))));
     return;
   }
