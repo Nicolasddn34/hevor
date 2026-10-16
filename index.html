@@ -70,8 +70,10 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .logo img{width:100%;height:100%;display:block;object-fit:cover}
 .logo.xl{width:96px;height:96px;border-radius:22px}
 h3,.folder-title,.sheet-h h2,.modal .big,.tpl h3{font-style:italic}
-.sub{color:var(--muted);font-size:13px;text-transform:capitalize}
-.sync{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:99px;background:var(--surface);font-size:12px;color:var(--muted);max-width:60%;text-align:left}
+.sub{color:var(--muted);font-size:13px}
+.sub::first-letter{text-transform:uppercase}
+.sync{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:99px;background:var(--surface);font-size:12px;color:var(--muted);max-width:46%;text-align:left;flex:none}
+.sync .st-t{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25}
 .sync .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .sync[data-s="ok"] .dot{background:var(--ok)}
 .sync[data-s="saving"] .dot{background:var(--accent)}
@@ -848,7 +850,7 @@ function viewStats(){
   let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Stats</div><div class="sub">Ta progression, séance après séance</div></div>${syncChip()}</header>`;
   if(!S.sessions.length)return h+`<div class="card empty"><div class="fig">${figSVG(EXMAP['squat'],1)}</div><h3>Pas encore de données</h3><p>Termine une première séance : le poids soulevé, tes records et ta progression par exercice apparaîtront ici.</p></div></div>`;
   const tot=S.sessions.reduce((a,s)=>a+s.tonnage,0);const m30=S.sessions.filter(s=>s.date>Date.now()-30*864e5).length;
-  h+=`<div class="tiles"><div class="tile"><span>Séances</span><b class="num">${S.sessions.length}</b></div><div class="tile"><span>30 derniers j</span><b class="num">${m30}</b></div><div class="tile"><span>Total soulevé</span><b class="num">${tot>=10000?fmtN(tot/1000)+' t':fmtKg(tot)}</b></div></div>`;
+  h+=`<div class="tiles"><div class="tile"><span>Séances</span><b class="num">${S.sessions.length}</b></div><div class="tile"><span>30 derniers j</span><b class="num">${m30}</b></div><div class="tile"><span>Total soulevé</span><b class="num">${tot>=1000?fmtN(tot/1000)+' t':fmtKg(tot)}</b></div></div>`;
   h+=`<section class="card"><div class="chart-h"><b>Poids soulevé par séance</b><span class="small muted">${Math.min(12,S.sessions.length)} dernières</span></div><canvas class="chart" id="c-ton"></canvas></section>`;
   const ids=Object.keys(IDX).sort((a,b)=>IDX[b].hist.length-IDX[a].hist.length);
   if(ids.length){if(!statsExo||!IDX[statsExo])statsExo=ids[0];const x=IDX[statsExo],first=x.hist[0].w,last=x.hist[x.hist.length-1].w,diff=last-first;
