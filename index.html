@@ -324,8 +324,14 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .tier .tb i{display:block;height:100%;background:var(--accent)}
 .tier.lock .te{filter:grayscale(1);opacity:.4}
 .tier.lock .tm b{color:var(--muted)}
-.tier.mile{border-color:color-mix(in srgb,var(--pr) 55%,transparent)}
-.tier.mile .tn{color:var(--pr)}
+.tier.obj{border-color:color-mix(in srgb,var(--pr) 45%,transparent)}
+.tier.obj.done{border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.tier.obj .tn{color:var(--pr)}
+.tier.mini{padding:5px 12px 5px 8px;background:transparent;border-color:transparent}
+.tier.mini .tm b{font-weight:500;font-size:14px}
+.tier.mini .tthr{color:var(--muted);font-size:12px;flex:none}
+.tier.mini.lock .tm b,.tier.mini.lock .tn{opacity:.55}
+.tier.mini.cur{background:var(--accent-soft);border-color:var(--accent)}
 .unl{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--pr-soft);border-radius:12px;padding:10px 12px}
 .unl .k{color:var(--pr)}
 .unl div{display:flex;align-items:center;gap:10px;font-weight:600}
@@ -356,7 +362,7 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 <nav class="tabs" id="tabs" aria-label="Navigation" hidden><div class="in">
   <button class="tab" data-act="tab" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Séances</button>
   <button class="tab" data-act="tab" data-v="lib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Exercices</button>
-  <button class="tab" data-act="tab" data-v="pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4"/></svg>Passe</button>
+  <button class="tab" data-act="tab" data-v="pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4"/></svg>Niveaux</button>
   <button class="tab" data-act="tab" data-v="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 15l4-5 3 3 5-7"/></svg>Stats</button>
   <button class="tab" data-act="tab" data-v="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Réglages</button>
 </div></nav>
@@ -688,113 +694,21 @@ function compareObj(t){
   return{emoji:best[3],count:1,txt:`C'est à peu près le poids ${best[1]}.`};
 }
 
-/* ---------- passe : 100 paliers ---------- */
-const TIERS_RAW=`Voiture citadine|🚗
-Taxi|🚕
-Requin blanc|🦈
-Voiture de police|🚓
-Berline|🚘
-Girafe|🦒
-Voiture de sport|🏎️
-Bateau à moteur|🚤
-SUV|🚙
-Morse géant|🦭
-Pick-up|🛻
-Rhinocéros|🦏
-Van de livraison|🚐
-Hippopotame|🦛
-Limousine|🚘
-Petit tracteur|🚜
-Voilier de 7 m|⛵
-Minibus|🚐
-Camionnette|🚚
-Hélicoptère|🚁
-Orque femelle|🐋
-Camping-car|🚐
-Voilier de 9 m|⛵
-Ambulance|🚑
-Mini-pelle|🏗️
-Bateau de pêche|🛥️
-Dépanneuse|🚚
-Éléphant d'Asie|🐘
-Hélicoptère de secours|🚁
-Requin pèlerin|🦈
-Tracteur agricole|🚜
-Camion-plateau|🚚
-Bateau de plongée|🛥️
-Orque|🐋
-Voilier de 11 m|⛵
-Mammouth laineux|🦣
-Camion de livraison|🚚
-Éléphant d'Afrique|🐘
-Tyrannosaure|🦖
-Petit autocar|🚌
-Spinosaure|🦕
-Yacht de 12 m|🛥️
-Tricératops|🦕
-Camion de pompiers léger|🚒
-Jet privé|✈️
-Bulldozer compact|🚜
-Voilier de 13 m|⛵
-Hélicoptère lourd|🚁
-Canot de sauvetage|🛥️
-Chalet en bois|🛖
-Bus scolaire|🚌
-Camion-benne|🚚
-Bus de ville|🚌
-Yacht de 15 m|🛥️
-Camion de pompiers|🚒
-Hélicoptère de transport|🚁
-Car de tourisme|🚌
-Bulldozer|🚜
-Requin-baleine|🦈
-Cachalot femelle|🐳
-Brontosaure|🦕
-Camion poubelle|🚛
-Péniche de plaisance|🛥️
-Bus articulé|🚌
-Pelleteuse|🏗️
-Toupie à béton|🚛
-Tramway court|🚊
-Camion de chantier|🚚
-Grue mobile|🏗️
-Yacht de 20 m|🛥️
-Locomotive de manœuvre|🚂
-Chalutier|🚢
-Baleine grise|🐋
-Moissonneuse-batteuse|🚜
-Baleine à bosse|🐋
-Tramway|🚊
-Voiture de métro|🚇
-Wagon de train|🚃
-Avion régional|✈️
-Camion grande échelle|🚒
-Brachiosaure|🦕
-Grue de chantier|🏗️
-Semi-remorque chargé|🚛
-Cachalot|🐳
-Airbus A320 à vide|✈️
-Camion-grue|🏗️
-Bateau de pêche hauturière|🚢
-Yacht de 25 m|🛥️
-Petite péniche|🚢
-Maison en bois|🏠
-Baleine franche|🐋
-Locomotive à vapeur|🚂
-Péniche de canal|⛴️
-Cachalot géant|🐳
-Wagon de marchandises chargé|🚃
-Rorqual commun|🐋
-Boeing 737 chargé|✈️
-Locomotive diesel|🚂
-Petit bateau de croisière|⛴️
-Airbus A320 au décollage|✈️`;
-const roundT=x=>x<3?Math.round(x*20)/20:x<10?Math.round(x*10)/10:x<30?Math.round(x*2)/2:Math.round(x);
-const TIERS=(()=>{let cum=0;return TIERS_RAW.split('\n').map((l,i)=>{const[name,emo]=l.split('|');const w=roundT(1.3*Math.pow(1.042,i));cum=Math.round((cum+w)*100)/100;return{n:i+1,name,emo,w,cum}})})();
-const fmtT=t=>(Math.round(t*100)/100).toLocaleString('fr-FR',{maximumFractionDigits:t<10?2:1})+'\u00a0t';
-function passAt(totalKg){const t=totalKg/1000;let lvl=0;while(lvl<100&&TIERS[lvl].cum<=t+1e-9)lvl++;
-  if(lvl>=100)return{lvl:100,t,done:true,into:0,need:0,pct:100,next:null,cur:TIERS[99]};
-  const base=lvl?TIERS[lvl-1].cum:0,next=TIERS[lvl],into=Math.max(0,t-base);return{lvl,t,into,need:next.w,pct:Math.min(100,into/next.w*100),next,cur:lvl?TIERS[lvl-1]:null}}
+/* ---------- niveaux : 100 niveaux, seuils cumulés, un objet tous les 5 niveaux ----------
+   Seuil du niveau n = TOTAL soulevé depuis le début. Courbe calée pour ~30 mois à 4 grosses séances/semaine (~5 200 t). */
+const LV_TOTAL=5200,LV_K=2.77;
+const OBJ5={5:['Voiture','🚗',1.3],10:['Tyrannosaure','🦖',9],15:['Baleine à bosse','🐋',27],20:['Yacht de 25 m','🛥️',60],25:['Locomotive de fret','🚂',110],
+ 30:['Baleine bleue','🐋',185],35:['Airbus A350 au décollage','✈️',280],40:['Boeing 747 au décollage','✈️',410],45:['Airbus A380 au décollage','✈️',570],50:['Immeuble de 2 étages','🏢',760],
+ 55:['Chalutier de haute mer','🚢',1000],60:['Ferry','⛴️',1260],65:['Immeuble de 4 étages','🏢',1580],70:['Sous-marin','🚢',1940],75:['Train de marchandises','🚆',2350],
+ 80:['Fusée Saturn V au décollage','🚀',2800],85:['Grand trois-mâts','⛵',3300],90:['Immeuble de 10 étages','🏙️',3880],95:['Brise-glace','🚢',4500],100:['Tour de 14 étages','🏙️',5200]};
+const roundT=x=>x<1?Math.max(0.05,Math.round(x*20)/20):x<10?Math.round(x*10)/10:x<100?Math.round(x):Math.round(x/5)*5;
+const TIERS=Array.from({length:100},(_,i)=>{const n=i+1,o=OBJ5[n];const thr=o?o[2]:roundT(LV_TOTAL*Math.pow(n/100,LV_K));return{n,thr,name:o?o[0]:'',emo:o?o[1]:'',obj:!!o}});
+const fmtT=t=>(t<10?Math.round(t*100)/100:Math.round(t*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:t<10?2:1})+'\u00a0t';
+const nextObj=lvl=>TIERS.find(T=>T.obj&&T.n>lvl)||null;
+function passAt(totalKg){const t=totalKg/1000;let lvl=0;while(lvl<100&&TIERS[lvl].thr<=t+1e-9)lvl++;
+  const no=nextObj(lvl);
+  if(lvl>=100)return{lvl:100,t,done:true,into:0,need:0,pct:100,next:null,no:null};
+  const base=lvl?TIERS[lvl-1].thr:0,next=TIERS[lvl],need=next.thr-base,into=Math.max(0,t-base);return{lvl,t,into,need,pct:Math.min(100,into/need*100),next,no}}
 const P_LVL=()=>passAt(totalKg()).lvl;
 const totalKg=()=>S.sessions.reduce((a,s)=>a+(s.tonnage||0),0);
 /* ---------- state & local storage ---------- */
@@ -923,7 +837,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.2.0';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -999,15 +913,16 @@ function viewLib(){
 }
 let passScrolled=false;
 function viewPass(){
-  const P=passAt(totalKg()),show=P.next||P.cur;
-  let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Passe</div><div class="sub">100 paliers. Chaque palier se gagne en soulevant le poids de son objet.</div></div>${syncChip()}</header>
-  <section class="pass-hero"><div class="ph-emo">${show.emo}</div><div class="ph-main"><div class="ph-k">Palier atteint</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>
-   ${P.done?'<div class="ph-next">Passe terminé. Tu as tout soulevé !</div>':`<div class="ph-next">Prochain : <b>${esc(P.next.name)}</b></div>`}</div>
-   ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>${fmtT(P.into)} soulevées</span><span>objectif ${fmtT(P.need)}</span></div>`}
-   <div class="ph-tot">Total soulevé depuis le début : <b class="num">${fmtT(P.t)}</b></div></section>
-  <section><div class="h2">Les 100 paliers</div><div class="tiers">`;
+  const P=passAt(totalKg()),last=[...TIERS].reverse().find(T=>T.obj&&T.n<=P.lvl);
+  let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Niveaux</div><div class="sub">100 niveaux. Un objet à débloquer tous les 5 niveaux.</div></div>${syncChip()}</header>
+  <section class="pass-hero"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div><div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>
+   ${P.done?'<div class="ph-next">Tous les niveaux sont débloqués !</div>':`<div class="ph-next">Prochain objet : <b>${esc(P.no.name)}</b> au niveau ${P.no.n}</div>`}</div>
+   ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>Niveau ${P.lvl+1} dans ${fmtT(P.need-P.into)}</span><span>${P.no?esc(P.no.name)+' dans '+fmtT(P.no.thr-P.t):''}</span></div>`}
+   <div class="ph-tot">Total soulevé depuis le début : <b class="num">${fmtT(P.t)}</b>${last?` · dernier objet : ${last.emo} ${esc(last.name)}`:''}</div></section>
+  <section><div class="h2">Les 100 niveaux</div><div class="tiers">`;
   for(const T of TIERS){const st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';
-    h+=`<div class="tier ${st} ${T.n%10===0?'mile':''}" ${st==='cur'?'id="tier-cur"':''}><span class="tn num">${T.n}</span><span class="te">${T.emo}</span><span class="tm"><b>${esc(T.name)}</b><small class="num">${fmtT(T.w)}</small>${st==='cur'?`<span class="tb"><i style="width:${P.pct.toFixed(1)}%"></i></span>`:''}</span><span class="ts">${st==='done'?'✓':st==='cur'?Math.floor(P.pct)+'\u00a0%':'🔒'}</span></div>`}
+    if(T.obj) h+=`<div class="tier obj ${st}" ${st==='cur'?'id="tier-cur"':''}><span class="tn num">${T.n}</span><span class="te">${T.emo}</span><span class="tm"><b>${esc(T.name)}</b><small class="num">Débloqué à ${fmtT(T.thr)} soulevées</small>${st==='cur'?`<span class="tb"><i style="width:${P.pct.toFixed(1)}%"></i></span>`:''}</span><span class="ts">${st==='done'?'✓':st==='cur'?Math.floor(P.pct)+'\u00a0%':'🔒'}</span></div>`;
+    else h+=`<div class="tier mini ${st}" ${st==='cur'?'id="tier-cur"':''}><span class="tn num">${T.n}</span><span class="tm"><b>Niveau ${T.n}</b>${st==='cur'?`<span class="tb"><i style="width:${P.pct.toFixed(1)}%"></i></span>`:''}</span><small class="num tthr">${fmtT(T.thr)}</small><span class="ts">${st==='done'?'✓':st==='cur'?Math.floor(P.pct)+'\u00a0%':''}</span></div>`;}
   h+=`</div></section></div>`;return h;
 }
 function viewStats(){
@@ -1240,15 +1155,16 @@ function finishSession(){
   touchActive(0);touchSession(s.id);buildIdx();
   closeSheet('session');try{wakeLock&&wakeLock.release()}catch(e){};
   VIEW='home';render();
-  const after=totalKg(),A=passAt(after),B=passAt(after-tonnage),gained=TIERS.slice(B.lvl,A.lvl);
-  const startPct=A.lvl>B.lvl?0:B.pct;
-  modal(`<div class="emo">${gained.length?gained[gained.length-1].emo:(A.next||A.cur).emo}</div>
+  const after=totalKg(),A=passAt(after),B=passAt(after-tonnage),gainedN=A.lvl-B.lvl,objs=TIERS.slice(B.lvl,A.lvl).filter(T=>T.obj);
+  const startPct=gainedN?0:B.pct,big=objs.length?objs[objs.length-1]:null;
+  modal(`<div class="emo">${big?big.emo:(A.no?A.no.emo:'🏆')}</div>
    <div class="k">Aujourd'hui tu as soulevé</div><div class="big num">${fmtKg(tonnage)}</div>
-   ${gained.length?`<div class="unl"><div class="k">${gained.length>1?gained.length+' paliers débloqués':'Palier débloqué'}</div>${gained.slice(-4).reverse().map(T=>`<div><span>${T.emo}</span><span>Palier ${T.n} · ${esc(T.name)}</span></div>`).join('')}${gained.length>4?`<div class="small muted">et ${gained.length-4} autre${gained.length>5?'s':''}</div>`:''}</div>`:''}
-   ${A.done?'<div class="cmp">Passe terminé : 100 paliers sur 100 !</div>':`<div class="cmp">Palier ${A.lvl}/100 · prochain : ${A.next.emo} ${esc(A.next.name)}</div><div class="mbar"><i id="mbar-i" style="width:${startPct.toFixed(1)}%"></i></div><div class="mrow num"><span>${fmtT(A.into)}</span><span>encore ${fmtT(A.need-A.into)}</span></div>`}
+   ${gainedN?`<div class="cmp">${gainedN>1?`+${gainedN} niveaux : tu passes au niveau ${A.lvl}`:`Niveau ${A.lvl} atteint`} !</div>`:`<div class="cmp">Niveau ${A.lvl}/100</div>`}
+   ${objs.length?`<div class="unl"><div class="k">${objs.length>1?objs.length+' objets débloqués':'Objet débloqué'}</div>${objs.slice(-4).reverse().map(T=>`<div><span>${T.emo}</span><span>Niveau ${T.n} · ${esc(T.name)}</span></div>`).join('')}</div>`:''}
+   ${A.done?'':`<div class="mbar"><i id="mbar-i" style="width:${startPct.toFixed(1)}%"></i></div><div class="mrow num"><span>Niveau ${A.lvl+1} dans ${fmtT(A.need-A.into)}</span><span>${A.no?A.no.emo+' '+esc(A.no.name)+' dans '+fmtT(A.no.thr-A.t):''}</span></div>`}
    <div class="chips"><span class="chip">${Math.round(s.dur/60)} min</span><span class="chip">${sets} séries</span><span class="chip">${items.filter(i=>i.done).length} exercices</span></div>
    ${prs.length?`<div class="prs"><div class="k">${prs.length>1?prs.length+' nouveaux records':'Nouveau record'}</div>${prs.map(p=>`<div><span>${esc(p.name)}</span><span>${fmtKg(p.w)} (+${fmtN(p.w-p.prev)})</span></div>`).join('')}</div>`:''}
-   <div class="acts"><button class="btn primary" data-act="modal-close">Super</button><button class="btn ghost" data-act="see-pass">Voir le passe</button></div>`);
+   <div class="acts"><button class="btn primary" data-act="modal-close">Super</button><button class="btn ghost" data-act="see-pass">Voir mes niveaux</button></div>`);
   if(!A.done)setTimeout(()=>{const b=document.getElementById('mbar-i');if(b)b.style.width=A.pct.toFixed(1)+'%'},350);
 }
 
