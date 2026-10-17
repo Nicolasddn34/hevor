@@ -938,7 +938,7 @@ async function pull(){
   for(const s of S.sessions)if(!cloud.has(s.id))mark('s:'+s.id);
   S.sessions.sort((a,b)=>a.date-b.date);
   persist();buildIdx();render();
-  if(VIEW==='pass')requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToCur(false)));
+
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function q(p){if(!p)return;p.catch(()=>{});return Promise.race([p,sleep(5000).then(()=>{queued=true})])}
@@ -1012,7 +1012,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.5.1';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1041,9 +1041,8 @@ function render(){
   v.innerHTML=VIEW==='pass'?viewPass():VIEW==='lib'?viewLib():VIEW==='stats'?viewStats():VIEW==='more'?viewMore():viewHome();
   if(VIEW==='stats')requestAnimationFrame(drawStats);
   document.body.classList.toggle('on-pass',VIEW==='pass');document.documentElement.classList.toggle('on-pass',VIEW==='pass');
-  if(VIEW==='pass'){fitPassTop();setupTiles()}else if(tileObs){tileObs.disconnect();tileObs=null}
+  if(VIEW==='pass'){fitPassTop();if(!passScrolled){passScrolled=true;scrollToCur(false)}setupTiles()}else if(tileObs){tileObs.disconnect();tileObs=null}
   if(VIEW==='pass')registerAnim();
-  if(VIEW==='pass'&&!passScrolled){passScrolled=true;setTimeout(()=>scrollToCur(false),60)}
   if(VIEW!=='pass')passScrolled=false;
   if(S.active&&$('#sheet-session'))renderSession();
 }
@@ -1194,10 +1193,14 @@ function drawTile(c,M){
   const g=c.getContext('2d');const k=cw/MAP_W*dpr,ky=c.height/(y1-y0);g.setTransform(k,0,0,ky,0,-y0*ky);
   paintForest(g,M,y0,y1);c.dataset.on='1';
 }
+const TILE_CACHE=new Map();
 function setupTiles(){
-  if(tileObs)tileObs.disconnect();const M=buildMap(),cv=[...document.querySelectorAll('.map-tile')];
+  if(tileObs)tileObs.disconnect();const M=buildMap();
+  document.querySelectorAll('.map-tile').forEach(ph=>{const old=TILE_CACHE.get(ph.dataset.i);if(old&&old.dataset.on&&old.clientWidth===0&&Math.abs(old.width-Math.round(ph.clientWidth*Math.min(2,window.devicePixelRatio||1)))<2){old.setAttribute('style',ph.getAttribute('style'));ph.replaceWith(old)}});
+  const cv=[...document.querySelectorAll('.map-tile')];cv.forEach(c=>TILE_CACHE.set(c.dataset.i,c));
+  const vh=window.innerHeight;cv.forEach(c=>{const b=c.getBoundingClientRect();if(b.bottom>-vh&&b.top<2*vh)drawTile(c,M)});
   if(!('IntersectionObserver' in window)){cv.forEach(c=>drawTile(c,M));return}
-  tileObs=new IntersectionObserver(es=>{for(const e of es){const c=e.target;if(e.isIntersecting)drawTile(c,M);else if(c.dataset.on){c.width=0;c.height=0;c.dataset.on=''}}},{rootMargin:'1500px 0px'});
+  tileObs=new IntersectionObserver(es=>{for(const e of es){const c=e.target;if(e.isIntersecting)drawTile(c,M);else if(c.dataset.on){c.width=0;c.height=0;c.dataset.on='';TILE_CACHE.delete(c.dataset.i)}}},{rootMargin:'1500px 0px'});
   cv.forEach(c=>tileObs.observe(c));
 }
 function fitPassTop(){const pt=document.querySelector('.pass-top'),m=document.getElementById('map');if(pt&&m)m.style.marginTop=(-pt.offsetHeight)+'px'}
@@ -1622,7 +1625,7 @@ function addSamples(){
 
 /* ---------- actions ---------- */
 const ACT={
-  tab:d=>{if(d.v!==VIEW){navStack.push(VIEW);pushNav()}if(d.v==='pass')passScrolled=false;VIEW=d.v;try{localStorage.setItem('fonte.view',VIEW)}catch(e){}closeSheet('exo');render();window.scrollTo(0,0)},
+  tab:d=>{if(d.v!==VIEW){navStack.push(VIEW);pushNav()}if(d.v==='pass')passScrolled=false;VIEW=d.v;try{localStorage.setItem('fonte.view',VIEW)}catch(e){}closeSheet('exo');if(VIEW!=='pass')window.scrollTo(0,0);render();if(VIEW!=='pass')window.scrollTo(0,0)},
   'new-tpl':()=>openEditor(null), edit:d=>openEditor(d.id), samples:addSamples,
   start:d=>startSession(d.id), resume:()=>openSession(),
   'ed-close':()=>{closeSheet('editor');ed=null},
