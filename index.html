@@ -332,6 +332,39 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .tier.mini .tthr{color:var(--muted);font-size:12px;flex:none}
 .tier.mini.lock .tm b,.tier.mini.lock .tn{opacity:.55}
 .tier.mini.cur{background:var(--accent-soft);border-color:var(--accent)}
+.map-wrap{padding-bottom:140px}
+.ph-go{margin-left:auto;float:right;background:rgba(0,0,0,.25);color:#fff;border-radius:99px;padding:4px 10px;font-size:12px;font-weight:600}
+.map{position:relative;width:100%;max-width:420px;margin:18px auto 0}
+.map-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.road{fill:none;stroke:var(--surface2);stroke-width:46;stroke-linecap:round}
+.road-line{fill:none;stroke:var(--line);stroke-width:3;stroke-dasharray:10 14;stroke-linecap:round}
+.road-done{fill:none;stroke:color-mix(in srgb,var(--accent) 38%,transparent);stroke-width:46;stroke-linecap:round}
+.dz rect,.dz circle{fill:var(--surface2)}
+.dz .dh{fill:var(--bg)}
+.nd{position:absolute;width:72px;height:72px;transform:translate(-50%,-50%);border-radius:50%;padding:0}
+.nd.mile{width:90px;height:90px}
+.nd .ring{position:absolute;inset:0;width:100%;height:100%}
+.rg-bg{fill:var(--bg);stroke:var(--line);stroke-width:6}
+.rg-fg{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;transition:stroke-dasharray .8s}
+.nd.done .rg-fg{stroke:var(--ok)}
+.nd.mile .rg-bg{stroke:color-mix(in srgb,var(--pr) 45%,var(--line))}
+.nd-in{position:absolute;inset:11px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:var(--surface)}
+.nd.mile .nd-in{font-size:34px;inset:13px}
+.nd.lock .nd-in{filter:grayscale(1);opacity:.45}
+.nd.cur .nd-in{background:var(--accent-soft);box-shadow:0 0 0 0 var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 14px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.nd-n{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);min-width:24px;height:20px;padding:0 6px;border-radius:10px;background:var(--surface2);color:var(--ink);font-family:var(--f-display);font-weight:700;font-size:13px;line-height:20px}
+.nd.cur .nd-n{background:var(--accent);color:var(--on-accent)}
+.nd.done .nd-n{background:var(--ok);color:#0b1a11}
+.nd.mile .nd-n{background:var(--pr);color:#1b1306}
+.nd-ok{position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:var(--ok);color:#0b1a11;font-size:12px;font-weight:800;display:grid;place-items:center}
+.nd-lab{position:absolute;top:50%;transform:translateY(-50%);width:max-content;max-width:112px;display:flex;flex-direction:column;text-align:left;pointer-events:none}
+.nd-lab.r{left:calc(100% + 8px)}
+.nd-lab.l{right:calc(100% + 8px);text-align:right}
+.nd-lab b{font-size:12.5px;font-weight:600;line-height:1.2;color:var(--ink)}
+.nd-lab small{font-size:11.5px;color:var(--muted)}
+.nd.lock .nd-lab b{color:var(--muted)}
+.nd.cur .nd-lab b{color:var(--accent)}
 .unl{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--pr-soft);border-radius:12px;padding:10px 12px}
 .unl .k{color:var(--pr)}
 .unl div{display:flex;align-items:center;gap:10px;font-weight:600}
@@ -697,14 +730,110 @@ function compareObj(t){
 /* ---------- niveaux : 100 niveaux, seuils cumulés, un objet tous les 5 niveaux ----------
    Seuil du niveau n = TOTAL soulevé depuis le début. Courbe calée pour ~30 mois à 4 grosses séances/semaine (~5 200 t). */
 const LV_TOTAL=5200,LV_K=2.77;
-const OBJ5={5:['Voiture','🚗',1.3],10:['Tyrannosaure','🦖',9],15:['Baleine à bosse','🐋',27],20:['Yacht de 25 m','🛥️',60],25:['Locomotive de fret','🚂',110],
- 30:['Baleine bleue','🐋',185],35:['Airbus A350 au décollage','✈️',280],40:['Boeing 747 au décollage','✈️',410],45:['Airbus A380 au décollage','✈️',570],50:['Immeuble de 2 étages','🏢',760],
- 55:['Chalutier de haute mer','🚢',1000],60:['Ferry','⛴️',1260],65:['Immeuble de 4 étages','🏢',1580],70:['Sous-marin','🚢',1940],75:['Train de marchandises','🚆',2350],
- 80:['Fusée Saturn V au décollage','🚀',2800],85:['Grand trois-mâts','⛵',3300],90:['Immeuble de 10 étages','🏙️',3880],95:['Brise-glace','🚢',4500],100:['Tour de 14 étages','🏙️',5200]};
+const OBJ_RAW=`Sac de frappe|🥊
+Scooter|🛵
+Piano droit|🎹
+Vache|🐄
+Voiture|🚗
+Rhinocéros|🦏
+Hippopotame|🦛
+Éléphant d'Asie|🐘
+Éléphant d'Afrique|🐘
+Tyrannosaure|🦖
+Bus de ville|🚌
+Cachalot femelle|🐳
+Camion de pompiers|🚒
+Pelleteuse|🏗️
+Baleine à bosse|🐋
+Tramway|🚊
+Semi-remorque chargé|🚛
+Cachalot mâle|🐳
+Brachiosaure|🦕
+Yacht de 25 m|🛥️
+Boeing 737 chargé|✈️
+Airbus A320 au décollage|✈️
+Locomotive électrique|🚂
+Péniche|🚢
+Locomotive de fret|🚂
+Maison de plain-pied|🏠
+Grue à tour|🏗️
+Rame de métro|🚇
+Bateau-mouche|⛴️
+Baleine bleue|🐋
+Statue de la Liberté|🗽
+Maison à étage|🏡
+Boeing 787 au décollage|✈️
+Train régional|🚆
+Airbus A350 au décollage|✈️
+Éolienne|🌬️
+Boeing 777 au décollage|✈️
+Maison de ville|🏘️
+Rame de TGV|🚄
+Boeing 747 au décollage|✈️
+Station spatiale internationale|🛰️
+Bateau de pêche industriel|🚢
+Voilier-école|⛵
+Passerelle métallique|🌉
+Airbus A380 au décollage|✈️
+Statue géante|🗿
+Château d'eau|🚰
+Fusée Ariane 6 au décollage|🚀
+Double rame de TGV|🚄
+Immeuble de 2 étages|🏢
+Bateau de croisière fluviale|⛴️
+Église de village|⛪
+Train Intercités|🚆
+Remorqueur de haute mer|🚢
+Chalutier de haute mer|🚢
+Pont routier|🌉
+Immeuble de 3 étages|🏢
+Navire océanographique|🚢
+Gare de village|🚉
+Ferry|⛴️
+Fusée Falcon Heavy au décollage|🚀
+Phare en mer|🗼
+Troupeau de 8 baleines bleues|🐋
+Yacht de luxe de 60 m|🛥️
+Immeuble de 4 étages|🏢
+Grue portuaire|🏗️
+Piscine remplie d'eau|💧
+Gymnase|🏟️
+Bateau de croisière côtier|⛴️
+Sous-marin|🚢
+Immeuble de 5 étages|🏢
+Grande roue|🎡
+Hôtel de ville|🏛️
+Petit porte-conteneurs|🚢
+Train de marchandises|🚆
+Montagnes russes|🎢
+Immeuble de 6 étages|🏢
+Tribune de stade|🏟️
+Chalutier-usine|🚢
+Fusée Saturn V au décollage|🚀
+Immeuble de 7 étages|🏢
+Tour de télécommunication|📡
+Navire d'expédition polaire|🚢
+Pont suspendu|🌉
+Grand trois-mâts|⛵
+Hôpital|🏥
+Château fort|🏰
+Immeuble de 9 étages|🏬
+Usine|🏭
+Immeuble de 10 étages|🏙️
+Gare de ville|🚉
+Patinoire olympique|⛸️
+Immeuble de 11 étages|🏙️
+Cargo|🚢
+Brise-glace|🚢
+Tour de contrôle d'aéroport|🗼
+Immeuble de 12 étages|🏙️
+Fusée Starship au décollage|🚀
+Immeuble de 13 étages|🏙️
+Tour de 14 étages|🏙️`;
 const roundT=x=>x<1?Math.max(0.05,Math.round(x*20)/20):x<10?Math.round(x*10)/10:x<100?Math.round(x):Math.round(x/5)*5;
-const TIERS=Array.from({length:100},(_,i)=>{const n=i+1,o=OBJ5[n];const thr=o?o[2]:roundT(LV_TOTAL*Math.pow(n/100,LV_K));return{n,thr,name:o?o[0]:'',emo:o?o[1]:'',obj:!!o}});
+const TIERS=OBJ_RAW.split('\n').map((l,i)=>{const n=i+1,[name,emo]=l.split('|');return{n,thr:roundT(LV_TOTAL*Math.pow(n/100,LV_K)),name,emo,obj:true,mile:n%10===0}});
 const fmtT=t=>(t<10?Math.round(t*100)/100:Math.round(t*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:t<10?2:1})+'\u00a0t';
-const nextObj=lvl=>TIERS.find(T=>T.obj&&T.n>lvl)||null;
+const nextObj=lvl=>TIERS[lvl]||null;
 function passAt(totalKg){const t=totalKg/1000;let lvl=0;while(lvl<100&&TIERS[lvl].thr<=t+1e-9)lvl++;
   const no=nextObj(lvl);
   if(lvl>=100)return{lvl:100,t,done:true,into:0,need:0,pct:100,next:null,no:null};
@@ -837,7 +966,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.3.0';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -865,7 +994,7 @@ function render(){
   const v=$('#view');
   v.innerHTML=VIEW==='pass'?viewPass():VIEW==='lib'?viewLib():VIEW==='stats'?viewStats():VIEW==='more'?viewMore():viewHome();
   if(VIEW==='stats')requestAnimationFrame(drawStats);
-  if(VIEW==='pass'&&!passScrolled){passScrolled=true;requestAnimationFrame(()=>{const c=document.getElementById('tier-cur');if(c&&P_LVL()>6)c.scrollIntoView({block:'center'})})}
+  if(VIEW==='pass'&&!passScrolled){passScrolled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToCur(false)))}
   if(VIEW!=='pass')passScrolled=false;
   if(S.active&&$('#sheet-session'))renderSession();
 }
@@ -912,19 +1041,33 @@ function viewLib(){
   <section><button class="btn line" data-act="custom-new">+ Créer un exercice</button></section></div>`;
 }
 let passScrolled=false;
+const MAP_W=360,MAP_STEP=118,MAP_PAD=110;
+function mapPts(){const H=MAP_PAD*2+99*MAP_STEP;return{H,pts:TIERS.map((T,i)=>({x:180+Math.sin(i*0.62)*112,y:H-MAP_PAD-i*MAP_STEP}))}}
+function smoothPath(p){if(!p.length)return'';let d=`M${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;for(let i=0;i<p.length-1;i++){const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
+  d+=` C${(b.x+(c.x-a.x)/6).toFixed(1)} ${(b.y+(c.y-a.y)/6).toFixed(1)} ${(c.x-(e.x-b.x)/6).toFixed(1)} ${(c.y-(e.y-b.y)/6).toFixed(1)} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`}return d}
+function levelPct(T,P){if(T.n<=P.lvl)return 100;if(T.n===P.lvl+1)return P.pct;return 0}
 function viewPass(){
-  const P=passAt(totalKg()),last=[...TIERS].reverse().find(T=>T.obj&&T.n<=P.lvl);
-  let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Niveaux</div><div class="sub">100 niveaux. Un objet à débloquer tous les 5 niveaux.</div></div>${syncChip()}</header>
+  const P=passAt(totalKg()),{H,pts}=mapPts(),cur=Math.min(P.lvl,99);
+  const full=smoothPath(pts),done=smoothPath(pts.slice(0,Math.max(1,P.lvl)+ (P.lvl<100?1:0)));
+  let deco='';for(let i=0;i<100;i+=3){const p=pts[i],side=p.x>180?-1:1,x=180+side*150,y=p.y-MAP_STEP*0.5;
+    deco+=i%2?`<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" class="dz"><rect x="-16" y="-3" width="32" height="6" rx="3"/><rect x="-20" y="-10" width="6" height="20" rx="2"/><rect x="14" y="-10" width="6" height="20" rx="2"/></g>`
+      :`<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" class="dz"><circle r="14"/><circle r="4" class="dh"/></g>`}
+  let h=`<div class="wrap map-wrap"><header class="top">${backBtn()}<div><div class="brand">Niveaux</div><div class="sub">Un objet par niveau. La jauge se remplit avec ce que tu soulèves.</div></div>${syncChip()}</header>
   <section class="pass-hero"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div><div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>
-   ${P.done?'<div class="ph-next">Tous les niveaux sont débloqués !</div>':`<div class="ph-next">Prochain objet : <b>${esc(P.no.name)}</b> au niveau ${P.no.n}</div>`}</div>
-   ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>Niveau ${P.lvl+1} dans ${fmtT(P.need-P.into)}</span><span>${P.no?esc(P.no.name)+' dans '+fmtT(P.no.thr-P.t):''}</span></div>`}
-   <div class="ph-tot">Total soulevé depuis le début : <b class="num">${fmtT(P.t)}</b>${last?` · dernier objet : ${last.emo} ${esc(last.name)}`:''}</div></section>
-  <section><div class="h2">Les 100 niveaux</div><div class="tiers">`;
-  for(const T of TIERS){const st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';
-    if(T.obj) h+=`<div class="tier obj ${st}" ${st==='cur'?'id="tier-cur"':''}><span class="tn num">${T.n}</span><span class="te">${T.emo}</span><span class="tm"><b>${esc(T.name)}</b><small class="num">Débloqué à ${fmtT(T.thr)} soulevées</small>${st==='cur'?`<span class="tb"><i style="width:${P.pct.toFixed(1)}%"></i></span>`:''}</span><span class="ts">${st==='done'?'✓':st==='cur'?Math.floor(P.pct)+'\u00a0%':'🔒'}</span></div>`;
-    else h+=`<div class="tier mini ${st}" ${st==='cur'?'id="tier-cur"':''}><span class="tn num">${T.n}</span><span class="tm"><b>Niveau ${T.n}</b>${st==='cur'?`<span class="tb"><i style="width:${P.pct.toFixed(1)}%"></i></span>`:''}</span><small class="num tthr">${fmtT(T.thr)}</small><span class="ts">${st==='done'?'✓':st==='cur'?Math.floor(P.pct)+'\u00a0%':''}</span></div>`;}
-  h+=`</div></section></div>`;return h;
+   ${P.done?'<div class="ph-next">Tous les niveaux sont débloqués !</div>':`<div class="ph-next">Prochain : <b>${esc(P.no.name)}</b></div>`}</div>
+   ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>${fmtT(P.into)} / ${fmtT(P.need)}</span><span>encore ${fmtT(P.need-P.into)}</span></div>`}
+   <div class="ph-tot">Total soulevé : <b class="num">${fmtT(P.t)}</b><button class="ph-go" data-act="map-cur">Voir mon niveau ↓</button></div></section>
+  <div class="map" style="aspect-ratio:${MAP_W}/${H}"><svg class="map-svg" viewBox="0 0 ${MAP_W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+   ${deco}<path d="${full}" class="road"/><path d="${full}" class="road-line"/>${P.lvl?`<path d="${done}" class="road-done"/>`:''}</svg>`;
+  const R0=30,C=2*Math.PI*R0;
+  TIERS.forEach((T,i)=>{const p=pts[i],pct=levelPct(T,P),st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';const side=p.x>180?'l':'r';
+    h+=`<button class="nd ${st} ${T.mile?'mile':''}" style="left:${(p.x/MAP_W*100).toFixed(2)}%;top:${(p.y/H*100).toFixed(3)}%" data-act="nd" data-n="${T.n}" ${st==='cur'?'id="nd-cur"':''} aria-label="Niveau ${T.n} : ${esc(T.name)}">
+     <svg class="ring" viewBox="0 0 72 72"><circle cx="36" cy="36" r="${R0}" class="rg-bg"/><circle cx="36" cy="36" r="${R0}" class="rg-fg" ${pct<=0?'style="display:none"':''} stroke-dasharray="${(C*pct/100).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 36 36)"/></svg>
+     <span class="nd-in">${T.emo}</span><span class="nd-n num">${T.n}</span>${st==='done'?'<span class="nd-ok">✓</span>':''}
+     <span class="nd-lab ${side}"><b>${esc(T.name)}</b><small class="num">${fmtT(T.thr)}</small></span></button>`});
+  h+=`</div></div>`;return h;
 }
+function scrollToCur(smooth){const c=document.getElementById('nd-cur')||document.querySelector('.nd.done:last-of-type');if(c)c.scrollIntoView({block:'center',behavior:smooth?'smooth':'auto'})}
 function viewStats(){
   let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Stats</div><div class="sub">Ta progression, séance après séance</div></div>${syncChip()}</header>`;
   if(!S.sessions.length)return h+`<div class="card empty"><div class="fig">${figSVG(EXMAP['squat'],1)}</div><h3>Pas encore de données</h3><p>Termine une première séance : le poids soulevé, tes records et ta progression par exercice apparaîtront ici.</p></div></div>`;
@@ -1334,6 +1477,11 @@ const ACT={
   'rest-adj':d=>{const t=S.active.timer;if(!t)return;if(t.fired){t.fired=false;t.end=Date.now()}t.end=Math.max(Date.now()+1000,t.end+(+d.d)*1000);t.total=Math.max(t.total,(t.end-Date.now())/1000);touchActive();updateRest()},
   'rest-skip':()=>{const t=S.active.timer;if(t&&t.kind==='work'){const it=S.active.items[t.i];S.active.timer=null;if(it){it.done[t.j]=true;afterSetDone(t.i)}return}S.active.timer=null;touchActive();updateRest()},
   'modal-close':()=>closeModal(),
+  'map-cur':()=>scrollToCur(true),
+  nd:d=>{const T=TIERS[+d.n-1],P=passAt(totalKg()),st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';
+    modal(`<div class="emo">${T.emo}</div><div class="k">Niveau ${T.n}</div><h3>${esc(T.name)}</h3><p class="muted" style="margin:0">Se débloque quand ton total soulevé atteint <b class="num">${fmtT(T.thr)}</b>.</p>
+     ${st==='done'?'<div class="cmp" style="color:var(--ok)">Débloqué ✓</div>':st==='cur'?`<div class="mbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="mrow num"><span>${fmtT(P.into)} / ${fmtT(P.need)}</span><span>encore ${fmtT(P.need-P.into)}</span></div>`:`<div class="cmp">Encore ${fmtT(T.thr-P.t)} au total</div>`}
+     <div class="acts"><button class="btn primary" data-act="modal-close">OK</button></div>`)},
   'see-pass':()=>{closeModal();ACT.tab({v:'pass'})},
   'go-back':()=>goBack(),
   'lg-mode':d=>{loginMode=d.m;showLogin()},
