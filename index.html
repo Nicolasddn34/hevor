@@ -893,6 +893,7 @@ async function pull(){
   for(const s of S.sessions)if(!cloud.has(s.id))mark('s:'+s.id);
   S.sessions.sort((a,b)=>a.date-b.date);
   persist();buildIdx();render();
+  if(VIEW==='pass')requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToCur(false)));
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function q(p){if(!p)return;p.catch(()=>{});return Promise.race([p,sleep(5000).then(()=>{queued=true})])}
@@ -966,7 +967,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.3.0';
+const APP_VERSION='1.3.1';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
