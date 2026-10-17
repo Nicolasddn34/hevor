@@ -8,3 +8,6 @@ window.HEVOR_FIREBASE = {
   messagingSenderId: "291380986625",
   appId: "1:291380986625:web:9d3fd46301542827485100"
 };
+
+/* Adresse de contact affichée dans les informations légales (demandes RGPD). Laisse vide pour ne rien afficher. */
+window.HEVOR_CONTACT = "";

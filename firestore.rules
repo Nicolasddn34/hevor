@@ -1,9 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Chaque utilisateur ne peut lire et écrire que ses propres données.
-    match /data/users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    function isOwner(uid) { return request.auth != null && request.auth.uid == uid; }
+    // Documents de l'utilisateur : meta (séances types, exercices perso, réglages), active (séance en cours), profile
+    match /data/users/{uid}/{doc} {
+      allow read, delete: if isOwner(uid) && doc in ['meta', 'active', 'profile'];
+      allow create, update: if isOwner(uid) && doc in ['meta', 'active', 'profile'] && request.resource.data.keys().size() <= 10;
     }
+    // Séances terminées
+    match /data/users/{uid}/profile/sessions/{sid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && sid.matches('^[A-Za-z0-9_-]{1,48}$') && request.resource.data.id == sid && request.resource.data.keys().size() <= 12;
+    }
+    // Tout le reste est interdit
+    match /{document=**} { allow read, write: if false; }
   }
 }
