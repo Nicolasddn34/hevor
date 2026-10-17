@@ -332,7 +332,7 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .tier.mini .tthr{color:var(--muted);font-size:12px;flex:none}
 .tier.mini.lock .tm b,.tier.mini.lock .tn{opacity:.55}
 .tier.mini.cur{background:var(--accent-soft);border-color:var(--accent)}
-.map-wrap{padding-bottom:140px}
+.map-wrap{padding-bottom:0}
 .ph-go{margin-left:auto;float:right;background:rgba(0,0,0,.25);color:#fff;border-radius:99px;padding:4px 10px;font-size:12px;font-weight:600}
 .map{position:relative;width:100%;max-width:420px;margin:18px auto 0}
 .map-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -365,7 +365,11 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .nd-lab small{font-size:11.5px;color:var(--muted)}
 .nd.lock .nd-lab b{color:var(--muted)}
 .nd.cur .nd-lab b{color:var(--accent)}
-.map{max-width:440px;border-radius:22px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.map{max-width:none;width:auto;margin:18px calc(-1*max(16px,env(safe-area-inset-right,0px))) 0 calc(-1*max(16px,env(safe-area-inset-left,0px)));border-radius:0;overflow:hidden;box-shadow:none}
+body.on-pass{background:#0b0707}
+body.on-pass::before{background:transparent}
+body.on-pass .map-wrap{padding-bottom:0}
+body.on-pass #view>.wrap{min-height:0}
 .road-rim{fill:none;stroke:#0e0707;stroke-width:58;stroke-linecap:round;stroke-linejoin:round}
 .road{fill:none;stroke:#3a2420;stroke-width:46;stroke-linecap:round;stroke-linejoin:round}
 .road-in{fill:none;stroke:#4a2e29;stroke-width:24;stroke-linecap:round;opacity:.55}
@@ -983,7 +987,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.4.1';
+const APP_VERSION='1.4.2';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1011,6 +1015,7 @@ function render(){
   const v=$('#view');
   v.innerHTML=VIEW==='pass'?viewPass():VIEW==='lib'?viewLib():VIEW==='stats'?viewStats():VIEW==='more'?viewMore():viewHome();
   if(VIEW==='stats')requestAnimationFrame(drawStats);
+  document.body.classList.toggle('on-pass',VIEW==='pass');
   if(VIEW==='pass')registerAnim();
   if(VIEW==='pass'&&!passScrolled){passScrolled=true;setTimeout(()=>scrollToCur(false),60)}
   if(VIEW!=='pass')passScrolled=false;
@@ -1065,18 +1070,19 @@ function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(see
 let MAP=null;
 function buildMap(){
   if(MAP)return MAP;
-  const r=rng(20261017),steps=[];let H=150;for(let i=0;i<99;i++){const st=106+r()*34;steps.push(st);H+=st}H+=170;
+  const r=rng(20261017),steps=[];let H=170;for(let i=0;i<99;i++){const st=168+r()*26;steps.push(st);H+=st}H+=190;
   const pts=[];let y=H-120;
-  for(let i=0;i<100;i++){let x=180+104*Math.sin(i*0.47+1.6*Math.sin(i*0.15))+(r()-.5)*58;pts.push({x,y});y-=steps[i]||0}
+  for(let i=0;i<100;i++){let x=180+118*Math.sin(i*1.75+0.7*Math.sin(i*0.31))+(r()-.5)*26;pts.push({x,y});y-=steps[i]||0}
   const manors=MANOR_LV.map((L,k)=>({L,side:k%2?1:-1}));
   manors.forEach(m=>{for(let j=m.L-2;j<=m.L;j++){if(j<0||j>99)continue;const p=pts[j];p.x=m.side<0?Math.max(p.x,236+r()*30):Math.min(p.x,124-r()*30)}});
   pts.forEach(p=>{p.x=Math.max(64,Math.min(296,p.x))});
   manors.forEach(m=>{const p=pts[m.L-1];m.x=m.side<0?78:282;m.y=p.y+30});
-  const figs=[];for(let L=5;L<=100;L+=5){const p=pts[L-1],side=p.x>180?-1:1;figs.push({L,ex:MAP_FIGS[L/5-1],x:Math.max(44,Math.min(316,p.x+side*112)),y:p.y-6})}
+  const figs=[];for(let L=5;L<=100;L+=5){const a=pts[L-1],b=pts[Math.min(99,L)],mx=(a.x+b.x)/2,my=(a.y+b.y)/2,side=mx>180?-1:1;figs.push({L,ex:MAP_FIGS[L/5-1],x:Math.max(46,Math.min(314,mx+side*118)),y:my})}
   // smooth path
-  const d=smoothPath(pts);
+  const road=[];for(let i=0;i<pts.length;i++){road.push(pts[i]);if(i<pts.length-1){const a=pts[i],b=pts[i+1],mx=(a.x+b.x)/2,my=(a.y+b.y)/2,bend=(i%2?1:-1)*(26+r()*22);road.push({x:Math.max(40,Math.min(320,mx+bend)),y:my})}}
+  const d=smoothPath(road);
   // obstacles for scenery
-  const segs=[];for(let i=0;i<99;i++){const a=pts[i],b=pts[i+1];for(let t=0;t<=1;t+=.2)segs.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t})}
+  const segs=[];for(let i=0;i<road.length-1;i++){const a=road[i],b=road[i+1];for(let t=0;t<=1;t+=.2)segs.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t})}
   const free=(x,y,pad)=>{for(const q of segs){if(Math.abs(q.y-y)<70&&Math.hypot(q.x-x,q.y-y)<pad)return false}
     for(const p of pts){if(Math.abs(x-p.x)<70&&y>p.y-46&&y<p.y+78)return false}
     for(const m of manors){if(Math.abs(x-m.x)<88&&y>m.y-150&&y<m.y+26)return false}
@@ -1105,7 +1111,7 @@ function buildMap(){
   for(const m of manors)bg+=manorSVG(m.x,m.y,m.side,r);
   // embers
   for(let i=0;i<H/40;i++)bg+=`<circle cx="${(r()*MAP_W).toFixed(0)}" cy="${(r()*H).toFixed(0)}" r="${(.6+r()*1.2).toFixed(1)}" fill="#E07B4A" opacity="${(.15+r()*.45).toFixed(2)}"/>`;
-  MAP={H,pts,d,bg,figs};return MAP;
+  MAP={H,pts,road,d,bg,figs};return MAP;
 }
 function manorSVG(x,y,side,r){
   const W='#2b1719',W2='#22121400',RF='#130a0b',TR='#4a2326',win=()=>r()<.7?'#E07B4A':'#2a1214';
@@ -1130,7 +1136,7 @@ function smoothPath(p){if(!p.length)return'';let d=`M${p[0].x.toFixed(1)} ${p[0]
 function levelPct(T,P){if(T.n<=P.lvl)return 100;if(T.n===P.lvl+1)return P.pct;return 0}
 function viewPass(){
   const P=passAt(totalKg()),M=buildMap(),H=M.H,pts=M.pts;
-  const done=P.lvl?smoothPath(pts.slice(0,Math.min(100,P.lvl+1))):'';
+  const done=P.lvl?smoothPath(M.road.slice(0,Math.min(M.road.length,P.lvl*2+1))):'';
   let h=`<div class="wrap map-wrap"><header class="top">${backBtn()}<div><div class="brand">Niveaux</div><div class="sub">Un objet par niveau. La jauge se remplit avec ce que tu soulèves.</div></div>${syncChip()}</header>
   <section class="pass-hero"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div><div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>
    ${P.done?'<div class="ph-next">Tous les niveaux sont débloqués !</div>':`<div class="ph-next">Prochain : <b>${esc(P.no.name)}</b></div>`}</div>
