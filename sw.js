@@ -1,6 +1,6 @@
 /* Service worker Hevor : garde l'appli sur le téléphone pour l'ouvrir sans réseau.
    Change VERSION à chaque mise à jour pour renouveler le cache. */
-const VERSION = 'hevor-1.4.2';
+const VERSION = 'hevor-1.5.0';
 const CORE = [
   './', './index.html', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png', './icons/logo.png',

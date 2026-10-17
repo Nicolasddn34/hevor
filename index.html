@@ -405,6 +405,31 @@ body.on-pass #view>.wrap{min-height:0}
 .linkbtn{color:var(--accent);font-weight:600;padding:8px 0}
 .install{display:flex;gap:10px;align-items:center;background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:12px}
 .install b{color:var(--ink)}
+
+/* ---- Niveaux v1.5 : encart fixe par-dessus la forêt ---- */
+:root.on-pass{padding-top:0}
+body.on-pass .map-wrap{padding-top:0;padding-bottom:0}
+.pass-top{position:sticky;top:0;z-index:6;padding-top:calc(env(safe-area-inset-top,0px) + 4px);padding-bottom:10px;margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:linear-gradient(to bottom,rgba(8,4,5,.88) 0%,rgba(8,4,5,.55) 70%,rgba(8,4,5,0) 100%)}
+.ptop{padding-block:4px 8px}
+.ptop .brand{font-size:30px}
+.pass-hero2{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:center;color:#fff;border-radius:18px;padding:12px 14px;background:linear-gradient(140deg,rgba(140,72,72,.9),rgba(74,34,37,.86));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.08)}
+.pass-hero2 .ph-emo{width:58px;height:58px;font-size:40px;border-radius:14px}
+.pass-hero2 .ph-lvl{font-size:36px}
+.pass-hero2 .ph-lvl span{font-size:18px}
+.pass-hero2 .ph-next{font-size:13px;margin-top:1px}
+.ph-side{align-self:start;display:flex;flex-direction:column;align-items:flex-end;gap:8px;text-align:right}
+.ph-side .ph-go{float:none;margin:0;white-space:nowrap}
+.ph-side .ph-tot{border:0;padding:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;opacity:.85;grid-column:auto;display:flex;flex-direction:column;align-items:flex-end}
+.ph-side .ph-tot b{font-size:16px;letter-spacing:0;text-transform:none;font-family:var(--f-display);font-style:italic}
+.pass-hero2 .pbar,.pass-hero2 .ph-row{grid-column:1/-1}
+.pass-hero2 .pbar{height:8px}
+.pass-hero2 .ph-row{font-size:12.5px}
+.map{margin-top:0;z-index:0}
+.map-tile{position:absolute;left:0;width:100%;display:block}
+.map-svg{z-index:1}
+.road-done{stroke:#C9625F;stroke-width:42;opacity:.28}
+.nd,.mapfig{z-index:2}
+.mapfig{width:104px;height:104px;background:radial-gradient(ellipse at 50% 86%,rgba(201,98,95,.22),transparent 60%)!important;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
 </style>
 </head>
 <body>
@@ -987,7 +1012,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.4.2';
+const APP_VERSION='1.5.0';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1015,7 +1040,8 @@ function render(){
   const v=$('#view');
   v.innerHTML=VIEW==='pass'?viewPass():VIEW==='lib'?viewLib():VIEW==='stats'?viewStats():VIEW==='more'?viewMore():viewHome();
   if(VIEW==='stats')requestAnimationFrame(drawStats);
-  document.body.classList.toggle('on-pass',VIEW==='pass');
+  document.body.classList.toggle('on-pass',VIEW==='pass');document.documentElement.classList.toggle('on-pass',VIEW==='pass');
+  if(VIEW==='pass'){fitPassTop();setupTiles()}else if(tileObs){tileObs.disconnect();tileObs=null}
   if(VIEW==='pass')registerAnim();
   if(VIEW==='pass'&&!passScrolled){passScrolled=true;setTimeout(()=>scrollToCur(false),60)}
   if(VIEW!=='pass')passScrolled=false;
@@ -1064,86 +1090,130 @@ function viewLib(){
   <section><button class="btn line" data-act="custom-new">+ Créer un exercice</button></section></div>`;
 }
 let passScrolled=false;
-const MAP_W=360,MANOR_LV=[8,23,38,53,68,83,98];
+const MAP_W=360,MANOR_LV=[8,23,38,53,68,83,98],MAP_TOP=430,MAP_BOT=310,TILE=900;
 const MAP_FIGS=['squat','dc-barre','tractions','souleve','dm-barre','curl-halt','hip-thrust','fentes','kb-swing','box-jump','rowing-barre','presse','dips','elev-lat','power-clean','face-pull','pompes','releve-jambes','planche','tapis'];
 function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 let MAP=null;
 function buildMap(){
   if(MAP)return MAP;
-  const r=rng(20261017),steps=[];let H=170;for(let i=0;i<99;i++){const st=168+r()*26;steps.push(st);H+=st}H+=190;
-  const pts=[];let y=H-120;
-  for(let i=0;i<100;i++){let x=180+118*Math.sin(i*1.75+0.7*Math.sin(i*0.31))+(r()-.5)*26;pts.push({x,y});y-=steps[i]||0}
+  const r=rng(20261017),steps=[];let sum=0;for(let i=0;i<99;i++){const st=168+r()*26;steps.push(st);sum+=st}
+  const H=Math.round(MAP_TOP+sum+MAP_BOT);
+  const pts=[];let y=H-MAP_BOT;
+  for(let i=0;i<100;i++){const x=180+118*Math.sin(i*1.75+0.7*Math.sin(i*0.31))+(r()-.5)*26;pts.push({x,y});y-=steps[i]||0}
   const manors=MANOR_LV.map((L,k)=>({L,side:k%2?1:-1}));
   manors.forEach(m=>{for(let j=m.L-2;j<=m.L;j++){if(j<0||j>99)continue;const p=pts[j];p.x=m.side<0?Math.max(p.x,236+r()*30):Math.min(p.x,124-r()*30)}});
   pts.forEach(p=>{p.x=Math.max(64,Math.min(296,p.x))});
   manors.forEach(m=>{const p=pts[m.L-1];m.x=m.side<0?78:282;m.y=p.y+30});
   const figs=[];for(let L=5;L<=100;L+=5){const a=pts[L-1],b=pts[Math.min(99,L)],mx=(a.x+b.x)/2,my=(a.y+b.y)/2,side=mx>180?-1:1;figs.push({L,ex:MAP_FIGS[L/5-1],x:Math.max(46,Math.min(314,mx+side*118)),y:my})}
-  // smooth path
   const road=[];for(let i=0;i<pts.length;i++){road.push(pts[i]);if(i<pts.length-1){const a=pts[i],b=pts[i+1],mx=(a.x+b.x)/2,my=(a.y+b.y)/2,bend=(i%2?1:-1)*(26+r()*22);road.push({x:Math.max(40,Math.min(320,mx+bend)),y:my})}}
   const d=smoothPath(road);
-  // obstacles for scenery
   const segs=[];for(let i=0;i<road.length-1;i++){const a=road[i],b=road[i+1];for(let t=0;t<=1;t+=.2)segs.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t})}
-  const free=(x,y,pad)=>{for(const q of segs){if(Math.abs(q.y-y)<70&&Math.hypot(q.x-x,q.y-y)<pad)return false}
-    for(const p of pts){if(Math.abs(x-p.x)<70&&y>p.y-46&&y<p.y+78)return false}
-    for(const m of manors){if(Math.abs(x-m.x)<88&&y>m.y-150&&y<m.y+26)return false}
-    for(const f of figs){if(Math.abs(x-f.x)<46&&Math.abs(y-f.y)<50)return false}return true};
-  let bg=`<defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0707"/><stop offset=".5" stop-color="#170c0d"/><stop offset="1" stop-color="#120909"/></linearGradient>
-   <radialGradient id="glow"><stop offset="0" stop-color="#8C4848" stop-opacity=".32"/><stop offset="1" stop-color="#8C4848" stop-opacity="0"/></radialGradient>
-   <radialGradient id="wglow"><stop offset="0" stop-color="#E07B4A" stop-opacity=".45"/><stop offset="1" stop-color="#E07B4A" stop-opacity="0"/></radialGradient></defs>
-   <rect width="${MAP_W}" height="${H}" fill="url(#mg)"/>`;
-  for(let i=0;i<Math.round(H/260);i++)bg+=`<ellipse cx="${(r()*MAP_W).toFixed(0)}" cy="${(r()*H).toFixed(0)}" rx="${(120+r()*120).toFixed(0)}" ry="${(70+r()*80).toFixed(0)}" fill="url(#glow)"/>`;
-  // grass
-  let grass='';for(let i=0;i<H/9;i++){const x=r()*MAP_W,y=r()*H;if(!free(x,y,40))continue;const c=r()<.5?'#3d1a1c':'#4f2023',h=4+r()*6;grass+=`<path d="M${x.toFixed(0)} ${y.toFixed(0)}l-3 -${h.toFixed(0)}M${x.toFixed(0)} ${y.toFixed(0)}l0 -${(h+2).toFixed(0)}M${x.toFixed(0)} ${y.toFixed(0)}l3 -${h.toFixed(0)}" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`}
-  bg+=grass;
-  // road
-  bg+=`<path d="${d}" class="road-rim"/><path d="${d}" class="road"/><path d="${d}" class="road-in"/>`;
-  let stones='';for(const q of segs){if(r()<.45){const side=r()<.5?-1:1,ox=side*(19+r()*9),oy=(r()-.5)*10;stones+=`<ellipse cx="${(q.x+ox).toFixed(1)}" cy="${(q.y+oy).toFixed(1)}" rx="${(2+r()*3.5).toFixed(1)}" ry="${(1.5+r()*2.5).toFixed(1)}" fill="${r()<.5?'#1c1010':'#2c1a18'}"/>`}}
-  bg+=stones;
-  // trees
-  const trees=[];for(let y=-10;y<H+20;y+=30){for(let x=6;x<MAP_W;x+=27){const tx=x+(r()-.5)*22,ty=y+(r()-.5)*22;if(r()<.22)continue;if(!free(tx,ty,58))continue;trees.push({x:tx,y:ty,s:.7+r()*.75,c:Math.floor(r()*3),k:r()<.16?1:0})}}
-  trees.sort((a,b)=>a.y-b.y);
-  const TC=[['#2a1215','#381a1d'],['#3a171b','#4a1f23'],['#22100f','#30171a']];
-  for(const t of trees){const[c1,c2]=TC[t.c],s=t.s,x=t.x,y=t.y;
-    if(t.k){bg+=`<circle cx="${x.toFixed(1)}" cy="${(y-6*s).toFixed(1)}" r="${(9*s).toFixed(1)}" fill="${c2}"/><circle cx="${(x-6*s).toFixed(1)}" cy="${(y-3*s).toFixed(1)}" r="${(6*s).toFixed(1)}" fill="${c1}"/>`;continue}
-    const w=15*s,h=40*s;bg+=`<ellipse cx="${x.toFixed(1)}" cy="${(y+1).toFixed(1)}" rx="${(w*.8).toFixed(1)}" ry="${(3*s).toFixed(1)}" fill="#070404" opacity=".6"/><rect x="${(x-1.6*s).toFixed(1)}" y="${(y-7*s).toFixed(1)}" width="${(3.2*s).toFixed(1)}" height="${(8*s).toFixed(1)}" fill="#140909"/>`+
-      [[1,0],[.8,.3],[.58,.56]].map(([k,o],j)=>`<path d="M${(x-w*k).toFixed(1)} ${(y-6*s-h*o).toFixed(1)}L${x.toFixed(1)} ${(y-6*s-h*o-h*.46*k-6*s).toFixed(1)}L${(x+w*k).toFixed(1)} ${(y-6*s-h*o).toFixed(1)}Z" fill="${j%2?c2:c1}"/>`).join('')}
-  // manors
-  for(const m of manors)bg+=manorSVG(m.x,m.y,m.side,r);
-  // embers
-  for(let i=0;i<H/40;i++)bg+=`<circle cx="${(r()*MAP_W).toFixed(0)}" cy="${(r()*H).toFixed(0)}" r="${(.6+r()*1.2).toFixed(1)}" fill="#E07B4A" opacity="${(.15+r()*.45).toFixed(2)}"/>`;
-  MAP={H,pts,road,d,bg,figs};return MAP;
+  const near=(x,y,pad)=>{for(const q of segs){if(Math.abs(q.y-y)<pad&&Math.hypot(q.x-x,q.y-y)<pad)return true}return false};
+  const free=(x,y,pad)=>{if(near(x,y,pad))return false;
+    for(const p of pts){if(Math.abs(x-p.x)<70&&y>p.y-46&&y<p.y+86)return false}
+    for(const m of manors){if(Math.abs(x-m.x)<92&&y>m.y-160&&y<m.y+30)return false}
+    for(const f of figs){if(Math.abs(x-f.x)<48&&Math.abs(y-f.y)<54)return false}return true};
+  const sc=[];
+  for(let i=0;i<H/5;i++){const x=r()*MAP_W,y=r()*H;if(free(x,y,36))sc.push({t:'grass',x,y,s:.7+r()*.8,v:r()})}
+  for(let i=0;i<H/70;i++){const x=r()*MAP_W,y=r()*H;if(free(x,y,40))sc.push({t:'rock',x,y,s:.6+r()*1.1,v:r()})}
+  for(let i=0;i<H/110;i++){const x=r()*MAP_W,y=r()*H;if(free(x,y,44))sc.push({t:'log',x,y,s:.8+r()*.5,v:r()})}
+  for(const q of segs){if(r()<.05){const side=r()<.5?-1:1,x=q.x+side*(34+r()*10),y=q.y+(r()-.5)*20;if(free(x,y,30))sc.push({t:'mush',x,y,s:.8+r()*.5,v:r()})}}
+  for(let yy=-20;yy<H+30;yy+=26){for(let xx=0;xx<MAP_W+20;xx+=24){const tx=xx+(r()-.5)*20,ty=yy+(r()-.5)*20;if(r()<.12)continue;if(!free(tx,ty,58))continue;
+    const k=r();sc.push({t:k<.12?'oak':k<.2?'bush':'pine',x:tx,y:ty,s:.75+r()*.75,v:Math.floor(r()*3),w:r()})}}
+  sc.sort((a,b)=>a.y-b.y);
+  const fog=[];for(let i=0;i<H/170;i++)fog.push({x:r()*MAP_W,y:r()*H,r:110+r()*150,c:r()<.6?'rgba(140,60,64,.20)':'rgba(0,0,0,.35)'});
+  const emb=[];for(let i=0;i<H/34;i++)emb.push({x:r()*MAP_W,y:r()*H,r:.5+r()*1.2,a:.15+r()*.5});
+  const spk=[];for(let i=0;i<H/3;i++)spk.push({x:r()*MAP_W,y:r()*H,r:.6+r()*2.2,c:r()<.5?'rgba(0,0,0,.35)':'rgba(90,38,42,.22)'});
+  let ov=`<defs><radialGradient id="wglow"><stop offset="0" stop-color="#E07B4A" stop-opacity=".45"/><stop offset="1" stop-color="#E07B4A" stop-opacity="0"/></radialGradient></defs>`;
+  for(const m of manors)ov+=manorSVG(m.x,m.y,m.side,r);
+  MAP={H,pts,road,d,figs,manors,sc,fog,emb,spk,ov,tiles:Math.ceil(H/TILE)};return MAP;
 }
 function manorSVG(x,y,side,r){
-  const W='#2b1719',W2='#22121400',RF='#130a0b',TR='#4a2326',win=()=>r()<.7?'#E07B4A':'#2a1214';
+  const W='#2b1719',RF='#130a0b',TR='#4a2326',win=()=>r()<.7?'#E07B4A':'#2a1214';
   const g=(xx,yy,w,h)=>`<rect x="${xx}" y="${yy}" width="${w}" height="${h}" rx="1.5" fill="${win()}"/>`;
   let s=`<g transform="translate(${x} ${y}) scale(${side<0?1:-1} 1)">`;
-  s+=`<ellipse cx="0" cy="4" rx="82" ry="10" fill="#050303" opacity=".7"/><circle cx="0" cy="-50" r="70" fill="url(#wglow)" opacity=".55"/>`;
+  s+=`<ellipse cx="0" cy="4" rx="84" ry="11" fill="#050303" opacity=".75"/><circle cx="0" cy="-50" r="74" fill="url(#wglow)" opacity=".55"/>`;
   s+=`<rect x="-72" y="-46" width="24" height="46" fill="${W}" stroke="#0f0808" stroke-width="1.5"/><path d="M-76 -46L-60 -66L-44 -46Z" fill="${RF}"/>`;
   s+=`<rect x="48" y="-46" width="24" height="46" fill="${W}" stroke="#0f0808" stroke-width="1.5"/><path d="M44 -46L60 -66L76 -46Z" fill="${RF}"/>`;
   s+=`<rect x="-50" y="-72" width="100" height="72" fill="${W}" stroke="#0f0808" stroke-width="1.5"/>`;
+  s+=`<path d="M-50 -72H50" stroke="#1a0d0e" stroke-width="1"/>`+[-58,-44,-30].map(yy=>`<path d="M-50 ${yy}H50" stroke="#24131500" stroke-width="1"/>`).join('');
   s+=`<path d="M-56 -72L-28 -102L0 -72Z" fill="${RF}"/><path d="M0 -72L28 -102L56 -72Z" fill="${RF}"/><path d="M-56 -72H56" stroke="${TR}" stroke-width="3"/>`;
   s+=`<rect x="-14" y="-112" width="28" height="44" fill="${W}" stroke="#0f0808" stroke-width="1.5"/><path d="M-19 -112L0 -146L19 -112Z" fill="${RF}"/><path d="M0 -146V-154" stroke="${TR}" stroke-width="2"/>`;
-  s+=`<rect x="30" y="-112" width="9" height="22" fill="#1a0d0e"/>`;
-  s+=g(-6,-104,12,14);
+  s+=`<rect x="30" y="-112" width="9" height="22" fill="#1a0d0e"/>`+g(-6,-104,12,14);
   [-42,-24,16,34].forEach(xx=>{s+=g(xx,-62,9,13);s+=g(xx,-36,9,13)});
   s+=g(-66,-34,12,12)+g(54,-34,12,12);
   s+=`<path d="M-9 0V-22Q0 -32 9 -22V0Z" fill="#0c0606"/><path d="M-9 0V-22Q0 -32 9 -22V0" fill="none" stroke="#E07B4A" stroke-opacity=".5" stroke-width="1.5"/>`;
-  s+=`<path d="M-90 2H90" stroke="#1a0d0e" stroke-width="2"/>`+Array.from({length:12},(_,i)=>`<path d="M${-88+i*16} 2V-10l2 -4 2 4V2" fill="#1a0d0e"/>`).join('');
+  s+=`<path d="M-92 2H92" stroke="#1a0d0e" stroke-width="2"/>`+Array.from({length:12},(_,i)=>`<path d="M${-88+i*16} 2V-10l2 -4 2 4V2" fill="#1a0d0e"/>`).join('');
   return s+`</g>`;
 }
 function smoothPath(p){if(!p.length)return'';let d=`M${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;for(let i=0;i<p.length-1;i++){const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
   d+=` C${(b.x+(c.x-a.x)/6).toFixed(1)} ${(b.y+(c.y-a.y)/6).toFixed(1)} ${(c.x-(e.x-b.x)/6).toFixed(1)} ${(c.y-(e.y-b.y)/6).toFixed(1)} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`}return d}
+/* ---- forêt dessinée en canvas, par tuiles, seulement près de l'écran ---- */
+const PINE=[['#5c232a','#3c161c','#230c11','#6e2c33'],['#4c1c23','#321318','#1c0a0e','#5f252c'],['#3f181d','#291015','#17090b','#4f1f25']];
+function ell(g,x,y,rx,ry){g.beginPath();g.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,Math.PI*2);g.fill()}
+const DRAW={
+  grass(g,o){const s=o.s;g.lineCap='round';g.lineWidth=1.3*s;g.strokeStyle=o.v<.5?'#3e191c':'#56232a';g.beginPath();
+    for(const[dx,h]of[[-2.6,5],[0,7.5],[2.6,5.5],[-1.2,6.2]]){g.moveTo(o.x+dx*s*.4,o.y);g.quadraticCurveTo(o.x+dx*s*.6,o.y-h*s*.6,o.x+dx*s,o.y-h*s)}g.stroke()},
+  rock(g,o){const s=o.s;g.fillStyle='rgba(0,0,0,.5)';ell(g,o.x+2*s,o.y+2*s,9*s,4*s);g.fillStyle='#1d1213';g.beginPath();g.moveTo(o.x-8*s,o.y+1*s);g.lineTo(o.x-6*s,o.y-5*s);g.lineTo(o.x+1*s,o.y-8*s);g.lineTo(o.x+7*s,o.y-4*s);g.lineTo(o.x+8*s,o.y+1*s);g.closePath();g.fill();
+    g.fillStyle='#3a2826';g.beginPath();g.moveTo(o.x-6*s,o.y-5*s);g.lineTo(o.x+1*s,o.y-8*s);g.lineTo(o.x+2*s,o.y-3*s);g.lineTo(o.x-4*s,o.y-1*s);g.closePath();g.fill()},
+  log(g,o){const s=o.s,a=(o.v-.5)*.8;g.save();g.translate(o.x,o.y);g.rotate(a);g.fillStyle='rgba(0,0,0,.45)';ell(g,2,3*s,16*s,4*s);g.fillStyle='#24120f';g.fillRect(-15*s,-3.5*s,30*s,7*s);g.fillStyle='#3a1f19';g.fillRect(-15*s,-3.5*s,30*s,2.5*s);
+    g.fillStyle='#4a2a22';ell(g,15*s,0,2.6*s,3.5*s);g.fillStyle='#2a1612';ell(g,15*s,0,1.2*s,1.8*s);g.restore()},
+  mush(g,o){const s=o.s,gr=g.createRadialGradient(o.x,o.y-3*s,0,o.x,o.y-3*s,14*s);gr.addColorStop(0,'rgba(224,123,74,.35)');gr.addColorStop(1,'rgba(224,123,74,0)');g.fillStyle=gr;g.fillRect(o.x-14*s,o.y-17*s,28*s,28*s);
+    g.fillStyle='#d9c3b8';g.fillRect(o.x-.9*s,o.y-3*s,1.8*s,3.5*s);g.fillStyle='#C9625F';g.beginPath();g.ellipse(o.x,o.y-3*s,3.6*s,2.4*s,0,Math.PI,0);g.fill();g.fillStyle='#f3d2c8';ell(g,o.x-1.2*s,o.y-4*s,.5*s,.5*s)},
+  bush(g,o){const s=o.s,P=PINE[o.v];g.fillStyle='rgba(0,0,0,.45)';ell(g,o.x+3*s,o.y+2*s,13*s,4*s);
+    [[-6,-4,7,2],[5,-4,7,2],[0,-8,8,1],[-3,-9,5,0],[4,-10,4,3]].forEach(([dx,dy,rr,c])=>{g.fillStyle=P[c];ell(g,o.x+dx*s,o.y+dy*s,rr*s,rr*s*.9)})},
+  oak(g,o){const s=o.s,P=PINE[o.v];g.fillStyle='rgba(0,0,0,.5)';ell(g,o.x+5*s,o.y+2*s,17*s,5*s);g.fillStyle='#140809';g.fillRect(o.x-2.2*s,o.y-12*s,4.4*s,13*s);
+    [[0,-20,13,2],[-9,-15,9,2],[9,-15,9,1],[-5,-25,9,1],[6,-26,8,1],[-6,-23,6,0],[2,-29,5,0],[-10,-18,4,3]].forEach(([dx,dy,rr,c])=>{g.fillStyle=P[c];ell(g,o.x+dx*s,o.y+dy*s,rr*s,rr*s)})},
+  pine(g,o){const s=o.s,P=PINE[o.v],w=15*s,h=48*s,x=o.x,y=o.y;
+    g.fillStyle='rgba(0,0,0,.5)';ell(g,x+5*s,y+2*s,w*1.15,4.5*s);
+    g.fillStyle='#120708';g.fillRect(x-1.8*s,y-9*s,3.6*s,10*s);
+    for(let k=0;k<4;k++){const tw=w*(1-k*.2),base=y-6*s-k*h*.19,top=base-h*.36*(1-k*.06),jag=2.2*s;
+      g.fillStyle=P[0];g.beginPath();g.moveTo(x,top);g.lineTo(x-tw,base);g.lineTo(x-tw*.66,base-jag);g.lineTo(x-tw*.42,base+jag*.5);g.lineTo(x-tw*.18,base-jag*.8);g.lineTo(x,base+jag*.6);g.closePath();g.fill();
+      g.fillStyle=P[1];g.beginPath();g.moveTo(x,top);g.lineTo(x,base+jag*.6);g.lineTo(x+tw*.2,base-jag*.7);g.lineTo(x+tw*.45,base+jag*.4);g.lineTo(x+tw*.7,base-jag);g.lineTo(x+tw,base);g.closePath();g.fill();
+      g.fillStyle=P[2];g.beginPath();g.moveTo(x+tw*.45,base+jag*.4);g.lineTo(x+tw*.7,base-jag);g.lineTo(x+tw,base);g.lineTo(x+tw*.72,base+jag*.3);g.closePath();g.fill();
+      if(o.w>.55){g.strokeStyle=P[3];g.lineWidth=.9*s;g.beginPath();g.moveTo(x-tw*.15,top+(base-top)*.35);g.lineTo(x-tw*.5,base-jag*.4);g.stroke()}}}
+};
+function paintForest(g,M,y0,y1){
+  g.fillStyle='#130a0b';g.fillRect(0,y0-2,MAP_W,y1-y0+4);
+  for(const f of M.fog){if(f.y+f.r<y0||f.y-f.r>y1)continue;const gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);gr.addColorStop(0,f.c);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(f.x-f.r,f.y-f.r,2*f.r,2*f.r)}
+  for(const p of M.spk){if(p.y<y0-4||p.y>y1+4)continue;g.fillStyle=p.c;ell(g,p.x,p.y,p.r,p.r*.7)}
+  const rp=M.rp||(M.rp=new Path2D(M.d));g.lineCap='round';g.lineJoin='round';
+  g.strokeStyle='rgba(0,0,0,.55)';g.lineWidth=66;g.stroke(rp);
+  g.strokeStyle='#2c1a17';g.lineWidth=50;g.stroke(rp);
+  g.strokeStyle='#3d2622';g.lineWidth=42;g.stroke(rp);
+  g.strokeStyle='rgba(88,56,48,.55)';g.lineWidth=20;g.stroke(rp);
+  g.setLineDash([1.5,7]);g.strokeStyle='rgba(15,8,8,.45)';g.lineWidth=34;g.stroke(rp);g.setLineDash([3,13]);g.strokeStyle='rgba(110,70,60,.35)';g.lineWidth=26;g.stroke(rp);g.setLineDash([]);
+  for(const o of M.sc){if(o.y<y0-100||o.y>y1+40)continue;DRAW[o.t](g,o)}
+  for(const e of M.emb){if(e.y<y0-4||e.y>y1+4)continue;g.fillStyle=`rgba(224,123,74,${e.a})`;ell(g,e.x,e.y,e.r,e.r)}
+}
+let tileObs=null;
+function drawTile(c,M){
+  if(c.dataset.on)return;const i=+c.dataset.i,y0=i*TILE,y1=Math.min(M.H,y0+TILE);
+  const cw=c.clientWidth,ch=c.clientHeight;if(!cw||!ch)return;
+  const dpr=Math.min(2,window.devicePixelRatio||1);c.width=Math.round(cw*dpr);c.height=Math.round(ch*dpr);
+  const g=c.getContext('2d');const k=cw/MAP_W*dpr,ky=c.height/(y1-y0);g.setTransform(k,0,0,ky,0,-y0*ky);
+  paintForest(g,M,y0,y1);c.dataset.on='1';
+}
+function setupTiles(){
+  if(tileObs)tileObs.disconnect();const M=buildMap(),cv=[...document.querySelectorAll('.map-tile')];
+  if(!('IntersectionObserver' in window)){cv.forEach(c=>drawTile(c,M));return}
+  tileObs=new IntersectionObserver(es=>{for(const e of es){const c=e.target;if(e.isIntersecting)drawTile(c,M);else if(c.dataset.on){c.width=0;c.height=0;c.dataset.on=''}}},{rootMargin:'1500px 0px'});
+  cv.forEach(c=>tileObs.observe(c));
+}
+function fitPassTop(){const pt=document.querySelector('.pass-top'),m=document.getElementById('map');if(pt&&m)m.style.marginTop=(-pt.offsetHeight)+'px'}
 function levelPct(T,P){if(T.n<=P.lvl)return 100;if(T.n===P.lvl+1)return P.pct;return 0}
 function viewPass(){
   const P=passAt(totalKg()),M=buildMap(),H=M.H,pts=M.pts;
   const done=P.lvl?smoothPath(M.road.slice(0,Math.min(M.road.length,P.lvl*2+1))):'';
-  let h=`<div class="wrap map-wrap"><header class="top">${backBtn()}<div><div class="brand">Niveaux</div><div class="sub">Un objet par niveau. La jauge se remplit avec ce que tu soulèves.</div></div>${syncChip()}</header>
-  <section class="pass-hero"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div><div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>
-   ${P.done?'<div class="ph-next">Tous les niveaux sont débloqués !</div>':`<div class="ph-next">Prochain : <b>${esc(P.no.name)}</b></div>`}</div>
-   ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>${fmtT(P.into)} / ${fmtT(P.need)}</span><span>encore ${fmtT(P.need-P.into)}</span></div>`}
-   <div class="ph-tot">Total soulevé : <b class="num">${fmtT(P.t)}</b><button class="ph-go" data-act="map-cur">Voir mon niveau ↓</button></div></section>
-  <div class="map" style="aspect-ratio:${MAP_W}/${H}"><svg class="map-svg" viewBox="0 0 ${MAP_W} ${H}" preserveAspectRatio="none" aria-hidden="true">${M.bg}${done?`<path d="${done}" class="road-done"/>`:''}</svg>`;
-  for(const f of M.figs)h+=`<div class="fig anim mapfig" data-ex="${f.ex}" style="left:${(f.x/MAP_W*100).toFixed(2)}%;top:${(f.y/H*100).toFixed(3)}%">${figSVG(exo(f.ex),0)}</div>`;
+  let h=`<div class="wrap map-wrap"><div class="pass-top"><header class="top ptop">${backBtn()}<div><div class="brand">Niveaux</div></div>${syncChip()}</header>
+  <section class="pass-hero2"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div>
+   <div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>${P.done?'<div class="ph-next">Tout est débloqué !</div>':`<div class="ph-next">Prochain : <b>${esc(P.no.name)}</b></div>`}</div>
+   <div class="ph-side"><button class="ph-go" data-act="map-cur">Voir mon niveau ↓</button><div class="ph-tot">Total soulevé<b class="num">${fmtT(P.t)}</b></div></div>
+   ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>${fmtT(P.into)} / ${fmtT(P.need)}</span><span>encore ${fmtT(P.need-P.into)}</span></div>`}</section></div>
+  <div class="map" id="map" style="aspect-ratio:${MAP_W}/${H}">`;
+  for(let i=0;i<M.tiles;i++){const y0=i*TILE,th=Math.min(TILE,H-y0);h+=`<canvas class="map-tile" data-i="${i}" style="top:${(y0/H*100).toFixed(4)}%;height:${(th/H*100).toFixed(4)}%"></canvas>`}
+  h+=`<svg class="map-svg" viewBox="0 0 ${MAP_W} ${H}" preserveAspectRatio="none" aria-hidden="true">${M.ov}${done?`<path d="${done}" class="road-done"/>`:''}</svg>`;
+  for(const f of M.figs)h+=`<div class="fig anim mapfig" data-hum="1" data-ex="${f.ex}" style="left:${(f.x/MAP_W*100).toFixed(2)}%;top:${(f.y/H*100).toFixed(3)}%">${figHuman(exo(f.ex),0)}</div>`;
   const R0=30,C=2*Math.PI*R0;
   TIERS.forEach((T,i)=>{const p=pts[i],pct=levelPct(T,P),st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';
     h+=`<button class="nd ${st} ${T.mile?'mile':''}" style="left:${(p.x/MAP_W*100).toFixed(2)}%;top:${(p.y/H*100).toFixed(3)}%" data-act="nd" data-n="${T.n}" ${st==='cur'?'id="nd-cur"':''} aria-label="Niveau ${T.n} : ${esc(T.name)}">
@@ -1151,6 +1221,36 @@ function viewPass(){
      <span class="nd-in">${T.emo}</span><span class="nd-n num">${T.n}</span>${st==='done'?'<span class="nd-ok">✓</span>':''}
      <span class="nd-lab"><b>${esc(T.name)}</b><small class="num">${fmtT(T.thr)}</small></span></button>`});
   h+=`</div></div>`;return h;
+}
+/* bonhomme plus réaliste (volumes, ombre, membres arrière plus sombres) pour la carte */
+function figHuman(ex,t){
+  const p=PAT[ex.pat]||PAT.squat,q=poseAt(p,t),eq=ex.eq,L='#efe0da',Dk='#9a7e79',HAIR='#2b1517';
+  const f=n=>n.toFixed(1),seg=(a,b,w,c)=>`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+  const head=(Hh,N)=>{const nx=N[0]+(Hh[0]-N[0])*.45,ny=N[1]+(Hh[1]-N[1])*.45;return seg(N,[nx,ny],4.6,L)+`<circle cx="${f(Hh[0])}" cy="${f(Hh[1])}" r="7.4" fill="${L}"/><path d="M${f(Hh[0]-7.2)} ${f(Hh[1]-1)}a7.3 7.3 0 0 1 14.4 0q-3 -2.6 -7.2 -2.6t-7.2 2.6z" fill="${HAIR}"/>`};
+  const foot=(K,F,c)=>F[1]>=80?seg(F,[F[0]+(F[0]>=K[0]?6:5),Math.min(93.5,F[1]+1.5)],4.2,c):'';
+  let s=`<ellipse cx="50" cy="94.5" rx="24" ry="3.6" fill="rgba(0,0,0,.5)"/>`;
+  (p.props||[]).forEach(k=>{s+=PROPS[k](q)});
+  const hand=p.to==='F'?q.F:q.W;
+  if(eq==='P'||eq==='E'){const a=eq==='E'?(p.anc||[96,hand[1]]):(p.pul||[60,-6]);const cls=eq==='E'?'bd':'cb';s+=ln(a,hand,cls);if(p.sym){s+=ln(mir(a),mir(hand),cls)}}
+  if(p.sym){const S=q.S||q.N,Q=q.Q||q.P;
+    s+=seg(Q,q.K,9,L)+seg(q.K,q.F,7,L)+seg(mir(Q),mir(q.K),9,L)+seg(mir(q.K),mir(q.F),7,L);
+    s+=`<path d="M${f(S[0]-1)} ${f(S[1])}L${f(100-S[0]+1)} ${f(S[1])}L${f(100-Q[0])} ${f(Q[1])}L${f(Q[0])} ${f(Q[1])}Z" fill="${L}" stroke="${L}" stroke-width="5" stroke-linejoin="round"/>`;
+    s+=`<path d="M${f(Q[0])} ${f(Q[1]-2)}L${f(100-Q[0])} ${f(Q[1]-2)}" stroke="${Dk}" stroke-width="3"/>`;
+    s+=seg(S,q.E,6.6,L)+seg(q.E,q.W,5.6,L)+seg(mir(S),mir(q.E),6.6,L)+seg(mir(q.E),mir(q.W),5.6,L)+head(q.H,q.N);
+    if(eq==='B'){const y=q.W[1],x1=q.W[0]-12,x2=100-q.W[0]+12;s+=`<line x1="${f(x1)}" y1="${f(y)}" x2="${f(x2)}" y2="${f(y)}" class="cb" style="stroke-width:2.6"/><rect x="${f(x1-2)}" y="${f(y-8)}" width="4" height="16" rx="1.5" class="eqf"/><rect x="${f(x2-2)}" y="${f(y-8)}" width="4" height="16" rx="1.5" class="eqf"/>`}
+    else if(eq==='H')s+=dumb(q.W)+dumb(mir(q.W));else if(eq==='K')s+=kb(q.W)+kb(mir(q.W));
+    return `<svg viewBox="0 -10 100 106" aria-hidden="true">${s}</svg>`}
+  if(q.k)s+=seg(q.P,q.k,8.4,Dk)+seg(q.k,q.f,6.6,Dk)+foot(q.k,q.f,Dk);
+  if(q.e)s+=seg(q.N,q.e,6.2,Dk)+seg(q.e,q.w,5.2,Dk);
+  s+=seg(q.P,q.K,9.4,L)+seg(q.K,q.F,7.2,L)+(p.notoe?'':foot(q.K,q.F,L));
+  s+=seg(q.N,q.P,12,L);
+  const tm=[q.N[0]+(q.P[0]-q.N[0])*.55,q.N[1]+(q.P[1]-q.N[1])*.55];s+=seg(tm,q.P,5,'#d8c4bd');
+  if(eq==='B'&&p.bar){const o=p.off||[0,0],c=q[p.bar];s+=plate([c[0]+o[0],c[1]+o[1]])}
+  s+=head(q.H,q.N);
+  s+=seg(q.N,q.E,7,L)+seg(q.E,q.W,5.8,L)+`<circle cx="${f(q.W[0])}" cy="${f(q.W[1])}" r="2.8" fill="${L}"/>`;
+  if(eq==='B'&&!p.bar)s+=plate(q.W);else if(eq==='H')s+=dumb(q.W);else if(eq==='K')s+=kb(q.W);
+  else if(eq==='M'&&p.legm)s+=`<circle cx="${f(q.F[0])}" cy="${f(q.F[1]-1)}" r="3.6" class="eqf"/>`;
+  return `<svg viewBox="0 -10 100 106" aria-hidden="true">${s}</svg>`;
 }
 function scrollToCur(smooth){const c=document.getElementById('nd-cur')||document.querySelector('.nd.done:last-of-type');if(c)c.scrollIntoView({block:'center',behavior:smooth?'smooth':'auto'})}
 function viewStats(){
@@ -1409,7 +1509,7 @@ function registerAnim(){animEls=[...document.querySelectorAll('.fig.anim[data-ex
 function animLoop(ts){
   animEls=animEls.filter(el=>el.isConnected);if(!animEls.length){animRAF=null;return}
   const per=2600,ph=(ts%per)/per;let t;if(ph<.15)t=0;else if(ph<.5)t=(1-Math.cos((ph-.15)/.35*Math.PI))/2;else if(ph<.65)t=1;else t=(1+Math.cos((ph-.65)/.35*Math.PI))/2;
-  for(const el of animEls)el.innerHTML=figSVG(exo(el.dataset.ex),t);
+  const vh=window.innerHeight;for(const el of animEls){if(el.dataset.hum){const b=el.getBoundingClientRect();if(b.bottom<-50||b.top>vh+50)continue;el.innerHTML=figHuman(exo(el.dataset.ex),t)}else el.innerHTML=figSVG(exo(el.dataset.ex),t)}
   animRAF=requestAnimationFrame(animLoop);
 }
 
@@ -1452,7 +1552,7 @@ function drawStats(){
   const cv=$('#c-ton');if(cv){const ss=S.sessions.slice(-12);drawChart(cv,{type:'bar',labels:ss.map(s=>dfr(s.date)),values:ss.map(s=>Math.round(s.tonnage))})}
   const c2=$('#c-exo');if(c2&&statsExo&&IDX[statsExo]){const x=IDX[statsExo];drawChart(c2,{type:'line',labels:x.hist.map(p=>dfr(p.t)),values:x.hist.map(p=>p.w),rec:x.rec.w})}
 }
-let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(VIEW==='stats')drawStats()},150)});
+let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(VIEW==='stats')drawStats();if(VIEW==='pass'){fitPassTop();document.querySelectorAll('.map-tile').forEach(c=>{c.dataset.on='';c.width=0});setupTiles()}},150)});
 
 /* ---------- exports ---------- */
 async function getDownloads(){return{save:async({filename,data})=>{
