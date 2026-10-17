@@ -365,6 +365,20 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .nd-lab small{font-size:11.5px;color:var(--muted)}
 .nd.lock .nd-lab b{color:var(--muted)}
 .nd.cur .nd-lab b{color:var(--accent)}
+.map{max-width:440px;border-radius:22px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.road-rim{fill:none;stroke:#0e0707;stroke-width:58;stroke-linecap:round;stroke-linejoin:round}
+.road{fill:none;stroke:#3a2420;stroke-width:46;stroke-linecap:round;stroke-linejoin:round}
+.road-in{fill:none;stroke:#4a2e29;stroke-width:24;stroke-linecap:round;opacity:.55}
+.road-done{fill:none;stroke:#C9625F;stroke-width:46;stroke-linecap:round;opacity:.3}
+.road-line,.dz{display:none}
+.nd{width:64px;height:64px}
+.nd.mile{width:80px;height:80px}
+.nd-in{inset:10px;font-size:24px}
+.nd.mile .nd-in{font-size:30px;inset:12px}
+.nd-lab,.nd-lab.l,.nd-lab.r{left:50%;right:auto;top:calc(100% + 10px);transform:translateX(-50%);text-align:center;max-width:124px;background:rgba(10,6,6,.78);padding:3px 8px;border-radius:8px;align-items:center}
+.nd-lab.l{text-align:center}
+.mapfig{position:absolute;width:96px;height:96px;border-radius:50%;background:radial-gradient(ellipse at 50% 88%,rgba(201,98,95,.28),transparent 62%)!important;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 0 6px rgba(201,98,95,.35))}
+.mapfig .g{stroke:#3a2420}
 .unl{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--pr-soft);border-radius:12px;padding:10px 12px}
 .unl .k{color:var(--pr)}
 .unl div{display:flex;align-items:center;gap:10px;font-weight:600}
@@ -729,53 +743,40 @@ function compareObj(t){
 
 /* ---------- niveaux : 100 niveaux, seuils cumulés, un objet tous les 5 niveaux ----------
    Seuil du niveau n = TOTAL soulevé depuis le début. Courbe calée pour ~30 mois à 4 grosses séances/semaine (~5 200 t). */
-const LV_TOTAL=5200,LV_K=2.77;
-const OBJ_RAW=`Sac de frappe|🥊
-Scooter|🛵
-Piano droit|🎹
-Vache|🐄
-Voiture|🚗
-Rhinocéros|🦏
-Hippopotame|🦛
+/* Seuil du niveau n = total soulevé depuis le début = 1,3 t × n^K, de 1,3 t (voiture) au niveau 1 à 5 200 t au niveau 100.
+   Calé sur ~10 t par grosse séance, 4 séances/semaine : au moins un niveau par semaine pendant les ~35 premiers niveaux, niveau 100 vers 30 mois. */
+const LV_K=Math.log(4000)/Math.log(100);
+const OBJ_RAW=`Voiture|🚗
 Éléphant d'Asie|🐘
-Éléphant d'Afrique|🐘
 Tyrannosaure|🦖
-Bus de ville|🚌
 Cachalot femelle|🐳
-Camion de pompiers|🚒
 Pelleteuse|🏗️
-Baleine à bosse|🐋
 Tramway|🚊
 Semi-remorque chargé|🚛
-Cachalot mâle|🐳
 Brachiosaure|🦕
-Yacht de 25 m|🛥️
 Boeing 737 chargé|✈️
 Airbus A320 au décollage|✈️
-Locomotive électrique|🚂
 Péniche|🚢
 Locomotive de fret|🚂
 Maison de plain-pied|🏠
 Grue à tour|🏗️
-Rame de métro|🚇
 Bateau-mouche|⛴️
 Baleine bleue|🐋
 Statue de la Liberté|🗽
 Maison à étage|🏡
 Boeing 787 au décollage|✈️
-Train régional|🚆
 Airbus A350 au décollage|✈️
 Éolienne|🌬️
 Boeing 777 au décollage|✈️
 Maison de ville|🏘️
 Rame de TGV|🚄
-Boeing 747 au décollage|✈️
 Station spatiale internationale|🛰️
 Bateau de pêche industriel|🚢
 Voilier-école|⛵
 Passerelle métallique|🌉
 Airbus A380 au décollage|✈️
-Statue géante|🗿
+Chalet de montagne|🛖
+Christ Rédempteur|🗿
 Château d'eau|🚰
 Fusée Ariane 6 au décollage|🚀
 Double rame de TGV|🚄
@@ -786,52 +787,67 @@ Train Intercités|🚆
 Remorqueur de haute mer|🚢
 Chalutier de haute mer|🚢
 Pont routier|🌉
+Moulin en pierre|🌾
 Immeuble de 3 étages|🏢
 Navire océanographique|🚢
 Gare de village|🚉
 Ferry|⛴️
 Fusée Falcon Heavy au décollage|🚀
 Phare en mer|🗼
-Troupeau de 8 baleines bleues|🐋
 Yacht de luxe de 60 m|🛥️
 Immeuble de 4 étages|🏢
 Grue portuaire|🏗️
-Piscine remplie d'eau|💧
+Manoir en pierre|🏚️
 Gymnase|🏟️
+Paquebot fluvial|⛴️
 Bateau de croisière côtier|⛴️
 Sous-marin|🚢
-Immeuble de 5 étages|🏢
 Grande roue|🎡
+Immeuble de 5 étages|🏢
 Hôtel de ville|🏛️
+Navire de recherche polaire|🚢
 Petit porte-conteneurs|🚢
+Ferry rapide|⛴️
+Piscine olympique remplie|💧
 Train de marchandises|🚆
 Montagnes russes|🎢
 Immeuble de 6 étages|🏢
+Fusée Saturn V au décollage|🚀
 Tribune de stade|🏟️
 Chalutier-usine|🚢
-Fusée Saturn V au décollage|🚀
 Immeuble de 7 étages|🏢
 Tour de télécommunication|📡
-Navire d'expédition polaire|🚢
+Navire d'expédition|🚢
 Pont suspendu|🌉
 Grand trois-mâts|⛵
 Hôpital|🏥
+Immeuble de 8 étages|🏢
 Château fort|🏰
-Immeuble de 9 étages|🏬
 Usine|🏭
-Immeuble de 10 étages|🏙️
+Immeuble de 9 étages|🏬
 Gare de ville|🚉
 Patinoire olympique|⛸️
-Immeuble de 11 étages|🏙️
+Lycée|🏫
+Immeuble de 10 étages|🏙️
 Cargo|🚢
+Centre aquatique|💦
 Brise-glace|🚢
 Tour de contrôle d'aéroport|🗼
+Immeuble de 11 étages|🏙️
+Musée|🏛️
+Palais des sports|🏟️
 Immeuble de 12 étages|🏙️
-Fusée Starship au décollage|🚀
+Navire de croisière d'expédition|⛴️
+Château de la Loire|🏰
 Immeuble de 13 étages|🏙️
+Grand cargo frigorifique|🚢
+Fusée Starship au décollage|🚀
+Centre commercial|🏬
+Tour de bureaux|🏢
+Palais|🏯
 Tour de 14 étages|🏙️`;
-const roundT=x=>x<1?Math.max(0.05,Math.round(x*20)/20):x<10?Math.round(x*10)/10:x<100?Math.round(x):Math.round(x/5)*5;
-const TIERS=OBJ_RAW.split('\n').map((l,i)=>{const n=i+1,[name,emo]=l.split('|');return{n,thr:roundT(LV_TOTAL*Math.pow(n/100,LV_K)),name,emo,obj:true,mile:n%10===0}});
+const roundT=x=>x<10?Math.round(x*10)/10:x<100?Math.round(x):Math.round(x/5)*5;
+const TIERS=OBJ_RAW.split('\n').map((l,i)=>{const n=i+1,[name,emo]=l.split('|');return{n,thr:n===100?5200:roundT(1.3*Math.pow(n,LV_K)),name,emo,obj:true,mile:n%10===0}});
 const fmtT=t=>(t<10?Math.round(t*100)/100:Math.round(t*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:t<10?2:1})+'\u00a0t';
 const nextObj=lvl=>TIERS[lvl]||null;
 function passAt(totalKg){const t=totalKg/1000;let lvl=0;while(lvl<100&&TIERS[lvl].thr<=t+1e-9)lvl++;
@@ -967,7 +983,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.3.1';
+const APP_VERSION='1.4.0';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -995,6 +1011,7 @@ function render(){
   const v=$('#view');
   v.innerHTML=VIEW==='pass'?viewPass():VIEW==='lib'?viewLib():VIEW==='stats'?viewStats():VIEW==='more'?viewMore():viewHome();
   if(VIEW==='stats')requestAnimationFrame(drawStats);
+  if(VIEW==='pass')registerAnim();
   if(VIEW==='pass'&&!passScrolled){passScrolled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToCur(false)))}
   if(VIEW!=='pass')passScrolled=false;
   if(S.active&&$('#sheet-session'))renderSession();
@@ -1042,30 +1059,91 @@ function viewLib(){
   <section><button class="btn line" data-act="custom-new">+ Créer un exercice</button></section></div>`;
 }
 let passScrolled=false;
-const MAP_W=360,MAP_STEP=118,MAP_PAD=110;
-function mapPts(){const H=MAP_PAD*2+99*MAP_STEP;return{H,pts:TIERS.map((T,i)=>({x:180+Math.sin(i*0.62)*112,y:H-MAP_PAD-i*MAP_STEP}))}}
+const MAP_W=360,MANOR_LV=[8,23,38,53,68,83,98];
+const MAP_FIGS=['squat','dc-barre','tractions','souleve','dm-barre','curl-halt','hip-thrust','fentes','kb-swing','box-jump','rowing-barre','presse','dips','elev-lat','power-clean','face-pull','pompes','releve-jambes','planche','tapis'];
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let MAP=null;
+function buildMap(){
+  if(MAP)return MAP;
+  const r=rng(20261017),steps=[];let H=150;for(let i=0;i<99;i++){const st=106+r()*34;steps.push(st);H+=st}H+=170;
+  const pts=[];let y=H-120;
+  for(let i=0;i<100;i++){let x=180+104*Math.sin(i*0.47+1.6*Math.sin(i*0.15))+(r()-.5)*58;pts.push({x,y});y-=steps[i]||0}
+  const manors=MANOR_LV.map((L,k)=>({L,side:k%2?1:-1}));
+  manors.forEach(m=>{for(let j=m.L-2;j<=m.L;j++){if(j<0||j>99)continue;const p=pts[j];p.x=m.side<0?Math.max(p.x,236+r()*30):Math.min(p.x,124-r()*30)}});
+  pts.forEach(p=>{p.x=Math.max(64,Math.min(296,p.x))});
+  manors.forEach(m=>{const p=pts[m.L-1];m.x=m.side<0?78:282;m.y=p.y+30});
+  const figs=[];for(let L=5;L<=100;L+=5){const p=pts[L-1],side=p.x>180?-1:1;figs.push({L,ex:MAP_FIGS[L/5-1],x:Math.max(44,Math.min(316,p.x+side*112)),y:p.y-6})}
+  // smooth path
+  const d=smoothPath(pts);
+  // obstacles for scenery
+  const segs=[];for(let i=0;i<99;i++){const a=pts[i],b=pts[i+1];for(let t=0;t<=1;t+=.2)segs.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t})}
+  const free=(x,y,pad)=>{for(const q of segs){if(Math.abs(q.y-y)<70&&Math.hypot(q.x-x,q.y-y)<pad)return false}
+    for(const p of pts){if(Math.abs(x-p.x)<70&&y>p.y-46&&y<p.y+78)return false}
+    for(const m of manors){if(Math.abs(x-m.x)<88&&y>m.y-150&&y<m.y+26)return false}
+    for(const f of figs){if(Math.abs(x-f.x)<46&&Math.abs(y-f.y)<50)return false}return true};
+  let bg=`<defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0707"/><stop offset=".5" stop-color="#170c0d"/><stop offset="1" stop-color="#120909"/></linearGradient>
+   <radialGradient id="glow"><stop offset="0" stop-color="#8C4848" stop-opacity=".32"/><stop offset="1" stop-color="#8C4848" stop-opacity="0"/></radialGradient>
+   <radialGradient id="wglow"><stop offset="0" stop-color="#E07B4A" stop-opacity=".45"/><stop offset="1" stop-color="#E07B4A" stop-opacity="0"/></radialGradient></defs>
+   <rect width="${MAP_W}" height="${H}" fill="url(#mg)"/>`;
+  for(let i=0;i<Math.round(H/260);i++)bg+=`<ellipse cx="${(r()*MAP_W).toFixed(0)}" cy="${(r()*H).toFixed(0)}" rx="${(120+r()*120).toFixed(0)}" ry="${(70+r()*80).toFixed(0)}" fill="url(#glow)"/>`;
+  // grass
+  let grass='';for(let i=0;i<H/9;i++){const x=r()*MAP_W,y=r()*H;if(!free(x,y,40))continue;const c=r()<.5?'#3d1a1c':'#4f2023',h=4+r()*6;grass+=`<path d="M${x.toFixed(0)} ${y.toFixed(0)}l-3 -${h.toFixed(0)}M${x.toFixed(0)} ${y.toFixed(0)}l0 -${(h+2).toFixed(0)}M${x.toFixed(0)} ${y.toFixed(0)}l3 -${h.toFixed(0)}" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`}
+  bg+=grass;
+  // road
+  bg+=`<path d="${d}" class="road-rim"/><path d="${d}" class="road"/><path d="${d}" class="road-in"/>`;
+  let stones='';for(const q of segs){if(r()<.45){const side=r()<.5?-1:1,ox=side*(19+r()*9),oy=(r()-.5)*10;stones+=`<ellipse cx="${(q.x+ox).toFixed(1)}" cy="${(q.y+oy).toFixed(1)}" rx="${(2+r()*3.5).toFixed(1)}" ry="${(1.5+r()*2.5).toFixed(1)}" fill="${r()<.5?'#1c1010':'#2c1a18'}"/>`}}
+  bg+=stones;
+  // trees
+  const trees=[];for(let y=-10;y<H+20;y+=30){for(let x=6;x<MAP_W;x+=27){const tx=x+(r()-.5)*22,ty=y+(r()-.5)*22;if(r()<.22)continue;if(!free(tx,ty,58))continue;trees.push({x:tx,y:ty,s:.7+r()*.75,c:Math.floor(r()*3),k:r()<.16?1:0})}}
+  trees.sort((a,b)=>a.y-b.y);
+  const TC=[['#2a1215','#381a1d'],['#3a171b','#4a1f23'],['#22100f','#30171a']];
+  for(const t of trees){const[c1,c2]=TC[t.c],s=t.s,x=t.x,y=t.y;
+    if(t.k){bg+=`<circle cx="${x.toFixed(1)}" cy="${(y-6*s).toFixed(1)}" r="${(9*s).toFixed(1)}" fill="${c2}"/><circle cx="${(x-6*s).toFixed(1)}" cy="${(y-3*s).toFixed(1)}" r="${(6*s).toFixed(1)}" fill="${c1}"/>`;continue}
+    const w=15*s,h=40*s;bg+=`<ellipse cx="${x.toFixed(1)}" cy="${(y+1).toFixed(1)}" rx="${(w*.8).toFixed(1)}" ry="${(3*s).toFixed(1)}" fill="#070404" opacity=".6"/><rect x="${(x-1.6*s).toFixed(1)}" y="${(y-7*s).toFixed(1)}" width="${(3.2*s).toFixed(1)}" height="${(8*s).toFixed(1)}" fill="#140909"/>`+
+      [[1,0],[.8,.3],[.58,.56]].map(([k,o],j)=>`<path d="M${(x-w*k).toFixed(1)} ${(y-6*s-h*o).toFixed(1)}L${x.toFixed(1)} ${(y-6*s-h*o-h*.46*k-6*s).toFixed(1)}L${(x+w*k).toFixed(1)} ${(y-6*s-h*o).toFixed(1)}Z" fill="${j%2?c2:c1}"/>`).join('')}
+  // manors
+  for(const m of manors)bg+=manorSVG(m.x,m.y,m.side,r);
+  // embers
+  for(let i=0;i<H/40;i++)bg+=`<circle cx="${(r()*MAP_W).toFixed(0)}" cy="${(r()*H).toFixed(0)}" r="${(.6+r()*1.2).toFixed(1)}" fill="#E07B4A" opacity="${(.15+r()*.45).toFixed(2)}"/>`;
+  MAP={H,pts,d,bg,figs};return MAP;
+}
+function manorSVG(x,y,side,r){
+  const W='#2b1719',W2='#22121400',RF='#130a0b',TR='#4a2326',win=()=>r()<.7?'#E07B4A':'#2a1214';
+  const g=(xx,yy,w,h)=>`<rect x="${xx}" y="${yy}" width="${w}" height="${h}" rx="1.5" fill="${win()}"/>`;
+  let s=`<g transform="translate(${x} ${y}) scale(${side<0?1:-1} 1)">`;
+  s+=`<ellipse cx="0" cy="4" rx="82" ry="10" fill="#050303" opacity=".7"/><circle cx="0" cy="-50" r="70" fill="url(#wglow)" opacity=".55"/>`;
+  s+=`<rect x="-72" y="-46" width="24" height="46" fill="${W}" stroke="#0f0808" stroke-width="1.5"/><path d="M-76 -46L-60 -66L-44 -46Z" fill="${RF}"/>`;
+  s+=`<rect x="48" y="-46" width="24" height="46" fill="${W}" stroke="#0f0808" stroke-width="1.5"/><path d="M44 -46L60 -66L76 -46Z" fill="${RF}"/>`;
+  s+=`<rect x="-50" y="-72" width="100" height="72" fill="${W}" stroke="#0f0808" stroke-width="1.5"/>`;
+  s+=`<path d="M-56 -72L-28 -102L0 -72Z" fill="${RF}"/><path d="M0 -72L28 -102L56 -72Z" fill="${RF}"/><path d="M-56 -72H56" stroke="${TR}" stroke-width="3"/>`;
+  s+=`<rect x="-14" y="-112" width="28" height="44" fill="${W}" stroke="#0f0808" stroke-width="1.5"/><path d="M-19 -112L0 -146L19 -112Z" fill="${RF}"/><path d="M0 -146V-154" stroke="${TR}" stroke-width="2"/>`;
+  s+=`<rect x="30" y="-112" width="9" height="22" fill="#1a0d0e"/>`;
+  s+=g(-6,-104,12,14);
+  [-42,-24,16,34].forEach(xx=>{s+=g(xx,-62,9,13);s+=g(xx,-36,9,13)});
+  s+=g(-66,-34,12,12)+g(54,-34,12,12);
+  s+=`<path d="M-9 0V-22Q0 -32 9 -22V0Z" fill="#0c0606"/><path d="M-9 0V-22Q0 -32 9 -22V0" fill="none" stroke="#E07B4A" stroke-opacity=".5" stroke-width="1.5"/>`;
+  s+=`<path d="M-90 2H90" stroke="#1a0d0e" stroke-width="2"/>`+Array.from({length:12},(_,i)=>`<path d="M${-88+i*16} 2V-10l2 -4 2 4V2" fill="#1a0d0e"/>`).join('');
+  return s+`</g>`;
+}
 function smoothPath(p){if(!p.length)return'';let d=`M${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;for(let i=0;i<p.length-1;i++){const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
   d+=` C${(b.x+(c.x-a.x)/6).toFixed(1)} ${(b.y+(c.y-a.y)/6).toFixed(1)} ${(c.x-(e.x-b.x)/6).toFixed(1)} ${(c.y-(e.y-b.y)/6).toFixed(1)} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`}return d}
 function levelPct(T,P){if(T.n<=P.lvl)return 100;if(T.n===P.lvl+1)return P.pct;return 0}
 function viewPass(){
-  const P=passAt(totalKg()),{H,pts}=mapPts(),cur=Math.min(P.lvl,99);
-  const full=smoothPath(pts),done=smoothPath(pts.slice(0,Math.max(1,P.lvl)+ (P.lvl<100?1:0)));
-  let deco='';for(let i=0;i<100;i+=3){const p=pts[i],side=p.x>180?-1:1,x=180+side*150,y=p.y-MAP_STEP*0.5;
-    deco+=i%2?`<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" class="dz"><rect x="-16" y="-3" width="32" height="6" rx="3"/><rect x="-20" y="-10" width="6" height="20" rx="2"/><rect x="14" y="-10" width="6" height="20" rx="2"/></g>`
-      :`<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" class="dz"><circle r="14"/><circle r="4" class="dh"/></g>`}
+  const P=passAt(totalKg()),M=buildMap(),H=M.H,pts=M.pts;
+  const done=P.lvl?smoothPath(pts.slice(0,Math.min(100,P.lvl+1))):'';
   let h=`<div class="wrap map-wrap"><header class="top">${backBtn()}<div><div class="brand">Niveaux</div><div class="sub">Un objet par niveau. La jauge se remplit avec ce que tu soulèves.</div></div>${syncChip()}</header>
   <section class="pass-hero"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div><div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>
    ${P.done?'<div class="ph-next">Tous les niveaux sont débloqués !</div>':`<div class="ph-next">Prochain : <b>${esc(P.no.name)}</b></div>`}</div>
    ${P.done?'':`<div class="pbar"><i style="width:${P.pct.toFixed(1)}%"></i></div><div class="ph-row num"><span>${fmtT(P.into)} / ${fmtT(P.need)}</span><span>encore ${fmtT(P.need-P.into)}</span></div>`}
    <div class="ph-tot">Total soulevé : <b class="num">${fmtT(P.t)}</b><button class="ph-go" data-act="map-cur">Voir mon niveau ↓</button></div></section>
-  <div class="map" style="aspect-ratio:${MAP_W}/${H}"><svg class="map-svg" viewBox="0 0 ${MAP_W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-   ${deco}<path d="${full}" class="road"/><path d="${full}" class="road-line"/>${P.lvl?`<path d="${done}" class="road-done"/>`:''}</svg>`;
+  <div class="map" style="aspect-ratio:${MAP_W}/${H}"><svg class="map-svg" viewBox="0 0 ${MAP_W} ${H}" preserveAspectRatio="none" aria-hidden="true">${M.bg}${done?`<path d="${done}" class="road-done"/>`:''}</svg>`;
+  for(const f of M.figs)h+=`<div class="fig anim mapfig" data-ex="${f.ex}" style="left:${(f.x/MAP_W*100).toFixed(2)}%;top:${(f.y/H*100).toFixed(3)}%">${figSVG(exo(f.ex),0)}</div>`;
   const R0=30,C=2*Math.PI*R0;
-  TIERS.forEach((T,i)=>{const p=pts[i],pct=levelPct(T,P),st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';const side=p.x>180?'l':'r';
+  TIERS.forEach((T,i)=>{const p=pts[i],pct=levelPct(T,P),st=T.n<=P.lvl?'done':T.n===P.lvl+1?'cur':'lock';
     h+=`<button class="nd ${st} ${T.mile?'mile':''}" style="left:${(p.x/MAP_W*100).toFixed(2)}%;top:${(p.y/H*100).toFixed(3)}%" data-act="nd" data-n="${T.n}" ${st==='cur'?'id="nd-cur"':''} aria-label="Niveau ${T.n} : ${esc(T.name)}">
      <svg class="ring" viewBox="0 0 72 72"><circle cx="36" cy="36" r="${R0}" class="rg-bg"/><circle cx="36" cy="36" r="${R0}" class="rg-fg" ${pct<=0?'style="display:none"':''} stroke-dasharray="${(C*pct/100).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 36 36)"/></svg>
      <span class="nd-in">${T.emo}</span><span class="nd-n num">${T.n}</span>${st==='done'?'<span class="nd-ok">✓</span>':''}
-     <span class="nd-lab ${side}"><b>${esc(T.name)}</b><small class="num">${fmtT(T.thr)}</small></span></button>`});
+     <span class="nd-lab"><b>${esc(T.name)}</b><small class="num">${fmtT(T.thr)}</small></span></button>`});
   h+=`</div></div>`;return h;
 }
 function scrollToCur(smooth){const c=document.getElementById('nd-cur')||document.querySelector('.nd.done:last-of-type');if(c)c.scrollIntoView({block:'center',behavior:smooth?'smooth':'auto'})}
