@@ -952,7 +952,7 @@ function bootAccounts(){
 }
 function startApp(u){
   loadLocal(u?'hevor.v1:'+u.uid:'hevor.v1:local');
-  $('#tabs').hidden=false;buildIdx();render();if(S.active)ensureTick();if(!u)setSync('local');
+  $('#tabs').hidden=false;buildIdx();passScrolled=false;render();if(S.active)ensureTick();if(!u)setSync('local');
 }
 let loginMode='in';
 function showLogin(msg){
@@ -983,7 +983,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.4.1';
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1012,7 +1012,7 @@ function render(){
   v.innerHTML=VIEW==='pass'?viewPass():VIEW==='lib'?viewLib():VIEW==='stats'?viewStats():VIEW==='more'?viewMore():viewHome();
   if(VIEW==='stats')requestAnimationFrame(drawStats);
   if(VIEW==='pass')registerAnim();
-  if(VIEW==='pass'&&!passScrolled){passScrolled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToCur(false)))}
+  if(VIEW==='pass'&&!passScrolled){passScrolled=true;setTimeout(()=>scrollToCur(false),60)}
   if(VIEW!=='pass')passScrolled=false;
   if(S.active&&$('#sheet-session'))renderSession();
 }
@@ -1516,7 +1516,7 @@ function addSamples(){
 
 /* ---------- actions ---------- */
 const ACT={
-  tab:d=>{if(d.v!==VIEW){navStack.push(VIEW);pushNav()}VIEW=d.v;try{localStorage.setItem('fonte.view',VIEW)}catch(e){}closeSheet('exo');render();window.scrollTo(0,0)},
+  tab:d=>{if(d.v!==VIEW){navStack.push(VIEW);pushNav()}if(d.v==='pass')passScrolled=false;VIEW=d.v;try{localStorage.setItem('fonte.view',VIEW)}catch(e){}closeSheet('exo');render();window.scrollTo(0,0)},
   'new-tpl':()=>openEditor(null), edit:d=>openEditor(d.id), samples:addSamples,
   start:d=>startSession(d.id), resume:()=>openSession(),
   'ed-close':()=>{closeSheet('editor');ed=null},
