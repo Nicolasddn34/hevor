@@ -686,3 +686,28 @@ button.st-r:hover{background:var(--surface2)}
 .acc-me{display:flex;align-items:center;gap:12px;margin-bottom:10px;min-width:0}
 .acc-me>div{min-width:0;overflow-wrap:anywhere}
 .acc-back{display:flex;flex-direction:column;align-items:center;gap:4px}
+
+/* questionnaire de santé */
+.sp-qoff{display:flex;align-items:center;gap:12px;text-align:left;width:100%;border:1.5px dashed var(--line)}.sp-qoff .m{flex:1}.sp-qoff b{display:block}.sp-qoff small{color:var(--muted);font-size:13px}
+.qcard{display:flex;flex-direction:column;gap:10px}
+.ql{font-weight:700;font-size:16px;display:block}
+.req{color:var(--accent)}
+.qcard .q5{flex-wrap:wrap}
+.q5.q10{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.q5.q10 button{width:auto;height:40px}
+.qleg{display:flex;justify-content:space-between;gap:8px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg.mini.three{grid-template-columns:repeat(3,1fr)}
+.qnum{display:flex;align-items:center;gap:8px}.qnum input{width:120px;min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 12px;font-size:18px;font-weight:700;color:var(--ink)}.qnum input:focus{border-color:var(--accent);outline:none}.qnum span{color:var(--muted);font-weight:600}
+.qhist{display:flex;flex-direction:column;gap:8px}
+.qh{background:var(--surface2);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.qh>b{font-size:13px}
+.qa{display:flex;flex-wrap:wrap;gap:6px}
+.qa span{display:flex;flex-direction:column;background:var(--surface);border-radius:8px;padding:4px 8px;font-weight:700;font-variant-numeric:tabular-nums;max-width:100%;overflow-wrap:anywhere}
+.qa span small{font-weight:500;color:var(--muted);font-size:11px}
+.qa span.bad{background:#3A2D16;color:#F2C230}
+.qe{display:flex;flex-direction:column;gap:10px}
+.qe-h{display:flex;align-items:center;gap:6px}
+.qe-n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:14px;flex:none}
+.icon-btn.sm{width:32px;height:32px;background:var(--surface2);font-size:15px;font-weight:700}
+.icon-btn.sm:disabled{opacity:.35}
+.qe-o{display:flex;flex-direction:column;gap:6px}

@@ -75,7 +75,9 @@ service cloud.firestore {
         allow create: if signed() && uid == me() && validMember(request.resource.data, uid) && (
           // rejoindre avec un code valide : on arrive « en attente »
           (request.resource.data.role == 'pending' && str(request.resource.data.code, 12)
-            && get(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.tid == tid)
+            && get(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.tid == tid
+            // dans un club, c'est le coach qui attribue le poste
+            && (!('poste' in request.resource.data) || get(tpath(tid)).data.kind == 'coach'))
           // le créateur de l'équipe devient coach à la création
           || (request.resource.data.role == 'coach' && !exists(tpath(tid)) && getAfter(tpath(tid)).data.owner == me()));
         allow update: if signed() && validMember(request.resource.data, uid) && (
@@ -83,8 +85,9 @@ service cloud.firestore {
           (teamOwner(tid) == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'poste'])
             && request.resource.data.role in ['player', 'coach', 'spectator', 'client']
             && (uid != me() || request.resource.data.role == 'coach'))
-          // chacun modifie son nom, son poste et son consentement
-          || (uid == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'poste', 'health'])));
+          // chacun modifie son nom et son consentement ; le poste seulement pour un coach ou un client (objectif)
+          || (uid == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'health']))
+          || (uid == me() && resource.data.role in ['coach', 'client'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'poste', 'health'])));
         allow delete: if signed() && (
           (uid == me() && (!exists(tpath(tid)) || teamOwner(tid) != me()))
           || (uid != me() && exists(tpath(tid)) && teamOwner(tid) == me()));
@@ -109,14 +112,22 @@ service cloud.firestore {
           && request.resource.data.invitees is list && request.resource.data.invitees.size() <= 200;
         allow delete: if hasRole(tid, ['coach']);
       }
-      // Questionnaire du matin (données de santé) : seulement le joueur concerné et les coachs de l'équipe
+      // Questionnaire de santé créé par les coachs : lisible par les coachs et les joueurs, modifiable par les coachs
+      match /config/{cid} {
+        allow read: if hasRole(tid, ['coach', 'player']);
+        allow create, update: if hasRole(tid, ['coach']) && cid == 'quest'
+          && request.resource.data.keys().hasOnly(['on', 'qs', 'at', 'by'])
+          && request.resource.data.on is bool && request.resource.data.qs is list && request.resource.data.qs.size() <= 15;
+        allow delete: if hasRole(tid, ['coach']);
+      }
+      // Réponses au questionnaire de santé (données de santé) : seulement le joueur concerné et les coachs de l'équipe
       match /wellness/{wid} {
         allow read: if signed() && (resource.data.uid == me() || hasRole(tid, ['coach']));
         allow create, update: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
+          && get(mpath(tid, me())).data.get('health', 0) != 0
           && wid == me() + '_' + request.resource.data.day && request.resource.data.day.matches('^[0-9]{8}$')
-          && request.resource.data.keys().hasOnly(['uid', 'day', 'at', 'mot', 'som', 'pains'])
-          && request.resource.data.mot is int && request.resource.data.mot >= 1 && request.resource.data.mot <= 5
-          && request.resource.data.som is int && request.resource.data.som >= 1 && request.resource.data.som <= 5
+          && request.resource.data.keys().hasOnly(['uid', 'day', 'at', 'ans', 'pains'])
+          && request.resource.data.ans is map && request.resource.data.ans.size() <= 20
           && request.resource.data.pains is map && request.resource.data.pains.size() <= 40 && request.resource.data.pains.values().hasOnly([1, 2, 3, 4, 5]);
         allow delete: if signed() && (resource.data.uid == me() || teamOwner(tid) == me());
       }

@@ -101,7 +101,7 @@ function spacesUsed(){const u=[];if(S.templates.length||S.sessions.length||S.act
 const SPACE_L={moi:'Moi',club:'Club',coach:'Coach'};
 function spPill(){
   const used=spacesUsed();
-  if(used.length>=2||(SP.cur!=='moi'&&!used.includes(SP.cur)))return `<button class="sp-pill" data-act="sp-sheet" aria-label="Changer d'espace (espace actuel : ${SPACE_L[SP.cur]})"><span class="sp-pill-ic">${SP.cur==='moi'?SPICON.user:SP.cur==='club'?SPICON.shield:SPICON.team}</span>${SPACE_L[SP.cur]}${SPICON.down}</button>`;
+  if(used.length>=2||SP.cur!=='moi'||teamsOf('club').length||teamsOf('coach').length)return `<button class="sp-pill" data-act="sp-sheet" aria-label="Changer d'espace (espace actuel : ${SPACE_L[SP.cur]})"><span class="sp-pill-ic">${SP.cur==='moi'?SPICON.user:SP.cur==='club'?SPICON.shield:SPICON.team}</span>${SPACE_L[SP.cur]}${SPICON.down}</button>`;
   if(SP.cur!=='moi')return `<button class="icon-btn sp-me" data-act="sp-sheet" aria-label="Mes espaces et mon compte">${SPICON.user}</button>`;
   return '';
 }
@@ -366,12 +366,12 @@ async function openJoin(code){
   openSheet('sp-join',sheetHead(kind==='club'?'Rejoindre une équipe':'Rejoindre mon coach','sp-join-close')+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="card sp-inv"><span class="sp-ic">${kind==='club'?SPICON.shield:SPICON.team}</span><div><b>${esc(cStr(inv.name,60))}</b><small class="muted">${esc(kind==='club'?cStr(inv.club,80):'Espace coaching')}</small></div></div>
    ${idBlock('jn',kind==='club'?"par l'équipe":'par ton coach')}
-   ${kind==='club'?`<div class="field"><label for="jn-poste">Poste (facultatif)</label><input id="jn-poste" placeholder="Ex. Passeur, ailier, gardien…" maxlength="40" autocomplete="off"></div>`:`<div class="field"><label for="jn-poste">Ton objectif (facultatif)</label><input id="jn-poste" placeholder="Ex. Prise de masse, reprise…" maxlength="40" autocomplete="off"></div>`}
-   <p class="small muted" style="margin:0">Tu arriveras en attente : ${kind==='club'?'un coach':'ton coach'} choisit ensuite ton rôle. Ton espace « Moi » reste privé.</p></div></div>
+   ${kind==='club'?'':`<div class="field"><label for="jn-poste">Ton objectif (facultatif)</label><input id="jn-poste" placeholder="Ex. Prise de masse, reprise…" maxlength="40" autocomplete="off"></div>`}
+   <p class="small muted" style="margin:0">Tu arriveras en attente : ${kind==='club'?'un coach choisit ensuite ton rôle et ton poste':'ton coach choisit ensuite ton rôle'}. Ton espace « Moi » reste privé.</p></div></div>
    <div class="sheet-f"><div class="in"><button class="btn primary" data-act="sp-join-go" data-id="${tid}" data-code="${code}" data-k="${kind}">Rejoindre</button></div></div>`);
 }
 async function joinGo(d,btn){
-  const tid=d.id,code=d.code,kind=d.k,poste=($('#jn-poste').value||'').trim().slice(0,40);
+  const tid=d.id,code=d.code,kind=d.k,poste=kind==='club'?'':($('#jn-poste')?.value||'').trim().slice(0,40);
   btn.disabled=true;const me=await readId('jn');if(!me){btn.disabled=false;toast('Indique ton prénom et ton nom');return}
   try{const ex=await memRef(tid,UID).get();
     if(!ex.exists){const m={uid:UID,name:me,role:'pending',code,at:Date.now()};if(poste)m.poste=poste;await memRef(tid,UID).set(m)}
@@ -461,6 +461,7 @@ function teamSettings(tid){
   return `<section class="card"><div class="h2">${T.team.kind==='club'?"Réglages de l'équipe":'Réglages'}</div><div class="legal-list">
    <button class="row" data-act="sp-me-edit" data-id="${tid}"><div class="m"><div>Mon profil ${T.team.kind==='club'?"d'équipe":''}</div><small>${esc(T.me.name)}${T.me.poste?' · '+esc(T.me.poste):''}</small></div>${ICON.chev}</button>
    ${own&&T.team.kind==='club'?`<button class="row" data-act="sp-team-edit" data-id="${tid}"><div class="m"><div>Modifier l'équipe</div><small>Nom, club, logo et couleurs</small></div>${ICON.chev}</button>`:''}
+   ${T.team.kind==='club'&&T.me.role==='coach'&&typeof questOf==='function'?(()=>{const Q=questOf(tid);return `<button class="row" data-act="tm-qe" data-id="${tid}"><div class="m"><div>Questionnaire de santé</div><small>${Q.on?`Activé · ${Q.qs.length} question${Q.qs.length>1?'s':''}`:Q.qs.length?'Désactivé':'Pas encore créé'}</small></div>${ICON.chev}</button>`})():''}
    ${own?`<button class="row" data-act="sp-transfer" data-id="${tid}"><div class="m"><div>Transférer la propriété</div><small>À un autre coach ${T.team.kind==='club'?"de l'équipe":''}</small></div>${ICON.chev}</button>`:''}
    ${T.team.kind==='club'&&T.me.role==='player'?`<button class="row" data-act="sp-health" data-id="${tid}"><div class="m"><div>Mes réponses aux questionnaires</div><small>${T.me.health?'Consentement donné · tu peux le retirer':'Aucun consentement donné'}</small></div>${ICON.chev}</button>`:''}
    </div>${own?`<button class="linkbtn danger-link" data-act="sp-del-team" data-id="${tid}">Supprimer ${T.team.kind==='club'?"l'équipe":"l'espace coaching"}</button>`:`<button class="linkbtn danger-link" data-act="sp-leave" data-id="${tid}">Quitter ${T.team.kind==='club'?"l'équipe":'ce coaching'}</button>`}</section>`;
@@ -508,11 +509,12 @@ function openMeEdit(tid){
   const T=SP.T[tid];
   openSheet('sp-meed',sheetHead('Mon profil','sp-meed-close')+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="card sp-id"><span class="ini">${esc(initials(T.me.name))}</span><div class="m"><small class="muted">Nom affiché</small><b class="sp-id-n">${esc(T.me.name)}</b></div><button class="linkbtn" data-act="sp-name">Modifier</button></div>
-   <div class="field"><label for="me-poste">${T.team.kind==='club'?'Poste':'Objectif'}</label><input id="me-poste" value="${esc(T.me.poste)}" maxlength="40"></div></div></div>
-   <div class="sheet-f"><div class="in"><button class="btn primary" data-act="sp-me-save" data-id="${tid}">Enregistrer</button></div></div>`);
+   ${T.team.kind==='club'&&T.me.role!=='coach'?`<div class="card"><small class="muted">Poste</small><div style="font-weight:700;margin-top:2px">${T.me.poste?esc(T.me.poste):'<span class="muted">Pas encore attribué</span>'}</div><p class="small muted" style="margin:6px 0 0">C'est ton coach qui attribue les postes.</p></div></div></div>`
+   :`<div class="field"><label for="me-poste">${T.team.kind==='club'?'Poste':'Objectif'}</label><input id="me-poste" value="${esc(T.me.poste)}" maxlength="40"></div></div></div>
+   <div class="sheet-f"><div class="in"><button class="btn primary" data-act="sp-me-save" data-id="${tid}">Enregistrer</button></div></div>`}`);
 }
 async function meSave(tid){
-  const T=SP.T[tid],poste=($('#me-poste').value||'').trim().slice(0,40);
+  const T=SP.T[tid];if(!$('#me-poste'))return;const poste=($('#me-poste').value||'').trim().slice(0,40);
   try{await memRef(tid,UID).update({poste});T.me.poste=poste;const m=(SP.D[tid]?.members||[]).find(x=>x.uid===UID);if(m)m.poste=poste;
     closeSheet('sp-meed');render();toast('Profil enregistré')}catch(e){toast('Enregistrement impossible.')}
 }
@@ -541,6 +543,7 @@ async function deleteTeam(tid){
   for(const c of ['events','programs','wellness','logs'])await delDocs(subCol(tid,c));
   const ms=await subCol(tid,'members').get();for(const d of ms.docs)if(d.id!==UID)await d.ref.delete();
   if(T.code){try{await inviteRef(T.code).delete()}catch(e){}}
+  try{await DB.doc(`teams/${tid}/config/quest`).delete()}catch(e){}
   await teamRef(tid).delete();await memRef(tid,UID).delete();
 }
 async function leaveTeam(tid){

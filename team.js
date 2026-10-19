@@ -23,8 +23,29 @@ const cIds=a=>(Array.isArray(a)?a:[]).filter(x=>typeof x==='string'&&x.length<=1
 function cEvent(id,d){d=d||{};return{id,type:EVT[d.type]?d.type:'training',title:cStr(d.title,80)||EVT[d.type]||'Créneau',start:cNum(d.start,0,4102444800000,0),dur:Math.round(cNum(d.dur,0,1440,60)),place:cStr(d.place,80),invitees:cIds(d.invitees),video:okUrl(d.video)?d.video:'',by:cStr(d.by,128)}}
 function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120)}}
 function cProgram(id,d){d=d||{};return{id,title:cStr(d.title,80)||'Programme',date:cNum(d.date,0,4102444800000,0),eventId:okId(d.eventId)?d.eventId:'',items:(Array.isArray(d.items)?d.items:[]).slice(0,40).map(cPItem).filter(Boolean),invitees:cIds(d.invitees),note:cStr(d.note,300),by:cStr(d.by,128)}}
+const avgOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+/* questionnaire de santé : questions choisies par le coach */
+const QTYPES={scale:'Échelle',yn:'Oui / Non',num:'Nombre',text:'Texte libre',body:'Douleurs (silhouette)'};
+const QID=/^[A-Za-z0-9]{1,12}$/;
+function cQ(q){if(!q||!QID.test(q.id)||!QTYPES[q.t])return null;const o={id:q.id,t:q.t,l:cStr(q.l,80)||QTYPES[q.t],req:q.t!=='body'&&q.req===true};
+  if(q.t==='scale'){o.n=q.n===10?10:5;o.hi=q.hi==='bad'?'bad':'good'}else if(q.t==='yn')o.w=['yes','no'].includes(q.w)?q.w:'';else if(q.t==='num')o.u=cStr(q.u,12);return o}
+function cQuest(d){d=d||{};let body=false;const qs=(Array.isArray(d.qs)?d.qs:[]).slice(0,15).map(cQ).filter(q=>{if(!q)return false;if(q.t==='body'){if(body)return false;body=true}return true});
+  return{on:d.on===true&&qs.length>0,qs,at:cNum(d.at,0,4102444800000,0)}}
+const QUEST_OFF={on:false,qs:[],at:0};
+const QUEST_TPL=()=>[{id:'mot',t:'scale',l:'Motivation',n:5,hi:'good',req:true},{id:'som',t:'scale',l:'Qualité du sommeil',n:5,hi:'good',req:true},{id:'fat',t:'scale',l:'Fatigue',n:5,hi:'bad',req:true},{id:'pz',t:'body',l:'Où as-tu mal ?',req:false}];
+const questOf=tid=>dataOf(tid).quest||QUEST_OFF;
 function cWell(id,d){d=d||{};const p={};if(d.pains&&typeof d.pains==='object')for(const k in d.pains){if(ZONE_L[k]){p[k]=Math.round(cNum(d.pains[k],1,5,1))}}
-  return{id,uid:cStr(d.uid,128),day:/^\d{8}$/.test(d.day)?d.day:'00000000',at:cNum(d.at,0,4102444800000,0),mot:Math.round(cNum(d.mot,1,5,3)),som:Math.round(cNum(d.som,1,5,3)),pains:p}}
+  const a={};if(d.ans&&typeof d.ans==='object'){let n=0;for(const k in d.ans){if(!QID.test(k)||++n>20)continue;const v=d.ans[k];if(typeof v==='boolean')a[k]=v;else if(typeof v==='number'&&Number.isFinite(v))a[k]=Math.max(-1e6,Math.min(1e6,v));else if(typeof v==='string'&&v.trim())a[k]=v.slice(0,200)}}
+  if(a.mot==null&&d.mot!=null)a.mot=Math.round(cNum(d.mot,1,5,3));if(a.som==null&&d.som!=null)a.som=Math.round(cNum(d.som,1,5,3));
+  return{id,uid:cStr(d.uid,128),day:/^\d{8}$/.test(d.day)?d.day:'00000000',at:cNum(d.at,0,4102444800000,0),ans:a,pains:p}}
+/* score d'une réponse : 1 = très bien, 0 = très mal (null si la question ne se note pas) */
+function qScore(q,v){if(v==null)return null;if(q.t==='scale'){if(typeof v!=='number')return null;const r=(Math.min(q.n,Math.max(1,v))-1)/(q.n-1);return q.hi==='bad'?1-r:r}
+  if(q.t==='yn'&&q.w&&typeof v==='boolean')return (q.w==='yes')===v?0:1;return null}
+const qBad=(q,v)=>{const s=qScore(q,v);return s!=null&&s<=0.25};
+function qTxt(q,v){if(v==null||v==='')return'—';if(q.t==='scale')return v+'/'+q.n;if(q.t==='yn')return v?'Oui':'Non';if(q.t==='num')return fmtN(v)+(q.u?' '+q.u:'');return String(v)}
+/* indice de forme d'un questionnaire : moyenne des réponses notées, ramenée sur 5 */
+function formeOf(w,quest){const sc=quest.qs.map(q=>qScore(q,w.ans[q.id])).filter(x=>x!=null);return sc.length?1+4*avgOf(sc):null}
+
 function cLog(id,d){d=d||{};return{id,uid:cStr(d.uid,128),kind:['training','program','match','free'].includes(d.kind)?d.kind:'training',eventId:okId(d.eventId)?d.eventId:'',programId:okId(d.programId)?d.programId:'',title:cStr(d.title,80)||'Séance',at:cNum(d.at,0,4102444800000,0),dur:Math.round(cNum(d.dur,0,600,0)),rpe:Math.round(cNum(d.rpe,1,10,5)),load:cNum(d.load,0,6000,0),comment:cStr(d.comment,500),note:cStr(d.note,500),noteAt:cNum(d.noteAt,0,4102444800000,0),
   items:(Array.isArray(d.items)?d.items:[]).slice(0,40).filter(it=>it&&okId(it.exoId)).map(it=>({exoId:it.exoId,name:cStr(it.name,80),weight:it.weight==null?null:cNum(it.weight,0,2000,0),done:Math.round(cNum(it.done,0,20,0)),sets:Math.round(cNum(it.sets,0,20,0)),reps:Math.round(cNum(it.reps,0,999,0))}))}}
 
@@ -40,9 +61,10 @@ async function loadData(tid,force){
   else if(role==='player'||role==='client')J.events=subCol(tid,'events').where('invitees','array-contains',UID).get();
   if(role==='coach'){J.programs=subCol(tid,'programs').where('date','>=',now-70*DAY).get();J.wellness=subCol(tid,'wellness').where('day','>=',dayKey(from)).get();J.logs=subCol(tid,'logs').where('at','>=',from).get()}
   if(role==='player'||role==='client'){J.programs=subCol(tid,'programs').where('invitees','array-contains',UID).get();J.wellness=subCol(tid,'wellness').where('uid','==',UID).get();J.logs=subCol(tid,'logs').where('uid','==',UID).get()}
-  const out={members:D?.members||[],events:D?.events||[],programs:D?.programs||[],wellness:D?.wellness||[],logs:D?.logs||[]};let err=false;
+  const out={members:D?.members||[],events:D?.events||[],programs:D?.programs||[],wellness:D?.wellness||[],logs:D?.logs||[],quest:D?.quest||null};let err=false;
+  const QP=(T.team.kind==='club'&&(role==='coach'||role==='player'))?DB.doc(`teams/${tid}/config/quest`).get().then(q=>{out.quest=q.exists?cQuest(q.data()):QUEST_OFF}).catch(()=>{}):Promise.resolve();
   await Promise.all(Object.entries(J).map(async([k,p])=>{try{const s=await p;
-    out[k]=s.docs.map(x=>k==='members'?cMember(x.data()):k==='events'?cEvent(x.id,x.data()):k==='programs'?cProgram(x.id,x.data()):k==='wellness'?cWell(x.id,x.data()):cLog(x.id,x.data()))}catch(e){err=true}}));
+    out[k]=s.docs.map(x=>k==='members'?cMember(x.data()):k==='events'?cEvent(x.id,x.data()):k==='programs'?cProgram(x.id,x.data()):k==='wellness'?cWell(x.id,x.data()):cLog(x.id,x.data()))}catch(e){err=true}}).concat(QP));
   out.events.sort((a,b)=>a.start-b.start);out.programs.sort((a,b)=>a.date-b.date);out.logs.sort((a,b)=>a.at-b.at);out.wellness.sort((a,b)=>a.day<b.day?-1:1);
   const me=out.members.find(m=>m.uid===UID);if(me)T.me={...T.me,...me};
   SP.D[tid]={...out,at:Date.now(),loading:false,err};
@@ -50,7 +72,7 @@ async function loadData(tid,force){
   if(curTid()===tid&&SP.cur!=='moi')render();
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&SP.cur!=='moi'){const t=curTid();if(t)loadData(t,true)}});
-const dataOf=tid=>SP.D[tid]||{members:[],events:[],programs:[],wellness:[],logs:[]};
+const dataOf=tid=>SP.D[tid]||{members:[],events:[],programs:[],wellness:[],logs:[],quest:null};
 const memName=(tid,uid)=>(dataOf(tid).members.find(m=>m.uid===uid)||{}).name||(uid===UID?SP.T[tid]?.me?.name:'')||'Joueur';
 
 /* ---------- charge, forme et statut ---------- */
@@ -63,11 +85,11 @@ function loadStats(logs,uid,now=Date.now()){
 function lastWell(well,uid,days=3){const min=dayKey(Date.now()-(days-1)*DAY);const w=well.filter(x=>x.uid===uid&&x.day>=min);return w.length?w[w.length-1]:null}
 const painMax=w=>w?Math.max(0,...Object.values(w.pains)):0;
 function playerStatus(tid,uid){
-  const D=dataOf(tid),st=loadStats(D.logs,uid),w=lastWell(D.wellness,uid),pm=painMax(w);
+  const D=dataOf(tid),Q=questOf(tid),st=loadStats(D.logs,uid),w=lastWell(D.wellness,uid),pm=painMax(w),bad=w?Q.qs.filter(q=>qBad(q,w.ans[q.id])):[];
   const hasData=w||D.logs.some(l=>l.uid===uid&&l.at>=Date.now()-14*DAY);
   let s='none';
-  if(hasData){s='v';if((st.ratio!=null&&st.ratio>=1.5)||pm>=4)s='r';else if((st.ratio!=null&&(st.ratio>=1.3||st.ratio<0.7))||pm>=2||(w&&(w.som<=2||w.mot<=2)))s='o'}
-  return{s,st,w,pm}
+  if(hasData){s='v';if((st.ratio!=null&&st.ratio>=1.5)||pm>=4)s='r';else if((st.ratio!=null&&(st.ratio>=1.3||st.ratio<0.7))||pm>=2||bad.length)s='o'}
+  return{s,st,w,pm,bad}
 }
 const ST_L={r:'Rouge',o:'Orange',v:'Vert',none:'—'};
 const pctTxt=r=>r==null?'—':(r>=1?'+':'−')+Math.abs(Math.round((r-1)*100))+' %';
@@ -117,15 +139,18 @@ function viewEffectif(tid){
   const doneT=players.filter(p=>D.wellness.some(w=>w.uid===p.uid&&w.day===today)),miss=players.filter(p=>!doneT.includes(p));
   const alert=rows.filter(r=>r.s==='r').sort((a,b)=>(b.st.ratio||0)-(a.st.ratio||0))[0];
   const order={r:0,o:1,v:2,none:3};rows.sort((a,b)=>order[a.s]-order[b.s]||(b.st.ratio||0)-(a.st.ratio||0));
-  let h=`<div class="tiles st3"><div class="tile t-r"><b class="num">${cnt('r')}</b><span>Rouge</span></div><div class="tile t-o"><b class="num">${cnt('o')}</b><span>Orange</span></div><div class="tile t-v"><b class="num">${cnt('v')}</b><span>Vert</span></div></div>
-   <section class="card sp-q"><div class="r"><span>Questionnaires du matin</span><b class="num">${doneT.length} / ${players.length}</b></div><div class="bar"><i style="width:${Math.round(doneT.length/players.length*100)}%"></i></div>
-   ${miss.length?`<div class="r"><span class="small muted">Pas encore remplis : ${esc(miss.slice(0,6).map(m=>m.name).join(', '))}${miss.length>6?'…':''}</span><button class="btn ghost sm" data-act="tm-remind" data-id="${tid}">Rappel</button></div>`:'<div class="small muted">Tout le monde a répondu ce matin.</div>'}</section>`;
+  const Q=questOf(tid);
+  let h=`<div class="tiles st3"><div class="tile t-r"><b class="num">${cnt('r')}</b><span>Rouge</span></div><div class="tile t-o"><b class="num">${cnt('o')}</b><span>Orange</span></div><div class="tile t-v"><b class="num">${cnt('v')}</b><span>Vert</span></div></div>`;
+  h+=Q.on?`<section class="card sp-q"><div class="r"><span>Questionnaire de santé · aujourd'hui</span><b class="num">${doneT.length} / ${players.length}</b></div><div class="bar"><i style="width:${Math.round(doneT.length/players.length*100)}%"></i></div>
+   ${miss.length?`<div class="r"><span class="small muted">Pas encore remplis : ${esc(miss.slice(0,6).map(m=>m.name).join(', '))}${miss.length>6?'…':''}</span><button class="btn ghost sm" data-act="tm-remind" data-id="${tid}">Rappel</button></div>`:'<div class="small muted">Tout le monde a répondu aujourd\'hui.</div>'}
+   <button class="linkbtn" style="align-self:flex-start" data-act="tm-qe" data-id="${tid}">Modifier le questionnaire</button></section>`
+   :`<button class="card sp-qoff" data-act="tm-qe" data-id="${tid}"><span class="sp-ic">${SPICON.clock}</span><span class="m"><b>Questionnaire de santé désactivé</b><small>${Q.qs.length?'Touche pour le réactiver ou le modifier':'Crée tes questions (forme, sommeil, douleurs…) et active-le'}</small></span>${ICON.chev}</button>`;
   if(alert){const w=alert.w,pz=w?Object.entries(w.pains).sort((a,b)=>b[1]-a[1])[0]:null;
     h+=`<div class="card sp-alert">${SPICON.warn}<div><b>${esc(alert.p.name)}</b> ${alert.st.ratio!=null?`a une charge ${pctTxt(alert.st.ratio)} par rapport à son habitude`:'est à surveiller'}${pz?`, douleur ${esc(ZONE_L[pz[0]].toLowerCase())} ${pz[1]}/5`:''}.</div></div>`}
   h+=`<section><div class="h2">Effectif · ${players.length}<span class="small">Charge 7 j · douleur</span></div><div class="list">`;
   for(const r of rows){const pz=r.w?Object.entries(r.w.pains).sort((a,b)=>b[1]-a[1])[0]:null;
     h+=`<button class="row sp-pl" data-act="tm-player" data-id="${tid}" data-u="${esc(r.p.uid)}"><i class="sdot s-${r.s}"></i><div class="m"><div>${esc(r.p.name)}</div><small>${esc(r.p.poste||'')}</small></div><span class="ch num c-${r.s}">${pctTxt(r.st.ratio)}</span><span class="pz small">${pz?esc(ZONE_L[pz[0]].split(' ')[0])+' '+pz[1]+'/5':'—'}</span><span class="rpill s-${r.s}">${ST_L[r.s]}</span></button>`}
-  h+=`</div><p class="small muted" style="margin:4px 0 0">Indicateur d'aide basé sur la charge (durée × difficulté) et le questionnaire du matin. Ce n'est pas un avis médical.</p></section>`;
+  h+=`</div><p class="small muted" style="margin:4px 0 0">Indicateur d'aide basé sur la charge (durée × difficulté)${Q.on?' et le questionnaire de santé':''}. Ce n'est pas un avis médical.</p></section>`;
   return h+staffSection(tid);
 }
 function staffSection(tid){
@@ -141,7 +166,7 @@ function openPlayer(tid,uid){
   const D=dataOf(tid),m=D.members.find(x=>x.uid===uid);if(!m)return;
   const {s,st}=playerStatus(tid,uid),now=Date.now();
   const well7=D.wellness.filter(x=>x.uid===uid&&x.day>=dayKey(now-6*DAY));
-  const som=well7.length?well7.reduce((a,x)=>a+x.som,0)/well7.length:null;
+  const Q=questOf(tid),fo=avgOf(well7.map(x=>formeOf(x,Q)).filter(x=>x!=null)),qa=Q.qs.filter(q=>q.t!=='body');
   const pains={};well7.forEach(x=>{for(const k in x.pains)pains[k]=Math.max(pains[k]||0,x.pains[k])});
   const pf={},pb={};for(const k in pains)(k[0]==='f'?pf:pb)[k]=pains[k];
   const logs=D.logs.filter(l=>l.uid===uid).slice().reverse();
@@ -149,10 +174,10 @@ function openPlayer(tid,uid){
   const doneP=progs.filter(p=>D.logs.some(l=>l.uid===uid&&l.programId===p.id));
   let h=sheetHead(m.name,'tm-player-close',`<span class="rpill s-${s}">${ST_L[s]}</span>${isTeamOwner(tid)&&uid!==UID?`<button class="btn ghost sm" data-act="sp-mem" data-id="${tid}" data-u="${esc(uid)}">Gérer</button>`:''}`)+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="small muted">${esc(m.poste||'Joueur')}</div>
-   <div class="tiles"><div class="tile"><span>vs habituelle</span><b class="num c-${s}">${pctTxt(st.ratio)}</b></div><div class="tile"><span>Sommeil 7 j</span><b class="num">${som!=null?fmtN(som)+'/5':'—'}</b></div><div class="tile"><span>Programmes</span><b class="num">${progs.length?doneP.length+'/'+progs.length:'—'}</b></div></div>
+   <div class="tiles"><div class="tile"><span>vs habituelle</span><b class="num c-${s}">${pctTxt(st.ratio)}</b></div><div class="tile"><span>Forme 7 j</span><b class="num">${fo!=null?fmtN(Math.round(fo*10)/10)+'/5':'—'}</b></div><div class="tile"><span>Programmes</span><b class="num">${progs.length?doneP.length+'/'+progs.length:'—'}</b></div></div>
    <section class="card"><div class="chart-h"><b>Charge · 6 semaines</b><span class="small muted">durée × difficulté</span></div><canvas class="chart" id="c-pl"></canvas></section>
    <section class="card"><div class="chart-h"><b>Douleurs · 7 jours</b></div>${Object.keys(pains).length?`<div class="sp-pains"><div class="bm2">${bodyMap('f',pf,{w:84,dot:7})}${bodyMap('b',pb,{w:84,dot:7})}</div><div class="list sm">${Object.entries(pains).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="pz-r"><b>${esc(ZONE_L[k])}</b><span class="num">${v}/5</span></div>`).join('')}</div></div>`:'<p class="muted small" style="margin:0">Aucune douleur signalée.</p>'}</section>
-   <section class="card"><div class="chart-h"><b>Questionnaires</b><span class="small muted">motivation · sommeil</span></div>${well7.length?`<div class="wgrid">${well7.slice().reverse().map(x=>`<div><span>${dShort(keyTime(x.day))}</span><b class="num">${x.mot} · ${x.som}</b></div>`).join('')}</div>`:'<p class="muted small" style="margin:0">Aucun questionnaire cette semaine.</p>'}</section>
+   <section class="card"><div class="chart-h"><b>Questionnaires · 7 jours</b><span class="small muted">${well7.length}/7 remplis</span></div>${well7.length&&qa.length?`<div class="qhist">${well7.slice().reverse().map(x=>`<div class="qh"><b>${dShort(keyTime(x.day))}</b><div class="qa">${qa.map(q=>`<span class="${qBad(q,x.ans[q.id])?'bad':''}"><small>${esc(q.l)}</small>${esc(qTxt(q,x.ans[q.id]))}</span>`).join('')}</div></div>`).join('')}</div>`:`<p class="muted small" style="margin:0">${Q.on||Q.qs.length?'Aucun questionnaire cette semaine.':'Le questionnaire de santé n\'est pas activé.'}</p>`}</section>
    <section><div class="h2">Derniers ressentis</div>${logs.length?`<div class="list">${logs.slice(0,8).map(l=>`<div class="row sp-log"><div class="m"><div>${esc(l.title)}</div><small>${dShort(l.at)} · ${l.dur} min · difficulté ${l.rpe}/10${l.comment?' · « '+esc(l.comment)+' »':''}</small></div><span class="num ch">${Math.round(l.load)}</span></div>`).join('')}</div>`:'<p class="muted small" style="margin:0">Pas encore de ressenti.</p>'}</section>
   </div></div>`;
   openSheet('tm-player',h);
@@ -162,7 +187,6 @@ function openPlayer(tid,uid){
 
 /* --- statistiques du club : le coach voit l'équipe, le joueur seulement les siennes --- */
 const SPER={},SPX={};
-const avgOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function weeksLoad(logs,now){const labels=[],values=[];for(let k=5;k>=0;k--){const a=now-(k+1)*7*DAY,b=now-k*7*DAY;labels.push(k?dfr(a):'7 j');values.push(Math.round(logs.filter(l=>l.at>=a&&l.at<b).reduce((x,l)=>x+l.load,0)))}return{labels,values}}
 function viewTeamStats(tid){
   const T=SP.T[tid],D=dataOf(tid),role=T.me.role,per=SPER[tid]||30,now=Date.now(),from=now-per*DAY;
@@ -172,15 +196,15 @@ function viewTeamStats(tid){
     if(!players.length)return h+`<div class="card empty"><h3>Pas encore de statistiques</h3><p>Elles apparaîtront quand tes joueurs donneront leur ressenti après les séances et les programmes.</p></div>`;
     const L=D.logs.filter(l=>l.at>=from&&pid.has(l.uid)),progs=D.programs.filter(p=>p.date>=from&&p.date<=now);
     const asg=progs.reduce((n,p)=>n+p.invitees.filter(u=>pid.has(u)).length,0),dn=progs.reduce((n,p)=>n+new Set(D.logs.filter(l=>l.programId===p.id&&pid.has(l.uid)).map(l=>l.uid)).size,0);
-    const W=D.wellness.filter(w=>w.day>=dayKey(from)&&pid.has(w.uid)),qr=Math.min(100,Math.round(W.length/(players.length*per)*100)),rpe=avgOf(L.map(l=>l.rpe));
-    h+=`<div class="tiles st5"><div class="tile"><span>Séances</span><b class="num">${L.length}</b></div><div class="tile"><span>Charge totale</span><b class="num">${fmtN(Math.round(L.reduce((a,l)=>a+l.load,0)))}</b></div><div class="tile"><span>Difficulté moy.</span><b class="num">${rpe!=null?fmtN(Math.round(rpe*10)/10)+'/10':'—'}</b></div><div class="tile"><span>Programmes faits</span><b class="num">${asg?Math.round(dn/asg*100)+' %':'—'}</b></div><div class="tile"><span>Questionnaires</span><b class="num">${qr} %</b></div></div>
+    const Q=questOf(tid),W=D.wellness.filter(w=>w.day>=dayKey(from)&&pid.has(w.uid)),qr=Math.min(100,Math.round(W.length/(players.length*per)*100)),rpe=avgOf(L.map(l=>l.rpe)),showQ=Q.on||W.length>0;
+    h+=`<div class="tiles st5"><div class="tile"><span>Séances</span><b class="num">${L.length}</b></div><div class="tile"><span>Charge totale</span><b class="num">${fmtN(Math.round(L.reduce((a,l)=>a+l.load,0)))}</b></div><div class="tile"><span>Difficulté moy.</span><b class="num">${rpe!=null?fmtN(Math.round(rpe*10)/10)+'/10':'—'}</b></div><div class="tile"><span>Programmes faits</span><b class="num">${asg?Math.round(dn/asg*100)+' %':'—'}</b></div>${showQ?`<div class="tile"><span>Questionnaires</span><b class="num">${qr} %</b></div>`:''}</div>
      <section class="card"><div class="chart-h"><b>Charge de l'équipe · 6 semaines</b><span class="small muted">durée × difficulté</span></div><canvas class="chart" id="c-tst"></canvas></section>
      <section><div class="h2">Par joueur<span class="small">${per===7?'7 derniers jours':per===30?'30 derniers jours':'6 dernières semaines'}</span></div><div class="st-table" role="table">
-      <div class="st-r st-hd" role="row"><span>Joueur</span><span>Séances</span><span>Charge</span><span>Difficulté</span><span>Programmes</span><span>Sommeil</span></div>`;
+      <div class="st-r st-hd" role="row"><span>Joueur</span><span>Séances</span><span>Charge</span><span>Difficulté</span><span>Programmes</span><span>Forme</span></div>`;
     const rows=players.map(p=>{const l=L.filter(x=>x.uid===p.uid),pa=progs.filter(x=>x.invitees.includes(p.uid)),pd=pa.filter(x=>D.logs.some(y=>y.programId===x.id&&y.uid===p.uid)),w=W.filter(x=>x.uid===p.uid);
-      return{p,n:l.length,load:Math.round(l.reduce((a,x)=>a+x.load,0)),rpe:avgOf(l.map(x=>x.rpe)),pa:pa.length,pd:pd.length,som:avgOf(w.map(x=>x.som))}}).sort((a,b)=>b.load-a.load);
-    for(const r of rows)h+=`<button class="st-r" role="row" data-act="tm-player" data-id="${tid}" data-u="${esc(r.p.uid)}"><span class="st-n">${esc(r.p.name)}</span><span class="num" data-l="Séances">${r.n}</span><span class="num" data-l="Charge">${fmtN(r.load)}</span><span class="num" data-l="Difficulté">${r.rpe!=null?fmtN(Math.round(r.rpe*10)/10):'—'}</span><span class="num" data-l="Programmes">${r.pa?r.pd+'/'+r.pa:'—'}</span><span class="num" data-l="Sommeil">${r.som!=null?fmtN(Math.round(r.som*10)/10)+'/5':'—'}</span></button>`;
-    return h+`</div><p class="small muted" style="margin:6px 0 0">Touche un joueur pour voir son détail. Les questionnaires ne sont visibles que si le joueur a donné son accord.</p></section>`;
+      return{p,n:l.length,load:Math.round(l.reduce((a,x)=>a+x.load,0)),rpe:avgOf(l.map(x=>x.rpe)),pa:pa.length,pd:pd.length,fo:avgOf(w.map(x=>formeOf(x,Q)).filter(x=>x!=null))}}).sort((a,b)=>b.load-a.load);
+    for(const r of rows)h+=`<button class="st-r" role="row" data-act="tm-player" data-id="${tid}" data-u="${esc(r.p.uid)}"><span class="st-n">${esc(r.p.name)}</span><span class="num" data-l="Séances">${r.n}</span><span class="num" data-l="Charge">${fmtN(r.load)}</span><span class="num" data-l="Difficulté">${r.rpe!=null?fmtN(Math.round(r.rpe*10)/10):'—'}</span><span class="num" data-l="Programmes">${r.pa?r.pd+'/'+r.pa:'—'}</span><span class="num" data-l="Forme">${r.fo!=null?fmtN(Math.round(r.fo*10)/10)+'/5':'—'}</span></button>`;
+    return h+`</div><p class="small muted" style="margin:6px 0 0">Touche un joueur pour voir son détail. « Forme » est la moyenne des réponses notées du questionnaire de santé, ramenée sur 5. Les questionnaires ne sont visibles que si le joueur a donné son accord.</p></section>`;
   }
   // joueur : uniquement ses propres données
   const mine=D.logs.filter(l=>l.uid===UID),L=mine.filter(l=>l.at>=from),pa=D.programs.filter(p=>p.date>=from&&p.date<=now&&p.invitees.includes(UID)),pd=pa.filter(p=>mine.some(l=>l.programId===p.id)),rpe=avgOf(L.map(l=>l.rpe));
@@ -431,8 +455,8 @@ function viewPlayerHome(tid){
   const T=SP.T[tid],D=dataOf(tid),now=Date.now(),today=dayKey(now),kind=T.team.kind;
   const wToday=D.wellness.find(w=>w.uid===UID&&w.day===today),sk=streak(tid);
   let h='';
-  if(kind==='club')h+=wToday?`<button class="card sp-qdone" data-act="tm-q" data-id="${tid}"><span class="sp-ic ok">${ICON.check}</span><span class="m"><b>Questionnaire du matin fait</b><small>${sk>1?`Série de ${sk} jours · `:''}Touche pour modifier</small></span></button>`
-    :`<button class="sp-qcta" data-act="tm-q" data-id="${tid}"><span class="sp-ic">${SPICON.clock}</span><span class="m"><b>Questionnaire du matin</b><small>15 secondes${sk?` · série de ${sk} jour${sk>1?'s':''}`:''}</small></span>${ICON.chev}</button>`;
+  if(kind==='club'&&questOf(tid).on)h+=wToday?`<button class="card sp-qdone" data-act="tm-q" data-id="${tid}"><span class="sp-ic ok">${ICON.check}</span><span class="m"><b>Questionnaire de santé fait</b><small>${sk>1?`Série de ${sk} jours · `:''}Touche pour modifier</small></span></button>`
+    :`<button class="sp-qcta" data-act="tm-q" data-id="${tid}"><span class="sp-ic">${SPICON.clock}</span><span class="m"><b>Questionnaire de santé</b><small>À remplir aujourd'hui · demandé par ton coach${sk?` · série de ${sk} jour${sk>1?'s':''}`:''}</small></span>${ICON.chev}</button>`;
   const toRate=D.events.filter(e=>['training','muscu','match','recup'].includes(e.type)&&e.start+e.dur*60000<=now&&e.start>=now-36*3600000&&!D.logs.some(l=>l.uid===UID&&l.eventId===e.id));
   for(const e of toRate.slice(-2))h+=`<button class="card sp-rate" data-act="tm-rs-ev" data-id="${tid}" data-e="${e.id}"><span class="sp-ic">${SPICON.pulse}</span><span class="m"><b>Comment c'était ?</b><small>${esc(e.title)} · ${dShort(e.start)} ${hm(e.start)}</small></span>${ICON.chev}</button>`;
   const todayEv=D.events.filter(e=>dayKey(e.start)===today);
@@ -453,42 +477,93 @@ function viewRoster(tid){
   return h+teamSettings(tid);
 }
 
-/* --- questionnaire du matin (données de santé : consentement explicite) --- */
+/* --- questionnaire de santé (données de santé : consentement explicite) --- */
 let QS=null;
 function openQuest(tid){
+  const Q=questOf(tid);if(!Q.on){toast("Le questionnaire de santé n'est pas activé par ton coach.");return}
   const T=SP.T[tid],D=dataOf(tid),w=D.wellness.find(x=>x.uid===UID&&x.day===dayKey(Date.now()));
-  QS={tid,mot:w?w.mot:0,som:w?w.som:0,pains:w?{...w.pains}:{},side:'f',consent:!!T.me.health};renderQuest();
+  QS={tid,ans:w?{...w.ans}:{},pains:w?{...w.pains}:{},side:'f',consent:!!T.me.health};renderQuest();
 }
+function qVals(){if(!QS)return;document.querySelectorAll('[data-qin]').forEach(el=>{const q=questOf(QS.tid).qs.find(x=>x.id===el.dataset.qin);if(!q)return;const v=el.value.trim();
+  if(q.t==='num'){const n=Number(v.replace(',','.'));if(v&&Number.isFinite(n))QS.ans[q.id]=n;else delete QS.ans[q.id]}else{if(v)QS.ans[q.id]=v.slice(0,200);else delete QS.ans[q.id]}})}
+function questMissing(Q){return Q.qs.filter(q=>q.req&&(QS.ans[q.id]==null||QS.ans[q.id]===''))}
 function renderQuest(){
-  const T=SP.T[QS.tid];
-  if(!QS.consent){openSheet('tm-q',sheetHead('Questionnaire du matin','tm-q-close')+`<div class="sheet-b"><div class="wrap sp-col">
+  const T=SP.T[QS.tid],Q=questOf(QS.tid);
+  if(!QS.consent){openSheet('tm-q',sheetHead('Questionnaire de santé','tm-q-close')+`<div class="sheet-b"><div class="wrap sp-col">
     <div class="card sp-consent"><span class="sp-ic">${SPICON.lock}</span><h3>Avant de commencer</h3>
-    <p>Ce questionnaire contient des informations sur ta forme : motivation, sommeil et douleurs. Ce sont des <b>données de santé</b>.</p>
+    <p>Ce questionnaire, préparé par ton coach, contient des informations sur ta forme et ta santé${Q.qs.length?` (${esc(Q.qs.slice(0,4).map(q=>q.l.toLowerCase()).join(', '))}${Q.qs.length>4?'…':''})`:''}. Ce sont des <b>données de santé</b>.</p>
     <p>Elles sont visibles <b>uniquement par toi et les coachs de ${esc(T.team.name)}</b>, jamais par les autres joueurs ni les spectateurs. Ton espace « Moi » n'est pas concerné.</p>
     <p class="small muted">Tu peux retirer ton accord quand tu veux, dans Équipe › Mes réponses aux questionnaires : tes réponses sont alors effacées. Si tu as moins de 15 ans, demande d'abord l'accord d'un parent.</p>
     <label class="consent" for="q-ok"><input type="checkbox" id="q-ok"><span>J'accepte que mes réponses soient partagées avec les coachs de l'équipe.</span></label></div></div></div>
     <div class="sheet-f"><div class="in"><button class="btn primary" data-act="q-consent">Continuer</button></div></div>`);return}
   const sc=document.querySelector('#sheet-tm-q .sheet-b')?.scrollTop||0;
-  const sel=ZONES[QS.side].filter(z=>QS.pains[z[0]]),other=Object.keys(QS.pains).filter(k=>k[0]!==QS.side).length;
-  const scale=(k,l)=>`<div class="qrow"><b>${l}</b><div class="q5">${[1,2,3,4,5].map(n=>`<button data-act="q-set" data-k="${k}" data-v="${n}" aria-pressed="${QS[k]===n}" aria-label="${l} ${n} sur 5">${n}</button>`).join('')}</div></div>`;
-  const h=sheetHead('Questionnaire du matin','tm-q-close')+`<div class="sheet-b"><div class="wrap sp-col">
-   <h1 class="sp-h1">Comment tu te sens ?</h1>
-   <section class="card">${scale('mot','Motivation')}${scale('som','Sommeil')}<div class="small muted">1 = très mal · 5 = excellent</div></section>
-   <section class="card"><div class="chart-h"><b>Où as-tu mal ?</b><div class="seg mini"><button data-act="q-side" data-v="f" aria-pressed="${QS.side==='f'}">Face</button><button data-act="q-side" data-v="b" aria-pressed="${QS.side==='b'}">Dos</button></div></div>
+  const block=q=>{const v=QS.ans[q.id],star=q.req?' <span class="req" aria-label="obligatoire">*</span>':'';
+    if(q.t==='scale'){const n=q.n;return `<section class="card qcard"><b class="ql">${esc(q.l)}${star}</b><div class="q5 ${n===10?'q10':''}">${Array.from({length:n},(_,k)=>k+1).map(x=>`<button data-act="q-set" data-k="${q.id}" data-v="${x}" aria-pressed="${v===x}" aria-label="${esc(q.l)} ${x} sur ${n}">${x}</button>`).join('')}</div><div class="small muted qleg"><span>1 = ${q.hi==='bad'?'pas du tout':'très mal'}</span><span>${n} = ${q.hi==='bad'?'énormément':'excellent'}</span></div></section>`}
+    if(q.t==='yn')return `<section class="card qcard"><b class="ql">${esc(q.l)}${star}</b><div class="seg two"><button data-act="q-yn" data-k="${q.id}" data-v="1" aria-pressed="${v===true}">Oui</button><button data-act="q-yn" data-k="${q.id}" data-v="0" aria-pressed="${v===false}">Non</button></div></section>`;
+    if(q.t==='num')return `<section class="card qcard"><label class="ql" for="qi-${q.id}">${esc(q.l)}${star}</label><div class="qnum"><input id="qi-${q.id}" data-qin="${q.id}" type="text" inputmode="decimal" value="${v!=null?esc(String(v)):''}" autocomplete="off">${q.u?`<span>${esc(q.u)}</span>`:''}</div></section>`;
+    if(q.t==='text')return `<section class="card qcard"><label class="ql" for="qi-${q.id}">${esc(q.l)}${star}</label><div class="field" style="margin:0"><input id="qi-${q.id}" data-qin="${q.id}" maxlength="200" value="${v!=null?esc(String(v)):''}" autocomplete="off"></div></section>`;
+    const sel=ZONES[QS.side].filter(z=>QS.pains[z[0]]),other=Object.keys(QS.pains).filter(k=>k[0]!==QS.side).length;
+    return `<section class="card"><div class="chart-h"><b>${esc(q.l)}</b><div class="seg mini"><button data-act="q-side" data-v="f" aria-pressed="${QS.side==='f'}">Face</button><button data-act="q-side" data-v="b" aria-pressed="${QS.side==='b'}">Dos</button></div></div>
     <div class="qmap">${bodyMap(QS.side,QS.pains,{act:'q-zone',w:150})}<div class="qsel">${sel.length?sel.map(([id,l])=>`<div class="qz"><b>${esc(l)}</b><small class="muted">Intensité de la douleur</small><div class="q5 sm">${[1,2,3,4,5].map(n=>`<button data-act="q-int" data-z="${id}" data-v="${n}" aria-pressed="${QS.pains[id]===n}" aria-label="Intensité ${n} sur 5">${n}</button>`).join('')}</div></div>`).join(''):`<p class="small muted" style="margin:0">Touche une zone de la silhouette si tu as mal. Sinon, rien à faire.</p>`}
-    ${other?`<p class="small muted" style="margin:0">+ ${other} zone${other>1?'s':''} côté ${QS.side==='f'?'dos':'face'}</p>`:''}</div></div></section>
-  </div></div><div class="sheet-f"><div class="in"><button class="btn primary" data-act="q-save" ${QS.mot&&QS.som?'':'disabled'}>Envoyer</button></div></div>`;
+    ${other?`<p class="small muted" style="margin:0">+ ${other} zone${other>1?'s':''} côté ${QS.side==='f'?'dos':'face'}</p>`:''}</div></div></section>`};
+  const miss=questMissing(Q);
+  const h=sheetHead('Questionnaire de santé','tm-q-close')+`<div class="sheet-b"><div class="wrap sp-col">
+   <h1 class="sp-h1">Comment tu te sens ?</h1>
+   ${Q.qs.map(block).join('')}
+   ${Q.qs.some(q=>q.req)?'<p class="small muted" style="margin:0">* réponse obligatoire</p>':''}
+  </div></div><div class="sheet-f"><div class="in"><button class="btn primary" data-act="q-save" ${miss.length?'disabled':''}>Envoyer</button></div></div>`;
   const el=openSheet('tm-q',h);el.querySelector('.sheet-b').scrollTop=sc;
 }
+function questSaveBtn(){const b=document.querySelector('#sheet-tm-q [data-act="q-save"]');if(b&&QS){qVals();b.disabled=questMissing(questOf(QS.tid)).length>0}}
+document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.qin)questSaveBtn()});
 async function saveQuest(btn){
-  const day=dayKey(Date.now()),doc={uid:UID,day,at:Date.now(),mot:QS.mot,som:QS.som,pains:QS.pains};btn.disabled=true;
+  qVals();const Q=questOf(QS.tid);if(questMissing(Q).length){toast('Réponds aux questions obligatoires.');return}
+  const ids=new Set(Q.qs.map(q=>q.id)),ans={};for(const k in QS.ans)if(ids.has(k))ans[k]=QS.ans[k];
+  const day=dayKey(Date.now()),doc={uid:UID,day,at:Date.now(),ans,pains:Q.qs.some(q=>q.t==='body')?QS.pains:{}};btn.disabled=true;
   try{await subCol(QS.tid,'wellness').doc(UID+'_'+day).set(doc);const D=dataOf(QS.tid);D.wellness=D.wellness.filter(w=>!(w.uid===UID&&w.day===day)).concat(cWell(UID+'_'+day,doc));closeSheet('tm-q');QS=null;render();toast('Questionnaire envoyé · merci !')}
   catch(e){btn.disabled=false;toast('Envoi impossible. Vérifie ta connexion.')}
+}
+
+/* --- coach : créer et activer le questionnaire de santé --- */
+let QE=null;
+function openQuestEdit(tid){const Q=questOf(tid);QE={tid,on:Q.on||!Q.qs.length,qs:(Q.qs.length?Q.qs:QUEST_TPL()).map(q=>({...q})),tpl:!Q.qs.length};renderQuestEdit()}
+function qeVals(){if(!QE)return;QE.qs.forEach((q,i)=>{const l=$('#qe-l-'+i);if(l)q.l=l.value.slice(0,80);const u=$('#qe-u-'+i);if(u)q.u=u.value.slice(0,12)})}
+function renderQuestEdit(){
+  const sc=document.querySelector('#sheet-tm-qe .sheet-b')?.scrollTop||0,n=QE.qs.length,hasBody=QE.qs.some(q=>q.t==='body');
+  const card=(q,i)=>`<section class="card qe"><div class="qe-h"><span class="qe-n num">${i+1}</span><span class="chip">${QTYPES[q.t]}</span><span style="flex:1"></span>
+    <button class="icon-btn sm" data-act="qe-mv" data-i="${i}" data-d="-1" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="icon-btn sm" data-act="qe-mv" data-i="${i}" data-d="1" ${i<n-1?'':'disabled'} aria-label="Descendre">↓</button><button class="icon-btn sm" data-act="qe-del" data-i="${i}" aria-label="Supprimer la question">✕</button></div>
+    <div class="field" style="margin:0"><label for="qe-l-${i}">Question</label><input id="qe-l-${i}" value="${esc(q.l)}" maxlength="80" placeholder="Ex. Comment as-tu dormi ?" autocomplete="off"></div>
+    ${q.t==='scale'?`<div class="qe-o"><span class="small muted">Notes</span><div class="seg two mini"><button data-act="qe-set" data-i="${i}" data-k="n" data-v="5" aria-pressed="${q.n!==10}">1 à 5</button><button data-act="qe-set" data-i="${i}" data-k="n" data-v="10" aria-pressed="${q.n===10}">1 à 10</button></div></div>
+      <div class="qe-o"><span class="small muted">Une note haute, c'est</span><div class="seg two mini"><button data-act="qe-set" data-i="${i}" data-k="hi" data-v="good" aria-pressed="${q.hi!=='bad'}">Bien</button><button data-act="qe-set" data-i="${i}" data-k="hi" data-v="bad" aria-pressed="${q.hi==='bad'}">Mauvais</button></div></div>`:''}
+    ${q.t==='yn'?`<div class="qe-o"><span class="small muted">Alerter si la réponse est</span><div class="seg mini three"><button data-act="qe-set" data-i="${i}" data-k="w" data-v="yes" aria-pressed="${q.w==='yes'}">Oui</button><button data-act="qe-set" data-i="${i}" data-k="w" data-v="no" aria-pressed="${q.w==='no'}">Non</button><button data-act="qe-set" data-i="${i}" data-k="w" data-v="" aria-pressed="${!q.w}">Jamais</button></div></div>`:''}
+    ${q.t==='num'?`<div class="field" style="margin:0"><label for="qe-u-${i}">Unité (facultatif)</label><input id="qe-u-${i}" value="${esc(q.u||'')}" maxlength="12" placeholder="Ex. kg, h, bpm" autocomplete="off"></div>`:''}
+    ${q.t==='body'?'<p class="small muted" style="margin:0">Le joueur touche les zones où il a mal sur une silhouette et note l\'intensité de 1 à 5.</p>':`<div class="set-row" style="padding:0"><div class="small">Réponse obligatoire</div><button class="toggle" data-act="qe-req" data-i="${i}" aria-pressed="${!!q.req}" aria-label="Réponse obligatoire"></button></div>`}
+   </section>`;
+  const h=sheetHead('Questionnaire de santé','tm-qe-close')+`<div class="sheet-b"><div class="wrap sp-col">
+   <section class="card"><div class="set-row" style="padding:0"><div><div style="font-weight:700">${QE.on?'Activé':'Désactivé'}</div><div class="small muted">${QE.on?'Tes joueurs le voient chaque jour sur leur accueil et doivent y répondre.':'Tes joueurs ne le voient pas. Leurs anciennes réponses restent consultables.'}</div></div><button class="toggle" data-act="qe-on" aria-pressed="${QE.on}" aria-label="Activer le questionnaire"></button></div></section>
+   ${QE.tpl?'<p class="small muted" style="margin:0">Voici un modèle pour démarrer : modifie, supprime ou ajoute les questions que tu veux.</p>':''}
+   ${QE.qs.map(card).join('')||'<div class="card empty"><p style="margin:0">Aucune question. Ajoute ta première question.</p></div>'}
+   ${n<15?`<button class="btn ghost block" data-act="qe-add">+ Ajouter une question</button>`:'<p class="small muted" style="margin:0">15 questions maximum.</p>'}
+   ${n?'':'<button class="linkbtn" data-act="qe-tpl">Repartir du modèle</button>'}
+   <p class="small muted" style="margin:0">Les réponses sont des données de santé : chaque joueur donne son accord avant de répondre, et seuls les coachs de l'équipe les voient.</p>
+  </div></div><div class="sheet-f"><div class="in"><button class="btn primary" data-act="qe-save">Enregistrer</button></div></div>`;
+  const el=openSheet('tm-qe',h);el.querySelector('.sheet-b').scrollTop=sc;
+}
+function qeAddMenu(){const hasBody=QE.qs.some(q=>q.t==='body');
+  modal(`<h3>Type de question</h3><div class="legal-list" style="text-align:left">${[['scale','Échelle','Une note de 1 à 5 ou de 1 à 10 (forme, sommeil, fatigue…)'],['yn','Oui / Non','Ex. As-tu été malade ? As-tu pris un médicament ?'],['num','Nombre','Ex. poids, heures de sommeil, pouls au réveil'],['text','Texte libre','Le joueur écrit ce qu\'il veut'],...(hasBody?[]:[['body','Douleurs','Silhouette à toucher, intensité de 1 à 5']])].map(([t,l,d])=>`<button class="row" data-act="qe-add-t" data-t="${t}"><div class="m"><div>${l}</div><small>${d}</small></div>${ICON.chev}</button>`).join('')}</div>
+   <div class="acts"><button class="btn ghost" data-act="modal-close">Annuler</button></div>`)}
+async function saveQuestEdit(btn){
+  qeVals();const qs=QE.qs.map(q=>({...q,l:(q.l||'').trim()}));
+  if(qs.some(q=>!q.l)){toast('Écris le texte de chaque question.');return}
+  if(QE.on&&!qs.length){toast('Ajoute au moins une question pour activer le questionnaire.');return}
+  const doc={on:QE.on&&qs.length>0,qs:qs.map(cQ).filter(Boolean).map(q=>JSON.parse(JSON.stringify(q))),at:Date.now(),by:UID};btn.disabled=true;
+  try{await DB.doc(`teams/${QE.tid}/config/quest`).set(doc);const D=SP.D[QE.tid];if(D)D.quest=cQuest(doc);closeSheet('tm-qe');const on=doc.on;QE=null;render();toast(on?'Questionnaire enregistré et activé':'Questionnaire enregistré · désactivé')}
+  catch(e){btn.disabled=false;toast(e&&e.code==='permission-denied'?"Enregistrement refusé : publie les nouvelles règles Firestore.":'Enregistrement impossible. Vérifie ta connexion.')}
 }
 function openHealth(tid){
   const T=SP.T[tid];
   openSheet('tm-h',sheetHead('Mes réponses','tm-h-close')+`<div class="sheet-b"><div class="wrap sp-col"><div class="card">
-   <p style="margin:0">${T.me.health?`Tu as accepté le ${dfull(T.me.health)} que tes réponses au questionnaire du matin soient visibles par les coachs de <b>${esc(T.team.name)}</b>.`:"Tu n'as pas donné ton accord : aucune réponse n'est partagée."}</p></div>
+   <p style="margin:0">${T.me.health?`Tu as accepté le ${dfull(T.me.health)} que tes réponses au questionnaire de santé soient visibles par les coachs de <b>${esc(T.team.name)}</b>.`:"Tu n'as pas donné ton accord : aucune réponse n'est partagée."}</p></div>
    ${T.me.health?`<button class="btn danger" data-act="q-revoke" data-id="${tid}">Retirer mon accord et effacer mes réponses</button>`:''}</div></div>`);
 }
 async function revokeHealth(tid,btn){
@@ -503,7 +578,7 @@ Object.assign(ACT,{
   'pick-done':()=>{if(pick&&pick.target==='program'&&PE){[...pick.sel].forEach(id=>{const e=exo(id);PE.items.push({exoId:id,name:e.name,sets:3,reps:10,mode:TIMEIDS.has(id)?'time':'reps',dur:60,lt:'free',lv:0,note:''})});closeSheet('picker');pick=null;restoreIdx();renderProgEdit();return}origPickDone()},
   'pick-close':()=>{const p=pick&&pick.target==='program';origPickClose();if(p)restoreIdx()},
   'tm-player':d=>openPlayer(d.id,d.u),'tm-player-close':()=>closeSheet('tm-player'),
-  'tm-remind':async()=>{const t='Pensez à remplir le questionnaire du matin sur Hevor (15 secondes) 💪';if(navigator.share){try{await navigator.share({text:t})}catch(e){}}else{try{await navigator.clipboard.writeText(t);toast('Message de rappel copié : colle-le dans le groupe de l\'équipe')}catch(e){toast(t)}}},
+  'tm-remind':async()=>{const t='Pensez à remplir le questionnaire de santé sur Hevor 💪';if(navigator.share){try{await navigator.share({text:t})}catch(e){}}else{try{await navigator.clipboard.writeText(t);toast('Message de rappel copié : colle-le dans le groupe de l\'équipe')}catch(e){toast(t)}}},
   'tm-wk':d=>{PW[d.id]=(PW[d.id]||0)+(+d.d);render()},
   'tm-sper':d=>{SPER[d.id]=+d.v;render()},
   'tm-ev':d=>openEvent(d.id,d.e),'tm-ev-close':()=>closeSheet('tm-ev'),
@@ -538,10 +613,23 @@ Object.assign(ACT,{
   'tm-q':d=>openQuest(d.id),'tm-q-close':()=>{closeSheet('tm-q');QS=null},
   'q-consent':async(d,b)=>{if(!$('#q-ok').checked){toast("Coche la case pour donner ton accord, ou ferme le questionnaire.");return}b.disabled=true;const now=Date.now();
     try{await memRef(QS.tid,UID).update({health:now});SP.T[QS.tid].me.health=now;QS.consent=true;renderQuest()}catch(e){b.disabled=false;toast('Enregistrement impossible.')}},
-  'q-set':d=>{QS[d.k]=+d.v;renderQuest()},
-  'q-side':d=>{QS.side=d.v;renderQuest()},
-  'q-zone':d=>{if(QS.pains[d.z])delete QS.pains[d.z];else QS.pains[d.z]=1;renderQuest()},
-  'q-int':d=>{QS.pains[d.z]=+d.v;renderQuest()},
+  'q-set':d=>{qVals();QS.ans[d.k]=+d.v;renderQuest()},
+  'q-yn':d=>{qVals();QS.ans[d.k]=d.v==='1';renderQuest()},
+  'q-side':d=>{qVals();QS.side=d.v;renderQuest()},
+  'q-zone':d=>{qVals();if(QS.pains[d.z])delete QS.pains[d.z];else QS.pains[d.z]=1;renderQuest()},
+  'q-int':d=>{qVals();QS.pains[d.z]=+d.v;renderQuest()},
+  'tm-qe':d=>openQuestEdit(d.id),'tm-qe-close':()=>{closeSheet('tm-qe');QE=null},
+  'qe-on':()=>{qeVals();QE.on=!QE.on;renderQuestEdit()},
+  'qe-req':d=>{qeVals();const q=QE.qs[+d.i];q.req=!q.req;renderQuestEdit()},
+  'qe-set':d=>{qeVals();const q=QE.qs[+d.i];q[d.k]=d.k==='n'?+d.v:d.v;renderQuestEdit()},
+  'qe-mv':d=>{qeVals();const i=+d.i,j=i+(+d.d);if(j<0||j>=QE.qs.length)return;[QE.qs[i],QE.qs[j]]=[QE.qs[j],QE.qs[i]];renderQuestEdit()},
+  'qe-del':d=>{qeVals();QE.qs.splice(+d.i,1);renderQuestEdit()},
+  'qe-add':()=>{qeVals();qeAddMenu()},
+  'qe-add-t':d=>{closeModal();let id='';do{id='q'+Math.random().toString(36).slice(2,8)}while(QE.qs.some(q=>q.id===id));
+    const q={id,t:d.t,l:'',req:d.t!=='body'&&d.t!=='text'};if(d.t==='scale'){q.n=5;q.hi='good'}if(d.t==='yn')q.w='';if(d.t==='num')q.u='';if(d.t==='body')q.l='Où as-tu mal ?';
+    QE.qs.push(q);QE.tpl=false;renderQuestEdit();setTimeout(()=>{const el=$('#qe-l-'+(QE.qs.length-1));if(el){el.focus();el.scrollIntoView({block:'center'})}},40)},
+  'qe-tpl':()=>{QE.qs=QUEST_TPL();QE.tpl=true;renderQuestEdit()},
+  'qe-save':(d,b)=>saveQuestEdit(b),
   'q-save':(d,b)=>saveQuest(b),
   'sp-health':d=>openHealth(d.id),'tm-h-close':()=>closeSheet('tm-h'),'q-revoke':(d,b)=>revokeHealth(d.id,b)
 });

@@ -560,7 +560,7 @@ function startApp(u){
   loadLocal(u?'hevor.v1:'+u.uid:'hevor.v1:local');
   $('#tabs').hidden=false;document.body.classList.add('has-nav');buildIdx();passScrolled=false;render();if(S.active)ensureTick();if(!u)setSync('local');
 }
-let loginMode='in',pendingConsent=0,pendingName=null;const LEGAL_V='2026-10-19b';
+let loginMode='in',pendingConsent=0,pendingName=null;const LEGAL_V='2026-10-19c';
 function showLogin(msg){
   $('#tabs').hidden=true;document.body.classList.remove('has-nav');document.querySelectorAll('.sheet').forEach(e=>e.remove());closeModal();
   const up=loginMode==='up',reset=loginMode==='reset';
@@ -598,7 +598,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.4.0';let delAsk=false;
+const APP_VERSION='2.5.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1155,7 +1155,7 @@ function drawChart(cv,o){
   if(o.w){g.fillStyle=col.bg;g.fillRect(0,0,W,H)}else g.clearRect(0,0,W,H);
   const vals=o.values,n=vals.length;if(!n)return;
   const fs=o.fs||12,font=(wt=500,s=fs)=>`${wt} ${s}px Barlow, system-ui, sans-serif`;
-  let vmin,vmax;if(o.type==='bar'){vmin=0;vmax=Math.max(...vals)}else{vmin=Math.min(...vals,o.rec??Infinity);vmax=Math.max(...vals,o.rec??-Infinity);const pad=(vmax-vmin)*.18||5;vmin=Math.max(0,vmin-pad);vmax+=pad}
+  let vmin,vmax;if(o.type==='bar'){vmin=0;vmax=Math.max(...vals)||10}else{vmin=Math.min(...vals,o.rec??Infinity);vmax=Math.max(...vals,o.rec??-Infinity);const pad=(vmax-vmin)*.18||5;vmin=Math.max(0,vmin-pad);vmax+=pad}
   const ticks=niceTicks(vmin,vmax),y0=ticks[0],y1=ticks[ticks.length-1];
   g.font=font();const lw=Math.max(...ticks.map(t=>g.measureText(fmtTick(t)).width));
   const L=lw+14,R=o.type==='bar'?8:18,T=18,B=fs+14,pw=W-L-R,ph=H-T-B,Y=v=>T+ph-(v-y0)/(y1-y0)*ph;
@@ -1282,16 +1282,16 @@ privacy:{t:'Confidentialité',h:()=>`
 <h3>2. Quelles données sont collectées ?</h3>
 <ul><li><b>Ton compte</b> : ton prénom, ton nom, ton adresse e-mail et ton mot de passe. Le mot de passe est chiffré par Google : personne, pas même l'éditeur, ne peut le lire.</li>
 <li><b>Ton entraînement</b> : tes séances, exercices, poids, séries, répétitions, durées, dates, exercices personnalisés et réglages.</li>
-<li><b>Si tu utilises un espace Club ou Coach</b> : ton nom, le poste (ou l'objectif) que tu indiques, ton rôle, le planning, les programmes reçus, les séances faites dans cet espace et tes ressentis (durée, difficulté, commentaire). Dans un club, et seulement avec ton accord, tes réponses au questionnaire du matin : motivation, sommeil et douleurs.</li>
+<li><b>Si tu utilises un espace Club ou Coach</b> : ton nom, le poste que le coach t'attribue (ou l'objectif que tu indiques à ton coach), ton rôle, le planning, les programmes reçus, les séances faites dans cet espace et tes ressentis (durée, difficulté, commentaire). Dans un club, et seulement avec ton accord, tes réponses au questionnaire de santé préparé par le coach (par exemple motivation, sommeil, fatigue, douleurs).</li>
 <li><b>Des données techniques</b> : l'identifiant de ton compte et, pour la sécurité, les données de connexion (dont l'adresse IP) traitées par les hébergeurs.</li></ul>
 <p>Hevor ne demande ni ton âge, ni ta position, ni tes contacts, ni tes photos. Ton prénom et ton nom servent uniquement à ce que les coachs et équipes que tu rejoins sachent qui tu es : ils ne sont jamais affichés publiquement ni aux autres utilisateurs. Dans l'espace « Moi », n'y saisis pas d'informations médicales.</p>
 <h3>3. Pourquoi ?</h3>
-<p>Uniquement pour faire fonctionner Hevor : ton compte, la sauvegarde et la synchronisation de tes séances, tes records, tes statistiques et tes niveaux, et, si tu rejoins une équipe ou un coach, le suivi de ton entraînement par eux. Base légale : l'exécution des conditions d'utilisation que tu acceptes (article 6.1.b du RGPD). Les réponses au questionnaire du matin sont des données de santé : elles ne sont traitées qu'avec ton consentement explicite (article 9.2.a du RGPD), que tu peux retirer à tout moment. La sécurité du service repose sur l'intérêt légitime (article 6.1.f).</p>
+<p>Uniquement pour faire fonctionner Hevor : ton compte, la sauvegarde et la synchronisation de tes séances, tes records, tes statistiques et tes niveaux, et, si tu rejoins une équipe ou un coach, le suivi de ton entraînement par eux. Base légale : l'exécution des conditions d'utilisation que tu acceptes (article 6.1.b du RGPD). Les réponses au questionnaire de santé sont des données de santé : elles ne sont traitées qu'avec ton consentement explicite (article 9.2.a du RGPD), que tu peux retirer à tout moment. La sécurité du service repose sur l'intérêt légitime (article 6.1.f).</p>
 <h3>4. Ce que Hevor ne fait pas</h3>
 <p>Pas de publicité, pas de revente de données, pas de profilage, pas de mesure d'audience, pas de cookies de suivi.</p>
 <h3>5. Qui a accès à tes données ?</h3>
 <p>Ton espace « Moi » : toi seul. Des règles d'accès empêchent tout autre utilisateur de le lire, même les coachs de tes équipes.</p>
-<p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton nom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses au questionnaire du matin.</li><li><b>Les autres joueurs et les spectateurs</b> voient seulement ton nom, ton poste et ton rôle. Les spectateurs voient aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
+<p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton nom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses au questionnaire de santé.</li><li><b>Les autres joueurs et les spectateurs</b> voient seulement ton nom, ton poste et ton rôle. Les spectateurs voient aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
 <p>Avec un coach indépendant (espace Coach) : ton coach voit ton nom, ton objectif, les séances faites dans cet espace et tes ressentis. Les autres clients ne voient rien de toi.</p>
 <p>Deux prestataires techniques interviennent :</p>
 <ul><li><b>Google (Firebase)</b> gère les comptes et stocke tes séances. Les séances sont stockées en France (Paris). Les données de compte peuvent être traitées aux États-Unis, dans le cadre du Data Privacy Framework UE–États-Unis et des clauses contractuelles types de la Commission européenne.</li>
@@ -1308,7 +1308,7 @@ privacy:{t:'Confidentialité',h:()=>`
 <ul><li><b>Accès et portabilité</b> : Réglages › Exporter une copie.</li><li><b>Rectification</b> : modifie ou supprime tes séances et exercices, ton nom (Réglages › Compte) et ton poste (Équipe › Mon profil).</li><li><b>Retrait du consentement</b> : Équipe › Mes réponses aux questionnaires.</li><li><b>Effacement</b> : quitte l'équipe, ou Réglages › Supprimer mon compte.</li></ul>
 <p>Pour toute autre demande, contacte l'éditeur ${contactLine()}. Réponse sous un mois. Tu peux aussi adresser une réclamation à la CNIL (cnil.fr).</p>
 <h3>10. Âge</h3>
-<p>Hevor est destiné aux personnes de 15 ans et plus. En dessous, l'accord d'un parent est nécessaire, notamment pour rejoindre une équipe et pour répondre au questionnaire du matin.</p>
+<p>Hevor est destiné aux personnes de 15 ans et plus. En dessous, l'accord d'un parent est nécessaire, notamment pour rejoindre une équipe et pour répondre au questionnaire de santé.</p>
 <h3>11. Modifications</h3>
 <p>Cette politique peut évoluer. La date de mise à jour figure en haut de la page.</p>`},
 cgu:{t:'Conditions d\'utilisation',h:()=>`
