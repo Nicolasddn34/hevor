@@ -578,7 +578,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.2.0';let delAsk=false;
+const APP_VERSION='2.3.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1369,3 +1369,13 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadSW&&!reloaded&&!S.active){reloaded=true;location.reload()}});
   window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')r.update()})}).catch(()=>{})});
 }
+
+/* ---------- œil pour afficher le mot de passe ---------- */
+const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function enhancePw(root){(root||document).querySelectorAll('input[type=password]:not([data-pw])').forEach(inp=>{
+  inp.dataset.pw='1';const w=document.createElement('span');w.className='pw-wrap';inp.parentNode.insertBefore(w,inp);w.appendChild(inp);
+  const b=document.createElement('button');b.type='button';b.className='pw-eye';b.setAttribute('aria-label','Afficher le mot de passe');b.setAttribute('aria-pressed','false');b.innerHTML=EYE;
+  b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const show=inp.type==='password';inp.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE;b.setAttribute('aria-pressed',String(show));b.setAttribute('aria-label',show?'Masquer le mot de passe':'Afficher le mot de passe');inp.focus()});
+  w.appendChild(b)})}
+new MutationObserver(()=>enhancePw()).observe(document.body,{childList:true,subtree:true});enhancePw();

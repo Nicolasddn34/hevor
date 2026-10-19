@@ -46,6 +46,7 @@ async function loadData(tid,force){
   out.events.sort((a,b)=>a.start-b.start);out.programs.sort((a,b)=>a.date-b.date);out.logs.sort((a,b)=>a.at-b.at);out.wellness.sort((a,b)=>a.day<b.day?-1:1);
   const me=out.members.find(m=>m.uid===UID);if(me)T.me={...T.me,...me};
   SP.D[tid]={...out,at:Date.now(),loading:false,err};
+  if(typeof syncInvite==='function'&&!err)syncInvite(tid);
   if(curTid()===tid&&SP.cur!=='moi')render();
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&SP.cur!=='moi'){const t=curTid();if(t)loadData(t,true)}});
@@ -88,27 +89,29 @@ function bodyMap(side,pains,o={}){
 }
 
 /* ---------- vue d'équipe ---------- */
+const ST_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 15l4-5 3 3 5-7"/></svg>';
 const TABS_BY={
-  coach:[['effectif','Effectif',SPICON.pulse],['planning','Planning',SPICON.cal],['programs','Programmes',SPICON.dumb],['members','Membres',SPICON.team]],
-  player:[['home','Accueil',SPICON.home],['planning','Planning',SPICON.cal],['programs','Programmes',SPICON.dumb],['team','Équipe',SPICON.team]],
+  coach:[['effectif','Effectif',SPICON.pulse],['planning','Planning',SPICON.cal],['programs','Programmes',SPICON.dumb],['stats','Stats',ST_ICON],['settings','Réglages',SPICON.gear]],
+  player:[['home','Accueil',SPICON.home],['planning','Planning',SPICON.cal],['programs','Programmes',SPICON.dumb],['stats','Stats',ST_ICON],['team','Équipe',SPICON.team]],
   spectator:[['planning','Planning',SPICON.cal],['team','Équipe',SPICON.team]]
 };
 function renderTeam(tid){
   const T=SP.T[tid],role=T.me.role,tabs=TABS_BY[role]||TABS_BY.spectator;
-  let tab=SP.tab[tid];if(!tabs.some(t=>t[0]===tab))tab=tabs[0][0];
+  let tab=SP.tab[tid];if(tab==='members')tab='settings';if(!tabs.some(t=>t[0]===tab))tab=tabs[0][0];
   setTabs(tabs,tab);loadData(tid);
   const D=SP.D[tid];
-  let h=`<div class="wrap">${spTop(T.team.name,(T.team.club||'')+(role==='spectator'?' · spectateur':''),teamLogo(T.team),teamsOf('club').length>1?'sp-list':'')}`;
+  let h=`<div class="wrap">${teamTop(tid,(T.team.club||'')+(role==='spectator'?' · spectateur':''))}`;
   if(!D||(D.loading&&!D.at)){$('#view').innerHTML=h+`<p class="muted">Chargement de l'équipe…</p></div>`;return}
   if(D.err&&!D.members.length&&!D.events.length)h+=`<div class="card sp-warn">${SPICON.warn}<span>Certaines données n'ont pas pu être chargées. Vérifie ta connexion.</span></div>`;
-  h+=tab==='effectif'?viewEffectif(tid):tab==='planning'?viewPlanning(tid):tab==='programs'?viewPrograms(tid):tab==='members'?membersSection(tid):tab==='team'?viewRoster(tid):viewPlayerHome(tid);
+  h+=tab==='effectif'?viewEffectif(tid):tab==='planning'?viewPlanning(tid):tab==='programs'?viewPrograms(tid):tab==='settings'?settingsSection(tid):tab==='stats'?viewTeamStats(tid):tab==='team'?viewRoster(tid):viewPlayerHome(tid);
   $('#view').innerHTML=h+'</div>';
+  if(tab==='stats')requestAnimationFrame(()=>drawTeamStats(tid));
 }
 
 /* --- coach : effectif --- */
 function viewEffectif(tid){
   const D=dataOf(tid),players=D.members.filter(m=>m.role==='player'),today=dayKey(Date.now());
-  if(!players.length)return `<div class="card empty"><h3>Pas encore de joueurs</h3><p>Invite tes joueurs depuis l'onglet Membres, puis donne-leur le rôle de joueur.</p><button class="btn primary" data-act="sp-tab" data-v="members">Inviter des joueurs</button></div>`;
+  if(!players.length)return `<div class="card empty"><h3>Pas encore de joueurs</h3><p>Invite tes joueurs avec le code de l'onglet Réglages, puis donne-leur le rôle de joueur.</p><button class="btn primary" data-act="sp-tab" data-v="settings">Inviter des joueurs</button></div>`;
   const rows=players.map(p=>({p,...playerStatus(tid,p.uid)}));
   const cnt=s=>rows.filter(r=>r.s===s).length;
   const doneT=players.filter(p=>D.wellness.some(w=>w.uid===p.uid&&w.day===today)),miss=players.filter(p=>!doneT.includes(p));
@@ -123,7 +126,16 @@ function viewEffectif(tid){
   for(const r of rows){const pz=r.w?Object.entries(r.w.pains).sort((a,b)=>b[1]-a[1])[0]:null;
     h+=`<button class="row sp-pl" data-act="tm-player" data-id="${tid}" data-u="${esc(r.p.uid)}"><i class="sdot s-${r.s}"></i><div class="m"><div>${esc(r.p.name)}</div><small>${esc(r.p.poste||'')}</small></div><span class="ch num c-${r.s}">${pctTxt(r.st.ratio)}</span><span class="pz small">${pz?esc(ZONE_L[pz[0]].split(' ')[0])+' '+pz[1]+'/5':'—'}</span><span class="rpill s-${r.s}">${ST_L[r.s]}</span></button>`}
   h+=`</div><p class="small muted" style="margin:4px 0 0">Indicateur d'aide basé sur la charge (durée × difficulté) et le questionnaire du matin. Ce n'est pas un avis médical.</p></section>`;
-  return h;
+  return h+staffSection(tid);
+}
+function staffSection(tid){
+  const T=SP.T[tid],D=dataOf(tid),own=isTeamOwner(tid),st=D.members.filter(m=>m.role==='coach'||m.role==='spectator');
+  if(!st.length)return'';
+  return `<section><div class="h2">Staff · ${st.length}</div><div class="list">${st.map(m=>`<button class="row sp-mem" ${own&&m.uid!==UID?`data-act="sp-mem" data-id="${tid}" data-u="${esc(m.uid)}"`:'disabled'}><div class="m"><div>${esc(m.name)}${m.uid===UID?' <span class="muted small">(toi)</span>':''}</div><small>${esc(m.poste||'')}</small></div>${T.team.owner===m.uid?`<span class="rpill r-owner">${SPICON.crown}Propriétaire</span>`:`<span class="rpill r-${m.role}">${ROLE_L[m.role]}</span>`}</button>`).join('')}</div>${own?'<p class="small muted" style="margin:4px 0 0">Touche un joueur ou un membre du staff pour changer son rôle ou le retirer.</p>':''}</section>`;
+}
+function teamTop(tid,sub){
+  const T=SP.T[tid],n=teamsOf(T.team.kind).length;
+  return `<header class="top"><button class="team-sw" data-act="sp-teams" aria-label="Changer d'équipe (équipe actuelle : ${esc(T.team.name)})">${teamLogo(T.team)}<span class="m"><span class="brand sp-brand">${esc(T.team.name)}</span><span class="sub sp-sub">${esc(sub)}${sub?' · ':''}${n>1?n+' équipes':'Mes équipes'}</span></span>${SPICON.down}</button>${spPill()}</header>`;
 }
 function openPlayer(tid,uid){
   const D=dataOf(tid),m=D.members.find(x=>x.uid===uid);if(!m)return;
@@ -135,7 +147,7 @@ function openPlayer(tid,uid){
   const logs=D.logs.filter(l=>l.uid===uid).slice().reverse();
   const progs=D.programs.filter(p=>p.invitees.includes(uid)&&p.date>=now-7*DAY&&p.date<sod(now)+2*DAY);
   const doneP=progs.filter(p=>D.logs.some(l=>l.uid===uid&&l.programId===p.id));
-  let h=sheetHead(m.name,'tm-player-close',`<span class="rpill s-${s}">${ST_L[s]}</span>`)+`<div class="sheet-b"><div class="wrap sp-col">
+  let h=sheetHead(m.name,'tm-player-close',`<span class="rpill s-${s}">${ST_L[s]}</span>${isTeamOwner(tid)&&uid!==UID?`<button class="btn ghost sm" data-act="sp-mem" data-id="${tid}" data-u="${esc(uid)}">Gérer</button>`:''}`)+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="small muted">${esc(m.poste||'Joueur')}</div>
    <div class="tiles"><div class="tile"><span>vs habituelle</span><b class="num c-${s}">${pctTxt(st.ratio)}</b></div><div class="tile"><span>Sommeil 7 j</span><b class="num">${som!=null?fmtN(som)+'/5':'—'}</b></div><div class="tile"><span>Programmes</span><b class="num">${progs.length?doneP.length+'/'+progs.length:'—'}</b></div></div>
    <section class="card"><div class="chart-h"><b>Charge · 6 semaines</b><span class="small muted">durée × difficulté</span></div><canvas class="chart" id="c-pl"></canvas></section>
@@ -146,6 +158,51 @@ function openPlayer(tid,uid){
   openSheet('tm-player',h);
   requestAnimationFrame(()=>{const cv=$('#c-pl');if(!cv)return;const labels=[],values=[];for(let k=5;k>=0;k--){const a=now-(k+1)*7*DAY,b=now-k*7*DAY;labels.push(k?dfr(a):'7 j');values.push(Math.round(D.logs.filter(l=>l.uid===uid&&l.at>=a&&l.at<b).reduce((x,l)=>x+l.load,0)))}drawChart(cv,{type:'bar',labels,values})});
 }
+
+
+/* --- statistiques du club : le coach voit l'équipe, le joueur seulement les siennes --- */
+const SPER={},SPX={};
+const avgOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function weeksLoad(logs,now){const labels=[],values=[];for(let k=5;k>=0;k--){const a=now-(k+1)*7*DAY,b=now-k*7*DAY;labels.push(k?dfr(a):'7 j');values.push(Math.round(logs.filter(l=>l.at>=a&&l.at<b).reduce((x,l)=>x+l.load,0)))}return{labels,values}}
+function viewTeamStats(tid){
+  const T=SP.T[tid],D=dataOf(tid),role=T.me.role,per=SPER[tid]||30,now=Date.now(),from=now-per*DAY;
+  let h=`<div class="seg st-per" role="group" aria-label="Période">${[[7,'7 jours'],[30,'30 jours'],[42,'6 semaines']].map(([v,l])=>`<button data-act="tm-sper" data-id="${tid}" data-v="${v}" aria-pressed="${per===v}">${l}</button>`).join('')}</div>`;
+  if(role==='coach'){
+    const players=D.members.filter(m=>m.role==='player'),pid=new Set(players.map(p=>p.uid));
+    if(!players.length)return h+`<div class="card empty"><h3>Pas encore de statistiques</h3><p>Elles apparaîtront quand tes joueurs donneront leur ressenti après les séances et les programmes.</p></div>`;
+    const L=D.logs.filter(l=>l.at>=from&&pid.has(l.uid)),progs=D.programs.filter(p=>p.date>=from&&p.date<=now);
+    const asg=progs.reduce((n,p)=>n+p.invitees.filter(u=>pid.has(u)).length,0),dn=progs.reduce((n,p)=>n+new Set(D.logs.filter(l=>l.programId===p.id&&pid.has(l.uid)).map(l=>l.uid)).size,0);
+    const W=D.wellness.filter(w=>w.day>=dayKey(from)&&pid.has(w.uid)),qr=Math.min(100,Math.round(W.length/(players.length*per)*100)),rpe=avgOf(L.map(l=>l.rpe));
+    h+=`<div class="tiles st5"><div class="tile"><span>Séances</span><b class="num">${L.length}</b></div><div class="tile"><span>Charge totale</span><b class="num">${fmtN(Math.round(L.reduce((a,l)=>a+l.load,0)))}</b></div><div class="tile"><span>Difficulté moy.</span><b class="num">${rpe!=null?fmtN(Math.round(rpe*10)/10)+'/10':'—'}</b></div><div class="tile"><span>Programmes faits</span><b class="num">${asg?Math.round(dn/asg*100)+' %':'—'}</b></div><div class="tile"><span>Questionnaires</span><b class="num">${qr} %</b></div></div>
+     <section class="card"><div class="chart-h"><b>Charge de l'équipe · 6 semaines</b><span class="small muted">durée × difficulté</span></div><canvas class="chart" id="c-tst"></canvas></section>
+     <section><div class="h2">Par joueur<span class="small">${per===7?'7 derniers jours':per===30?'30 derniers jours':'6 dernières semaines'}</span></div><div class="st-table" role="table">
+      <div class="st-r st-hd" role="row"><span>Joueur</span><span>Séances</span><span>Charge</span><span>Difficulté</span><span>Programmes</span><span>Sommeil</span></div>`;
+    const rows=players.map(p=>{const l=L.filter(x=>x.uid===p.uid),pa=progs.filter(x=>x.invitees.includes(p.uid)),pd=pa.filter(x=>D.logs.some(y=>y.programId===x.id&&y.uid===p.uid)),w=W.filter(x=>x.uid===p.uid);
+      return{p,n:l.length,load:Math.round(l.reduce((a,x)=>a+x.load,0)),rpe:avgOf(l.map(x=>x.rpe)),pa:pa.length,pd:pd.length,som:avgOf(w.map(x=>x.som))}}).sort((a,b)=>b.load-a.load);
+    for(const r of rows)h+=`<button class="st-r" role="row" data-act="tm-player" data-id="${tid}" data-u="${esc(r.p.uid)}"><span class="st-n">${esc(r.p.name)}</span><span class="num" data-l="Séances">${r.n}</span><span class="num" data-l="Charge">${fmtN(r.load)}</span><span class="num" data-l="Difficulté">${r.rpe!=null?fmtN(Math.round(r.rpe*10)/10):'—'}</span><span class="num" data-l="Programmes">${r.pa?r.pd+'/'+r.pa:'—'}</span><span class="num" data-l="Sommeil">${r.som!=null?fmtN(Math.round(r.som*10)/10)+'/5':'—'}</span></button>`;
+    return h+`</div><p class="small muted" style="margin:6px 0 0">Touche un joueur pour voir son détail. Les questionnaires ne sont visibles que si le joueur a donné son accord.</p></section>`;
+  }
+  // joueur : uniquement ses propres données
+  const mine=D.logs.filter(l=>l.uid===UID),L=mine.filter(l=>l.at>=from),pa=D.programs.filter(p=>p.date>=from&&p.date<=now&&p.invitees.includes(UID)),pd=pa.filter(p=>mine.some(l=>l.programId===p.id)),rpe=avgOf(L.map(l=>l.rpe));
+  h+=`<p class="small muted sp-note">${SPICON.lock}Tes statistiques ne sont visibles que par toi et les coachs de l'équipe.</p>
+   <div class="tiles"><div class="tile"><span>Mes séances</span><b class="num">${L.length}</b></div><div class="tile"><span>Ma charge</span><b class="num">${fmtN(Math.round(L.reduce((a,l)=>a+l.load,0)))}</b></div><div class="tile"><span>Difficulté moy.</span><b class="num">${rpe!=null?fmtN(Math.round(rpe*10)/10)+'/10':'—'}</b></div><div class="tile"><span>Programmes faits</span><b class="num">${pa.length?pd.length+'/'+pa.length:'—'}</b></div></div>
+   <section class="card"><div class="chart-h"><b>Ma charge · 6 semaines</b><span class="small muted">durée × difficulté</span></div><canvas class="chart" id="c-tst"></canvas></section>`;
+  const best={};for(const l of mine)for(const it of l.items||[])if(it.weight!=null&&it.done>0){const b=best[it.exoId];if(!b||it.weight>b.w)best[it.exoId]={w:it.weight,n:it.name,t:l.at}}
+  const ids=Object.keys(best);
+  if(ids.length){const sel=SPX[tid]&&best[SPX[tid]]?SPX[tid]:ids.sort((a,b)=>best[b].w-best[a].w)[0];SPX[tid]=sel;
+    h+=`<section class="card"><div class="field" style="margin-bottom:10px"><label for="tst-exo">Ma progression par exercice</label><select id="tst-exo">${ids.map(id=>`<option value="${id}" ${id===sel?'selected':''}>${esc(best[id].n||exo(id).name)}</option>`).join('')}</select></div><canvas class="chart" id="c-tsx"></canvas></section>
+     <section><div class="h2">Mes records dans l'équipe</div><div class="list">${ids.sort((a,b)=>best[b].w-best[a].w).slice(0,12).map(id=>{const e=exo(id,best[id].n);return `<div class="row"><div class="fig sm">${figSVG(e,1)}</div><div class="m"><div>${esc(best[id].n||e.name)}</div><small>${dShort(best[id].t)}</small></div><b class="num" style="color:var(--pr)">${fmtKg(best[id].w)}</b></div>`}).join('')}</div></section>`}
+  else h+=`<p class="muted small">Tes records apparaîtront quand tu auras fait un programme de ton coach en notant tes charges.</p>`;
+  return h;
+}
+function drawTeamStats(tid){
+  const T=SP.T[tid];if(!T)return;const D=dataOf(tid),now=Date.now(),cv=$('#c-tst');
+  if(cv){const pid=new Set(D.members.filter(m=>m.role==='player').map(m=>m.uid));const logs=T.me.role==='coach'?D.logs.filter(l=>pid.has(l.uid)):D.logs.filter(l=>l.uid===UID);drawChart(cv,{type:'bar',...weeksLoad(logs,now)})}
+  const c2=$('#c-tsx'),id=SPX[tid];
+  if(c2&&id){const pts=[];for(const l of D.logs)if(l.uid===UID){const w=Math.max(-1,...(l.items||[]).filter(it=>it.exoId===id&&it.weight!=null&&it.done>0).map(it=>it.weight));if(w>=0)pts.push({t:l.at,w})}
+    pts.sort((a,b)=>a.t-b.t);if(pts.length)drawChart(c2,{type:'line',labels:pts.map(p=>dfr(p.t)),values:pts.map(p=>p.w),rec:Math.max(...pts.map(p=>p.w))})}
+}
+document.addEventListener('change',e=>{if(e.target.id==='tst-exo'){const t=curTid();if(t){SPX[t]=e.target.value;render()}}});
 
 /* --- planning --- */
 const PW={};
@@ -171,6 +228,7 @@ function viewPlanning(tid){
   return h;
 }
 let EV=null;
+const DEF_DUR={training:120,muscu:90,match:120,video:60,meeting:60,recup:60};
 function openEvent(tid,eid){
   const T=SP.T[tid],D=dataOf(tid),e=D.events.find(x=>x.id===eid);if(!e)return;
   const role=T.me.role,past=e.start<Date.now(),myLog=D.logs.find(l=>l.uid===UID&&l.eventId===e.id);
@@ -186,8 +244,8 @@ function openEvent(tid,eid){
 function openEventEdit(tid,eid){
   const D=dataOf(tid),e=eid?D.events.find(x=>x.id===eid):null,t0=e?e.start:(()=>{const d=new Date();d.setDate(d.getDate()+1);d.setHours(18,0,0,0);return d.getTime()})();
   const players=D.members.filter(m=>m.role==='player'||m.role==='client');
-  EV={tid,id:e?e.id:null,type:e?e.type:'training',dest:e&&e.invitees.length<players.length?'sel':'all',sel:new Set(e?e.invitees:players.map(p=>p.uid))};
-  renderEventEdit({title:e?e.title:'',date:isoDate(t0),time:isoTime(t0),dur:e?e.dur:90,place:e?e.place:'',video:e?e.video:''});
+  EV={tid,durTouched:!!e,id:e?e.id:null,type:e?e.type:'training',dest:e&&e.invitees.length<players.length?'sel':'all',sel:new Set(e?e.invitees:players.map(p=>p.uid))};
+  renderEventEdit({title:e?e.title:'',date:isoDate(t0),time:isoTime(t0),dur:e?e.dur:DEF_DUR.training,place:e?e.place:'',video:e?e.video:''});
 }
 function renderEventEdit(v){
   const D=dataOf(EV.tid),players=D.members.filter(m=>m.role==='player'||m.role==='client');
@@ -195,7 +253,7 @@ function renderEventEdit(v){
    <div class="chips left">${Object.entries(EVT).map(([k,l])=>`<button class="chip-b" data-act="tm-evtype" data-v="${k}" aria-pressed="${EV.type===k}">${l}</button>`).join('')}</div>
    <div class="field"><label for="ev-title">Titre</label><input id="ev-title" value="${esc(v.title)}" placeholder="${esc(EVT[EV.type])}" maxlength="80"></div>
    <div class="sp-2"><div class="field"><label for="ev-date">Date</label><input id="ev-date" type="date" value="${v.date}"></div><div class="field"><label for="ev-time">Heure</label><input id="ev-time" type="time" value="${v.time}"></div></div>
-   <div class="sp-2"><div class="field"><label for="ev-dur">Durée (min)</label><input id="ev-dur" type="number" inputmode="numeric" min="5" max="600" value="${v.dur}"></div><div class="field"><label for="ev-place">Lieu</label><input id="ev-place" value="${esc(v.place)}" maxlength="80" placeholder="Gymnase…"></div></div>
+   <div class="sp-2"><div class="field"><label for="ev-dur">Durée (min)</label><input id="ev-dur" type="number" inputmode="numeric" min="5" max="600" value="${v.dur}"></div><div class="field"><label for="ev-place">Lieu (facultatif)</label><input id="ev-place" value="${esc(v.place)}" maxlength="80" placeholder="Gymnase…"></div></div>
    <div class="field"><span class="flabel">Qui est convoqué ? <b class="num" style="color:var(--pr)">${EV.dest==='all'?players.length:EV.sel.size} / ${players.length}</b></span>
     <div class="seg" style="grid-template-columns:1fr 1fr"><button data-act="tm-evdest" data-v="all" aria-pressed="${EV.dest==='all'}">Tout le groupe</button><button data-act="tm-evdest" data-v="sel" aria-pressed="${EV.dest==='sel'}">Sélection</button></div></div>
    ${EV.dest==='sel'?`<div class="card sp-checks">${players.length?players.map(p=>`<label><input type="checkbox" data-evu="${esc(p.uid)}" ${EV.sel.has(p.uid)?'checked':''}><span>${esc(p.name)}</span><small class="muted">${esc(p.poste||'')}</small></label>`).join(''):'<p class="muted small" style="margin:0">Pas encore de joueurs dans l\'équipe.</p>'}</div>`:''}
@@ -242,7 +300,7 @@ function viewPrograms(tid){
 function openProgram(tid,pid){
   const T=SP.T[tid],D=dataOf(tid),p=D.programs.find(x=>x.id===pid);if(!p)return;
   const role=T.me.role,rec=role==='coach'?null:recordsClub(tid),myLog=D.logs.find(l=>l.programId===p.id&&l.uid===UID);
-  let h=sheetHead(p.title,'tm-prog-close')+`<div class="sheet-b"><div class="wrap sp-col"><div class="small muted" style="text-transform:capitalize">${dLong(p.date)}${p.eventId&&D.events.find(e=>e.id===p.eventId)?' · lié au créneau de '+hm(D.events.find(e=>e.id===p.eventId).start):''}</div>
+  let h=sheetHead(p.title,'tm-prog-close')+`<div class="sheet-b"><div class="wrap sp-col"><div class="small muted" style="text-transform:capitalize">${dLong(p.date)}</div>
    ${p.note?`<div class="card sp-note2">${esc(p.note)}</div>`:''}
    <div class="list">${p.items.map((it,i)=>{const e=exo(it.exoId,it.name);return `<div class="row"><div class="fig sm">${figSVG(e,1)}</div><div class="m"><div>${esc(it.name||e.name)}</div><small>${pVol(it)}${loadTxt(it,rec)?' · '+esc(loadTxt(it,rec)):''}${it.note?' · '+esc(it.note):''}</small></div></div>`}).join('')}</div>`;
   if(role==='coach'){const who=p.invitees.map(u=>({u,n:memName(tid,u),l:D.logs.find(l=>l.programId===p.id&&l.uid===u)}));
@@ -257,7 +315,7 @@ function openProgram(tid,pid){
 let PE=null;
 function openProgEdit(tid,pid){
   const D=dataOf(tid),p=pid?D.programs.find(x=>x.id===pid):null,players=D.members.filter(m=>m.role==='player'||m.role==='client');
-  PE={tid,id:p?p.id:null,title:p?p.title:'',date:isoDate(p?p.date:Date.now()+DAY),eventId:p?p.eventId:'',items:p?clone(p.items):[],note:p?p.note:'',dest:p?(p.eventId?'event':p.invitees.length<players.length?'sel':'all'):'all',sel:new Set(p?p.invitees:players.map(m=>m.uid))};
+  PE={tid,id:p?p.id:null,title:p?p.title:'',date:isoDate(p?p.date:Date.now()+DAY),eventId:p?p.eventId:'',items:p?clone(p.items):[],note:p?p.note:'',dest:p?(p.invitees.length<players.length?'sel':'all'):'all',sel:new Set(p?p.invitees:players.map(m=>m.uid))};
   renderProgEdit();
 }
 function progVals(){if(!$('#pe-title'))return;PE.title=$('#pe-title').value;PE.date=$('#pe-date').value;PE.note=$('#pe-note').value;PE.items.forEach((it,i)=>{const n=$('#pe-n-'+i);if(n)it.note=n.value;const v=$('#pe-v-'+i);if(v)it.lv=cNum(String(v.value).replace(',','.'),0,2000,0)})}
@@ -267,8 +325,7 @@ function renderProgEdit(){
   const sc=document.querySelector('#sheet-tm-ped .sheet-b')?.scrollTop||0;
   let h=sheetHead(PE.id?'Modifier le programme':'Nouveau programme','tm-ped-close')+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="field"><label for="pe-title">Titre</label><input id="pe-title" value="${esc(PE.title)}" placeholder="Ex. Force · bas du corps" maxlength="80"></div>
-   <div class="sp-2"><div class="field"><label for="pe-date">Date</label><input id="pe-date" type="date" value="${PE.date}"></div>
-   <div class="field"><label for="pe-ev">Lié au créneau</label><select id="pe-ev"><option value="">Aucun</option>${evs.map(e=>`<option value="${e.id}" ${PE.eventId===e.id?'selected':''}>${esc(dShort(e.start)+' '+hm(e.start)+' · '+e.title)}</option>`).join('')}</select></div></div>
+   <div class="field"><label for="pe-date">Date</label><input id="pe-date" type="date" value="${PE.date}"></div>
    <div class="field"><label for="pe-note">Consigne générale (facultatif)</label><input id="pe-note" value="${esc(PE.note)}" maxlength="300" placeholder="Ex. Échauffement 10 min avant"></div>
    <div class="h2">Exercices · ${PE.items.length}</div>`;
   PE.items.forEach((it,i)=>{const e=exo(it.exoId,it.name);
@@ -282,7 +339,7 @@ function renderProgEdit(){
      <div class="field"><label for="pe-n-${i}">Consigne (facultatif)</label><input id="pe-n-${i}" value="${esc(it.note)}" maxlength="120" placeholder="Ex. Tempo lent, repos 2 min"></div></div>`});
   h+=`<button class="btn line" data-act="pe-add">+ Ajouter des exercices</button>
    <div class="field"><span class="flabel">Envoyer à <b class="num" style="color:var(--pr)">${progDest().length} / ${players.length}</b></span>
-    <div class="seg"><button data-act="pe-dest" data-v="all" aria-pressed="${PE.dest==='all'}">Tout le groupe</button><button data-act="pe-dest" data-v="event" aria-pressed="${PE.dest==='event'}" ${PE.eventId?'':'disabled'}>Convoqués</button><button data-act="pe-dest" data-v="sel" aria-pressed="${PE.dest==='sel'}">Sélection</button></div></div>
+    <div class="seg" style="grid-template-columns:1fr 1fr"><button data-act="pe-dest" data-v="all" aria-pressed="${PE.dest==='all'}">Tout le groupe</button><button data-act="pe-dest" data-v="sel" aria-pressed="${PE.dest==='sel'}">Sélection</button></div></div>
    ${PE.dest==='sel'?`<div class="card sp-checks">${players.map(p=>`<label><input type="checkbox" data-peu="${esc(p.uid)}" ${PE.sel.has(p.uid)?'checked':''}><span>${esc(p.name)}</span><small class="muted">${esc(p.poste||'')}</small></label>`).join('')||'<p class="muted small" style="margin:0">Pas encore de joueurs.</p>'}</div>`:''}
    <p class="small muted" style="margin:0">Avec « % du record », la charge est calculée pour chaque joueur à partir de ses records dans cet espace.</p>
   </div></div><div class="sheet-f"><div class="in"><button class="btn primary" data-act="pe-save">${PE.id?'Enregistrer':'Envoyer le programme'}</button></div></div>`;
@@ -448,9 +505,10 @@ Object.assign(ACT,{
   'tm-player':d=>openPlayer(d.id,d.u),'tm-player-close':()=>closeSheet('tm-player'),
   'tm-remind':async()=>{const t='Pensez à remplir le questionnaire du matin sur Hevor (15 secondes) 💪';if(navigator.share){try{await navigator.share({text:t})}catch(e){}}else{try{await navigator.clipboard.writeText(t);toast('Message de rappel copié : colle-le dans le groupe de l\'équipe')}catch(e){toast(t)}}},
   'tm-wk':d=>{PW[d.id]=(PW[d.id]||0)+(+d.d);render()},
+  'tm-sper':d=>{SPER[d.id]=+d.v;render()},
   'tm-ev':d=>openEvent(d.id,d.e),'tm-ev-close':()=>closeSheet('tm-ev'),
   'tm-ev-new':d=>openEventEdit(d.id,null),'tm-ev-edit':d=>openEventEdit(d.id,d.e),'tm-eved-close':()=>{closeSheet('tm-eved');EV=null},
-  'tm-evtype':d=>{const v=evVals();EV.type=d.v;renderEventEdit(v)},
+  'tm-evtype':d=>{const v=evVals();EV.type=d.v;if(!EV.durTouched)v.dur=DEF_DUR[d.v]||90;renderEventEdit(v)},
   'tm-evdest':d=>{const v=evVals();EV.dest=d.v;renderEventEdit(v)},
   'tm-ev-save':(d,b)=>saveEvent(b),
   'tm-ev-del':d=>modal(`<h3>Supprimer ce créneau ?</h3><p class="muted" style="margin:0">Il disparaîtra du planning de tous les joueurs.</p><div class="acts"><button class="btn danger" data-act="tm-ev-del-yes" data-id="${d.id}" data-e="${d.e}">Supprimer</button><button class="btn ghost" data-act="modal-close">Annuler</button></div>`),
@@ -494,5 +552,6 @@ document.addEventListener('input',e=>{const t=e.target;
 document.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.evu!=null&&EV){t.checked?EV.sel.add(t.dataset.evu):EV.sel.delete(t.dataset.evu);const v=evVals();renderEventEdit(v);return}
   if(t.dataset.peu!=null&&PE){progVals();t.checked?PE.sel.add(t.dataset.peu):PE.sel.delete(t.dataset.peu);renderProgEdit();return}
+  if(t.id==='ev-dur'&&EV){EV.durTouched=true}
   if(t.id==='pe-ev'&&PE){progVals();PE.eventId=t.value;const e=dataOf(PE.tid).events.find(x=>x.id===t.value);if(e){PE.date=isoDate(e.start);if(PE.dest==='all')PE.dest='event'}else if(PE.dest==='event')PE.dest='all';renderProgEdit();return}
 });

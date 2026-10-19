@@ -46,7 +46,8 @@ service cloud.firestore {
     }
 
     function validTeam(d) {
-      return d.keys().hasOnly(['kind', 'name', 'club', 'sport', 'logo', 'theme', 'owner', 'ownerName', 'code', 'at'])
+      return d.keys().hasOnly(['kind', 'name', 'club', 'sport', 'logo', 'theme', 'owner', 'ownerName', 'code', 'at', 'max'])
+        && (!('max' in d) || (d.max is int && d.max >= 2 && d.max <= 200))
         && d.kind in ['club', 'coach'] && str(d.name, 60) && str(d.club, 80) && str(d.owner, 128)
         && (!('sport' in d) || str(d.sport, 40)) && (!('logo' in d) || str(d.logo, 200000))
         && (!('ownerName' in d) || str(d.ownerName, 60)) && (!('theme' in d) || (d.theme is map && d.theme.size() <= 20))

@@ -614,3 +614,53 @@ span.bz{border:0;box-shadow:none}span.bz.s1,span.bz.s2{background:#F2C230}span.b
   .folders{grid-template-columns:repeat(6,minmax(0,1fr))}
   .list{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* ===== v2.3 : club ===== */
+.wk{margin-bottom:14px}
+.wk+.sp-note{margin-bottom:10px}
+/* date et heure alignées sur les autres champs */
+.field input[type=date],.field input[type=time]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:46px;line-height:44px;text-align:left;color:var(--ink);font-family:inherit}
+.field input[type=date]::-webkit-date-and-time-value,.field input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0;min-height:44px;line-height:44px}
+.field input::-webkit-calendar-picker-indicator{opacity:.6;filter:invert(.85)}
+.sp-2>*{min-width:0}
+/* code d'invitation */
+.inv-code{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:38px;letter-spacing:.12em;text-align:center;padding:14px 10px;border-radius:14px;background:var(--surface2);border:1.5px dashed var(--line);user-select:all;-webkit-user-select:all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-code.off{opacity:.35;text-decoration:line-through}
+.sp-full{display:flex;gap:8px;align-items:flex-start;background:var(--pr-soft);color:var(--pr);border-radius:10px;padding:10px 12px;font-size:13.5px;font-weight:600}
+.sp-full svg{width:16px;height:16px;flex:none;margin-top:2px}
+.sp-max-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:10px;flex-wrap:wrap}
+.sp-max-row .m{display:flex;flex-direction:column;min-width:0}
+.sp-max{display:flex;gap:6px;align-items:center}
+.sp-max input{width:80px;min-height:42px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);padding:0 10px;font-size:16px;color:var(--ink);text-align:center}
+/* sélecteur d'équipe dans l'en-tête */
+.team-sw{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-align:left;padding:4px 8px 4px 4px;margin-left:-4px;border-radius:14px}
+.team-sw:hover{background:var(--surface)}
+.team-sw .m{display:flex;flex-direction:column;min-width:0}
+.team-sw .brand{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-sw>svg{width:18px;height:18px;flex:none;color:var(--muted)}
+.tsw-club{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.tsw-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px}
+.tsw-h .tlogo{width:24px;height:24px}
+/* stats club */
+.st-per{grid-template-columns:repeat(3,1fr);margin-bottom:12px}
+.tiles.st5{grid-template-columns:repeat(3,minmax(0,1fr))}
+.st-table{display:flex;flex-direction:column;gap:6px}
+.st-r{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(5,minmax(0,1fr));gap:6px;align-items:center;background:var(--surface);border-radius:12px;padding:10px 12px;text-align:left;width:100%;font-size:14px}
+.st-r span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-r .st-n{font-weight:600}
+.st-hd{background:none;padding-block:2px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+button.st-r:hover{background:var(--surface2)}
+@media (max-width:620px){
+  .st-hd{display:none}
+  .st-r{grid-template-columns:repeat(5,minmax(0,1fr));row-gap:4px}
+  .st-r .st-n{grid-column:1/-1}
+  .st-r span[data-l]{display:flex;flex-direction:column;font-size:15px;font-weight:600}
+  .st-r span[data-l]::before{content:attr(data-l);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700}
+}
+/* œil du mot de passe */
+.pw-wrap{position:relative;display:block}
+.pw-wrap input{padding-right:48px!important;width:100%}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:grid;place-items:center;color:var(--muted);border-radius:10px}
+.pw-eye:hover{color:var(--ink);background:var(--surface2)}
+.pw-eye svg{width:20px;height:20px}
+@media (min-width:960px){.tiles.st5{grid-template-columns:repeat(5,minmax(0,1fr))}}
