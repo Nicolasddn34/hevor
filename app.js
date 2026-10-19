@@ -541,11 +541,11 @@ function bootAccounts(){
 }
 function startApp(u){
   loadLocal(u?'hevor.v1:'+u.uid:'hevor.v1:local');
-  $('#tabs').hidden=false;buildIdx();passScrolled=false;render();if(S.active)ensureTick();if(!u)setSync('local');
+  $('#tabs').hidden=false;document.body.classList.add('has-nav');buildIdx();passScrolled=false;render();if(S.active)ensureTick();if(!u)setSync('local');
 }
 let loginMode='in',pendingConsent=0,pendingName=null;const LEGAL_V='2026-10-19b';
 function showLogin(msg){
-  $('#tabs').hidden=true;document.querySelectorAll('.sheet').forEach(e=>e.remove());closeModal();
+  $('#tabs').hidden=true;document.body.classList.remove('has-nav');document.querySelectorAll('.sheet').forEach(e=>e.remove());closeModal();
   const up=loginMode==='up',reset=loginMode==='reset';
   $('#view').innerHTML=`<div class="wrap"><div class="login"><div class="logo xl">${LOGO}</div><div><div class="brand">Hevor</div><div class="sub muted">${reset?'Reçois un lien pour choisir un nouveau mot de passe.':up?'Crée ton compte pour sauvegarder tes séances.':'Ton carnet de musculation. Connecte-toi pour retrouver tes séances.'}</div></div>
    <form id="login-form" novalidate>${up?`<div class="ed-grid"><div class="field"><label for="lg-first">Prénom</label><input id="lg-first" autocomplete="given-name" maxlength="30" required></div><div class="field"><label for="lg-last">Nom</label><input id="lg-last" autocomplete="family-name" maxlength="30" required></div></div><p class="small muted" style="margin:-4px 0 0">Ton nom reste privé. Il n'est visible que par les coachs et équipes que tu rejoins, pour qu'ils sachent qui tu es.</p>`:''}<div class="field"><label for="lg-mail">E-mail</label><input id="lg-mail" type="email" autocomplete="email" inputmode="email" required></div>
@@ -573,11 +573,12 @@ const isStandalone=()=>window.matchMedia&&matchMedia('(display-mode: standalone)
 function installHint(){
   if(isStandalone())return'';
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(!ios&&!/Android|Mobile/.test(navigator.userAgent)&&matchMedia('(pointer:fine)').matches)return `<div class="install"><div><b>Installe Hevor sur ton ordinateur.</b><br>Dans Chrome ou Edge : clique sur l'icône d'installation à droite de la barre d'adresse. Hevor s'ouvrira dans sa propre fenêtre.</div></div>`;
   return `<div class="install"><div><b>Installe Hevor sur ton écran d'accueil.</b><br>${ios?'Dans Safari : bouton Partager, puis « Sur l\'écran d\'accueil ».':'Dans Chrome : menu ⋮, puis « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».'}</div></div>`;
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.1.1';let delAsk=false;
+const APP_VERSION='2.2.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -854,7 +855,7 @@ function viewMore(){
    <div class="ed-grid">${stepper('Entre séries',st.restSet,'set-rs')}${stepper('Entre exercices',st.restExo,'set-re')}</div>
    <div class="set-row"><div><div style="font-weight:600">Bip et vibration</div><div class="small muted">À la fin de chaque temps de repos</div></div><button class="toggle" data-act="sound" aria-pressed="${!!st.sound}" aria-label="Bip et vibration"></button></div></section>
   <section class="card"><div class="h2">Mettre Hevor sur l'écran d'accueil</div>
-   <ol class="steps small"><li><b>iPhone :</b> dans Safari, bouton Partager puis « Sur l'écran d'accueil ».</li><li><b>Android :</b> dans Chrome, menu ⋮ puis « Installer l'application ».</li></ol>
+   <ol class="steps small"><li><b>iPhone :</b> dans Safari, bouton Partager puis « Sur l'écran d'accueil ».</li><li><b>Android :</b> dans Chrome, menu ⋮ puis « Installer l'application ».</li><li><b>Ordinateur :</b> dans Chrome ou Edge, icône d'installation à droite de la barre d'adresse.</li></ol>
    <p class="small muted" style="margin:8px 0 0">Une fois installée, Hevor s'ouvre même sans réseau. Les séances faites hors ligne partent sur ton compte au retour de la connexion.</p></section>
   <p class="small muted" style="text-align:center;margin:18px 0 0">Hevor · version ${APP_VERSION}</p></div>`;
 }
@@ -1357,7 +1358,8 @@ document.addEventListener('input',e=>{
   if(t.id==='pick-q'&&pick){pick.q=t.value;$('#pick-res').innerHTML=browseRes(pick,'pick');return}
 });
 document.addEventListener('change',e=>{if(e.target.id==='st-exo'){statsExo=e.target.value;render()}});
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.wi!=null)e.target.blur()});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.wi!=null)e.target.blur();
+  if(e.key==='Escape'&&($('#modal')||document.querySelector('.sheet'))){e.preventDefault();goBack()}});
 
 /* ---------- boot ---------- */
 // démarrage une fois tous les scripts chargés (espaces Club et Coach compris)
