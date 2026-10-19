@@ -35,12 +35,8 @@ function cQ(q){if(!q||!QID.test(q.id)||!QTYPES[q.t])return null;const o={id:q.id
 function cQuest(id,d){d=d||{};const when=QWHEN[d.when]?d.when:'morning';let body=false,rpe=false;
   const qs=(Array.isArray(d.qs)?d.qs:[]).slice(0,15).map(cQ).filter(q=>{if(!q)return false;if(q.t==='body'){if(body)return false;body=true}if(q.t==='rpe'){if(rpe||when!=='after')return false;rpe=true}return true});
   const aft=(Array.isArray(d.aft)?d.aft:[]).filter(t=>QAFT[t]);
-  return{id,title:cStr(d.title,60)||(when==='after'?'Ressenti après séance':'Questionnaire de santé'),when,aft:when==='after'?(aft.length?aft:['training','muscu']):[],on:d.on===true&&qs.length>0,qs,at:cNum(d.at,0,4102444800000,0)}}
-/* modèles proposés au coach */
+  return{id,title:cStr(d.title,60)||(when==='after'?'Ressenti après séance':'Questionnaire de santé'),when,aft:when==='after'?aft:[],on:d.on===true&&qs.length>0,qs,at:cNum(d.at,0,4102444800000,0)}}
 const QUEST_TPLS={
-  health:()=>({title:'Questionnaire de santé',when:'morning',qs:[{id:'mot',t:'scale',l:'Motivation',n:5,hi:'good',req:true},{id:'som',t:'scale',l:'Qualité du sommeil',n:5,hi:'good',req:true},{id:'fat',t:'scale',l:'Fatigue',n:5,hi:'bad',req:true},{id:'pz',t:'body',l:'Où as-tu mal ?',req:false}]}),
-  after:()=>({title:'Ressenti après séance',when:'after',aft:['training','muscu','match'],qs:[{id:'rpe',t:'rpe',l:"C'était dur ?",req:true},{id:'com',t:'text',l:'Un mot pour le coach',req:false}]}),
-  evening:()=>({title:'Bilan du soir',when:'evening',qs:[{id:'fat',t:'scale',l:'Fatigue',n:5,hi:'bad',req:true},{id:'pz',t:'body',l:'Où as-tu mal ?',req:false}]}),
   empty:()=>({title:'',when:'morning',qs:[]})
 };
 const questsOf=tid=>dataOf(tid).quests||[];
@@ -256,7 +252,7 @@ function viewTeamStats(tid){
   const ids=Object.keys(best);
   if(ids.length){const sel=SPX[tid]&&best[SPX[tid]]?SPX[tid]:ids.sort((a,b)=>best[b].w-best[a].w)[0];SPX[tid]=sel;
     h+=`<section class="card"><div class="field" style="margin-bottom:10px"><label for="tst-exo">Ma progression par exercice · ${perTxt(per)}</label><select id="tst-exo">${ids.map(id=>`<option value="${id}" ${id===sel?'selected':''}>${esc(best[id].n||exo(id).name)}</option>`).join('')}</select></div><canvas class="chart" id="c-tsx"></canvas></section>
-     <section><div class="h2">Mes records dans l'équipe</div><p class="small muted" style="margin:0 0 6px">La charge la plus lourde que tu as faite sur chaque exercice pendant les programmes du coach. C'est elle qui sert à calculer tes charges « % du record ».</p><div class="list">${ids.sort((a,b)=>best[b].w-best[a].w).slice(0,12).map(id=>{const e=exo(id,best[id].n);return `<div class="row"><div class="fig sm">${figSVG(e,1)}</div><div class="m"><div>${esc(best[id].n||e.name)}</div><small>${dShort(best[id].t)}</small></div><b class="num" style="color:var(--pr)">${fmtKg(best[id].w)}</b></div>`}).join('')}</div></section>`}
+     <section><div class="h2">Mes records</div><p class="small muted" style="margin:0 0 6px">La charge la plus lourde que tu as faite sur chaque exercice pendant les programmes du coach. C'est elle qui sert à calculer tes charges « % du record ».</p><div class="list">${ids.sort((a,b)=>best[b].w-best[a].w).slice(0,12).map(id=>{const e=exo(id,best[id].n);return `<div class="row"><div class="fig sm">${figSVG(e,1)}</div><div class="m"><div>${esc(best[id].n||e.name)}</div><small>${dShort(best[id].t)}</small></div><b class="num" style="color:var(--pr)">${fmtKg(best[id].w)}</b></div>`}).join('')}</div></section>`}
   else h+=`<p class="muted small">Tes records apparaîtront quand tu auras fait un programme de ton coach en notant tes charges.</p>`;
   return h;
 }
@@ -659,12 +655,9 @@ async function saveEvLoad(tid,e,rpe){
 /* --- coach : créer, activer et désactiver les questionnaires --- */
 let QE=null;
 const newQid=(tid)=>{let id;do{id='q'+Math.random().toString(36).slice(2,10).replace(/[^a-z0-9]/g,'')}while(!QSID.test(id)||questById(tid,id));return id};
-function openQuestNew(tid){
-  modal(`<h3>Nouveau questionnaire</h3><div class="legal-list" style="text-align:left">${[['health','Santé du matin','Motivation, sommeil, fatigue, douleurs · chaque matin'],['after','Ressenti après séance','Difficulté de 1 à 10 (sert à calculer la charge) · après chaque séance'],['evening','Bilan du soir','Fatigue et douleurs · chaque soir'],['empty','Questionnaire vide','Tu choisis tout']].map(([k,l,d])=>`<button class="row" data-act="tm-qe-tpl" data-id="${tid}" data-v="${k}"><div class="m"><div>${l}</div><small>${d}</small></div>${ICON.chev}</button>`).join('')}</div>
-   <div class="acts"><button class="btn ghost" data-act="modal-close">Annuler</button></div>`)}
 function openQuestEdit(tid,qid,tpl){
   const q=qid?questById(tid,qid):null,base=q||cQuest('',{...QUEST_TPLS[tpl||'empty'](),on:false});
-  QE={tid,id:q?q.id:null,legacy:!!(q&&q.legacy),title:q?q.title:QUEST_TPLS[tpl||'empty']().title,when:base.when,aft:new Set(base.aft.length?base.aft:['training','muscu']),on:q?q.on:true,qs:(q?q.qs:(QUEST_TPLS[tpl||'empty']().qs)).map(x=>({...x})),tpl:!q&&tpl&&tpl!=='empty'};
+  QE={tid,id:q?q.id:null,legacy:!!(q&&q.legacy),title:q?q.title:QUEST_TPLS[tpl||'empty']().title,when:base.when,aft:new Set(base.aft),on:q?q.on:true,qs:(q?q.qs:(QUEST_TPLS[tpl||'empty']().qs)).map(x=>({...x})),tpl:!q&&tpl&&tpl!=='empty'};
   renderQuestEdit();
 }
 function qeVals(){if(!QE)return;const t=$('#qe-title');if(t)QE.title=t.value.slice(0,60);QE.qs.forEach((q,i)=>{const l=$('#qe-l-'+i);if(l)q.l=l.value.slice(0,80);const u=$('#qe-u-'+i);if(u)q.u=u.value.slice(0,12)})}
@@ -686,7 +679,6 @@ function renderQuestEdit(){
    ${QE.when==='after'?`<div class="field"><span class="flabel">Après quelles séances ?</span><div class="chips left">${Object.entries(QAFT).map(([k,l])=>`<button class="chip-b" data-act="qe-aft" data-v="${k}" aria-pressed="${QE.aft.has(k)}">${l}</button>`).join('')}</div><p class="small muted" style="margin:0">Il apparaît sur le créneau du planning avec une pastille rouge, dès le début de la séance.</p></div>`
      :`<p class="small muted" style="margin:0">${QE.when==='morning'?'Il apparaît chaque jour en haut du planning de tes joueurs.':`Il apparaît chaque jour dans le planning de tes joueurs, à remplir à partir de ${EVENING_H}h.`}</p>`}
    <section class="card"><div class="set-row" style="padding:0"><div><div style="font-weight:700">${on?'Activé':'Désactivé'}</div><div class="small muted">${!n?'Ajoute au moins une question pour pouvoir l\'activer.':on?'Tes joueurs le voient dans leur planning et doivent y répondre.':'Tes joueurs ne le voient pas. Leurs anciennes réponses restent consultables.'}</div></div><button class="toggle" data-act="qe-on" aria-pressed="${on}" aria-label="Activer le questionnaire" ${n?'':'disabled'}></button></div></section>
-   ${QE.tpl?'<p class="small muted" style="margin:0">Voici un modèle pour démarrer : modifie, supprime ou ajoute les questions que tu veux.</p>':''}
    ${QE.qs.map(card).join('')||'<div class="card empty"><p style="margin:0">Aucune question. Ajoute ta première question.</p></div>'}
    ${n<15?`<button class="btn ghost block" data-act="qe-add">+ Ajouter une question</button>`:'<p class="small muted" style="margin:0">15 questions maximum.</p>'}
    ${QE.id?`<button class="linkbtn danger-link" data-act="qe-delq">Supprimer ce questionnaire</button>`:''}
@@ -788,7 +780,7 @@ Object.assign(ACT,{
   'q-zone':d=>{qVals();if(QS.pains[d.z])delete QS.pains[d.z];else QS.pains[d.z]=1;renderQuest()},
   'q-int':d=>{qVals();QS.pains[d.z]=+d.v;renderQuest()},
   'tm-qe':d=>{if(!d.q){SP.tab[d.id]='programs';PSUB[d.id]='quests';render();window.scrollTo(0,0);return}openQuestEdit(d.id,d.q)},'tm-qe-close':()=>{closeSheet('tm-qe');QE=null},
-  'tm-qe-new':d=>openQuestNew(d.id),'tm-qe-tpl':d=>{closeModal();openQuestEdit(d.id,null,d.v)},
+  'tm-qe-new':d=>openQuestEdit(d.id,null,'empty'),
   'tm-qon':(d,b)=>toggleQuest(d.id,d.q,b),
   'qe-on':()=>{qeVals();if(!QE.qs.length)return;QE.on=!QE.on;renderQuestEdit()},
   'qe-when':d=>{qeVals();QE.when=d.v;if(d.v!=='after')QE.qs=QE.qs.filter(q=>q.t!=='rpe');renderQuestEdit()},
