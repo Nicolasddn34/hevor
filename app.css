@@ -642,7 +642,7 @@ span.bz{border:0;box-shadow:none}span.bz.s1,span.bz.s2{background:#F2C230}span.b
 .tsw-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px}
 .tsw-h .tlogo{width:24px;height:24px}
 /* stats club */
-.st-per{grid-template-columns:repeat(3,1fr);margin-bottom:12px}
+.st-per{grid-template-columns:repeat(4,1fr);margin-bottom:12px}
 .tiles.st5{grid-template-columns:repeat(3,minmax(0,1fr))}
 .st-table{display:flex;flex-direction:column;gap:6px}
 .st-r{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(5,minmax(0,1fr));gap:6px;align-items:center;background:var(--surface);border-radius:12px;padding:10px 12px;text-align:left;width:100%;font-size:14px}
@@ -711,3 +711,23 @@ button.st-r:hover{background:var(--surface2)}
 .icon-btn.sm{width:32px;height:32px;background:var(--surface2);font-size:15px;font-weight:700}
 .icon-btn.sm:disabled{opacity:.35}
 .qe-o{display:flex;flex-direction:column;gap:6px}
+/* 2.6 : questionnaires multiples, pastille rouge, programmes du club */
+.seg.two{grid-template-columns:1fr 1fr}
+.st-sub{margin-bottom:4px}
+.sp-qline{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border-radius:12px;padding:8px 12px}
+.qchip{width:28px;height:24px;border-radius:8px;display:inline-grid;place-items:center;flex:none;font-size:11px;font-weight:800}
+.qchip svg{width:14px;height:14px}
+.qchip.ok{background:var(--ok-soft);color:var(--ok)}.qchip.no{background:#3A2222;color:#F0A9A6}.qchip.na{background:var(--surface2);color:var(--muted)}
+.qbadge{position:relative;background:var(--surface2);color:var(--ink)}
+.qbadge.ok{background:var(--ok-soft);color:var(--ok)}
+.qbadge svg{width:20px;height:20px}
+.rdot{position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%;background:#E5484D;box-shadow:0 0 0 2px var(--surface)}
+.qbadge-s{position:relative;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--surface2);flex:none}
+.qbadge-s.ok{background:var(--ok-soft);color:var(--ok)}.qbadge-s svg{width:20px;height:20px}.qbadge-s .rdot{top:-2px;right:-2px}
+.sp-qrow{gap:12px}
+.ev-quest{--ec:#E5484D}.ev-b:disabled{opacity:.6}
+.sp-quest{display:flex;align-items:center;gap:10px}.sp-quest .m{flex:1;min-width:0;text-align:left}
+.sp-quest .m small{display:block;color:var(--muted);font-size:13px}
+.r-off{background:var(--surface2);color:var(--muted)}
+.toggle:disabled{opacity:.4}
+.sp-wait .sp-consent{text-align:left;margin-top:8px}

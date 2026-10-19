@@ -598,7 +598,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.5.0';let delAsk=false;
+const APP_VERSION='2.6.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1291,7 +1291,7 @@ privacy:{t:'Confidentialité',h:()=>`
 <p>Pas de publicité, pas de revente de données, pas de profilage, pas de mesure d'audience, pas de cookies de suivi.</p>
 <h3>5. Qui a accès à tes données ?</h3>
 <p>Ton espace « Moi » : toi seul. Des règles d'accès empêchent tout autre utilisateur de le lire, même les coachs de tes équipes.</p>
-<p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton nom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses au questionnaire de santé.</li><li><b>Les autres joueurs et les spectateurs</b> voient seulement ton nom, ton poste et ton rôle. Les spectateurs voient aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
+<p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton nom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses aux questionnaires (santé, ressenti après les séances).</li><li><b>Les autres joueurs et le staff</b> voient seulement ton nom, ton poste et ton rôle. Le staff voit aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
 <p>Avec un coach indépendant (espace Coach) : ton coach voit ton nom, ton objectif, les séances faites dans cet espace et tes ressentis. Les autres clients ne voient rien de toi.</p>
 <p>Deux prestataires techniques interviennent :</p>
 <ul><li><b>Google (Firebase)</b> gère les comptes et stocke tes séances. Les séances sont stockées en France (Paris). Les données de compte peuvent être traitées aux États-Unis, dans le cadre du Data Privacy Framework UE–États-Unis et des clauses contractuelles types de la Commission européenne.</li>

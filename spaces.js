@@ -2,12 +2,12 @@
 /* =====================================================================
    Hevor — espaces Moi / Club / Coach
    « Moi » = l'appli perso (app.js), totalement privée : rien n'en sort.
-   « Club » = équipes (coach, joueur, spectateur). « Coach » = coach indépendant et ses clients.
+   « Club » = équipes (coach, joueur, staff). « Coach » = coach indépendant et ses clients.
    Chaque espace a ses propres données, son accueil et ses couleurs.
    ===================================================================== */
 const SP={doc:{teams:[],home:'auto',name:'',first:'',last:''},ready:false,cur:'moi',open:{club:null,coach:null},tab:{},T:{},D:{},booted:false,touched:false,unsub:{}};
 const MOI_TABS_HTML=document.querySelector('#tabs .in').innerHTML;
-const ROLE_L={pending:'En attente',player:'Joueur',coach:'Coach',spectator:'Spectateur',client:'Client'};
+const ROLE_L={pending:'En attente',player:'Joueur',coach:'Coach',spectator:'Staff',client:'Client'};
 const SPORTS=['Volley-ball','Handball','Football','Basket-ball','Rugby','Hockey','Water-polo','Athlétisme','Tennis','Natation','Cyclisme','Sports de combat','Autre'];
 const SPICON={
   user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-7 8-7s7 2.5 8 7"/></svg>',
@@ -257,8 +257,9 @@ function viewPending(tid){
   return `<div class="wrap">${spTop(T.team.name,T.team.club||'',teamLogo(T.team),teamsOf(SP.cur).length>1?'sp-list':'')}
    <div class="sp-wait"><div class="sp-wait-ic">${SPICON.clock}</div><h1>Demande envoyée</h1>
    <p>Tu as rejoint <b>${esc(T.team.name)}</b>${T.team.kind==='club'&&T.team.club?` du club ${esc(T.team.club)}`:''}. ${T.team.kind==='coach'?'Ton coach':'Un coach'} doit maintenant valider ton rôle.</p>
-   <div class="card sp-steps"><div class="ok">${ICON.check}<span>Code d'invitation valide</span></div><div class="cur"><i></i><span>Rôle en attente${T.team.kind==='club'?' : joueur, coach ou spectateur':''}</span></div><div class="todo"><i></i><span>Accès ${T.team.kind==='club'?"à l'équipe":'à ton coaching'}</span></div></div>
+   <div class="card sp-steps"><div class="ok">${ICON.check}<span>Code d'invitation valide</span></div><div class="cur"><i></i><span>Rôle en attente${T.team.kind==='club'?' : joueur, coach ou staff':''}</span></div><div class="todo"><i></i><span>Accès ${T.team.kind==='club'?"à l'équipe":'à ton coaching'}</span></div></div>
    <p class="small muted">Cet écran se met à jour tout seul dès que c'est validé. En attendant, tu ne vois aucune donnée ${T.team.kind==='club'?"de l'équipe":''}.</p>
+   ${T.team.kind==='club'&&typeof consentCard==='function'?(T.me.health?`<p class="small muted">${ICON.check} Accord donné pour les questionnaires de l'équipe : il ne te sera plus demandé.</p>`:consentCard(T,{title:'Questionnaires de l\'équipe (facultatif)',id:'h-ok',btn:`<button class="btn ghost block" data-act="h-consent" data-id="${tid}">Donner mon accord maintenant</button>`})):''}
    <button class="btn ghost block" data-act="sp-go" data-v="moi">Aller dans mon espace Moi</button><button class="linkbtn danger-link" data-act="sp-cancel-join" data-id="${tid}">Annuler ma demande</button></div></div>`;
 }
 
@@ -449,7 +450,7 @@ function settingsSection(tid){
 function membersSection(tid){
   const T=SP.T[tid],D=SP.D[tid]||{},ms=(D.members||[]),own=isTeamOwner(tid),act=ms.filter(m=>m.role!=='pending');
   let h=inviteCard(tid)+pendingBlock(tid);
-  const groups=T.team.kind==='club'?[['coach','Coachs'],['player','Joueurs'],['spectator','Spectateurs']]:[['coach','Coachs'],['client','Clients']];
+  const groups=T.team.kind==='club'?[['coach','Coachs'],['player','Joueurs'],['spectator','Staff']]:[['coach','Coachs'],['client','Clients']];
   h+=`<section><div class="h2">${T.team.kind==='club'?'Équipe':'Membres'} · ${act.length}</div>`;
   for(const [r,l] of groups){const g=act.filter(m=>m.role===r);if(!g.length)continue;
     h+=`<div class="small muted sp-gl">${l}</div><div class="list">${g.map(m=>`<button class="row sp-mem" ${own&&m.uid!==UID?`data-act="sp-mem" data-id="${tid}" data-u="${esc(m.uid)}"`:'disabled'}><div class="m"><div>${esc(m.name)}${m.uid===UID?' <span class="muted small">(toi)</span>':''}</div><small>${esc(m.poste||'')}</small></div>${T.team.owner===m.uid?`<span class="rpill r-owner">${SPICON.crown}Propriétaire</span>`:`<span class="rpill r-${m.role}">${ROLE_L[m.role]}</span>`}</button>`).join('')}</div>`}
@@ -461,9 +462,9 @@ function teamSettings(tid){
   return `<section class="card"><div class="h2">${T.team.kind==='club'?"Réglages de l'équipe":'Réglages'}</div><div class="legal-list">
    <button class="row" data-act="sp-me-edit" data-id="${tid}"><div class="m"><div>Mon profil ${T.team.kind==='club'?"d'équipe":''}</div><small>${esc(T.me.name)}${T.me.poste?' · '+esc(T.me.poste):''}</small></div>${ICON.chev}</button>
    ${own&&T.team.kind==='club'?`<button class="row" data-act="sp-team-edit" data-id="${tid}"><div class="m"><div>Modifier l'équipe</div><small>Nom, club, logo et couleurs</small></div>${ICON.chev}</button>`:''}
-   ${T.team.kind==='club'&&T.me.role==='coach'&&typeof questOf==='function'?(()=>{const Q=questOf(tid);return `<button class="row" data-act="tm-qe" data-id="${tid}"><div class="m"><div>Questionnaire de santé</div><small>${Q.on?`Activé · ${Q.qs.length} question${Q.qs.length>1?'s':''}`:Q.qs.length?'Désactivé':'Pas encore créé'}</small></div>${ICON.chev}</button>`})():''}
+   ${T.team.kind==='club'&&T.me.role==='coach'&&typeof questsOf==='function'?(()=>{const Qs=questsOf(tid),n=Qs.filter(q=>q.on).length;return `<button class="row" data-act="tm-qe" data-id="${tid}"><div class="m"><div>Questionnaires</div><small>${Qs.length?`${n} activé${n>1?'s':''} sur ${Qs.length} · dans l'onglet Programmes`:'Aucun questionnaire · à créer dans l\'onglet Programmes'}</small></div>${ICON.chev}</button>`})():''}
    ${own?`<button class="row" data-act="sp-transfer" data-id="${tid}"><div class="m"><div>Transférer la propriété</div><small>À un autre coach ${T.team.kind==='club'?"de l'équipe":''}</small></div>${ICON.chev}</button>`:''}
-   ${T.team.kind==='club'&&T.me.role==='player'?`<button class="row" data-act="sp-health" data-id="${tid}"><div class="m"><div>Mes réponses aux questionnaires</div><small>${T.me.health?'Consentement donné · tu peux le retirer':'Aucun consentement donné'}</small></div>${ICON.chev}</button>`:''}
+   ${T.team.kind==='club'&&T.me.role==='player'?`<button class="row" data-act="sp-health" data-id="${tid}"><div class="m"><div>Mes réponses aux questionnaires</div><small>${T.me.health?'Accord donné pour tous les questionnaires · tu peux le retirer':'Accord pas encore donné'}</small></div>${ICON.chev}</button>`:''}
    </div>${own?`<button class="linkbtn danger-link" data-act="sp-del-team" data-id="${tid}">Supprimer ${T.team.kind==='club'?"l'équipe":"l'espace coaching"}</button>`:`<button class="linkbtn danger-link" data-act="sp-leave" data-id="${tid}">Quitter ${T.team.kind==='club'?"l'équipe":'ce coaching'}</button>`}</section>`;
 }
 async function acceptMember(tid,uid){
@@ -481,7 +482,7 @@ function renderMember(){
   const {tid,uid}=SPM.open,T=SP.T[tid],m=(SP.D[tid]?.members||[]).find(x=>x.uid===uid);if(!m){closeSheet('sp-mem');return}
   openSheet('sp-mem',sheetHead(m.name,'sp-mem-close')+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="field"><span class="flabel">Rôle</span><div class="seg" style="grid-template-columns:repeat(${rolesFor(T.team).length},1fr)">${rolesFor(T.team).map(r=>`<button data-act="sp-mrole" data-r="${r}" aria-pressed="${SPM.open.role===r}">${ROLE_L[r]}</button>`).join('')}</div></div>
-   <p class="small muted" style="margin:0">${SPM.open.role==='spectator'?"Un spectateur voit seulement la liste de l'équipe et le planning. Aucune donnée de forme ni de santé.":SPM.open.role==='coach'?"Un coach voit l'effectif, les questionnaires, les ressentis et gère le planning et les programmes.":SPM.open.role==='client'?'Un client reçoit tes programmes et te partage ses séances et ressentis.':'Un joueur voit son planning, ses programmes et remplit ses questionnaires.'}</p>
+   <p class="small muted" style="margin:0">${SPM.open.role==='spectator'?"Un membre du staff voit seulement la liste de l'équipe et le planning. Aucune donnée de forme ni de santé.":SPM.open.role==='coach'?"Un coach voit l'effectif, les questionnaires, les ressentis et gère le planning et les programmes.":SPM.open.role==='client'?'Un client reçoit tes programmes et te partage ses séances et ressentis.':'Un joueur voit son planning, ses programmes et remplit ses questionnaires.'}</p>
    <div class="field"><label for="mm-poste">${T.team.kind==='club'?'Poste':'Objectif'}</label><input id="mm-poste" value="${esc(m.poste)}" maxlength="40" autocomplete="off"></div>
    ${m.role==='coach'?`<button class="btn ghost" data-act="sp-make-owner" data-id="${tid}" data-u="${esc(uid)}">${SPICON.crown} Nommer propriétaire</button>`:''}
    ${SPM.open.confirm?`<div class="confirm"><p>Retirer ${esc(m.name)} ${T.team.kind==='club'?"de l'équipe":'de ton coaching'} ? Il n'aura plus accès à rien.</p><div class="r"><button class="btn ghost" data-act="sp-mrm-no">Annuler</button><button class="btn danger" data-act="sp-mrm-yes">Retirer</button></div></div>`:`<button class="btn danger" data-act="sp-mrm">Retirer ${T.team.kind==='club'?"de l'équipe":'du coaching'}</button>`}</div></div>
@@ -540,7 +541,7 @@ async function teamSave(){
 async function delDocs(qry){const s=await qry.get();for(let i=0;i<s.docs.length;i+=400){const b=DB.batch();s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}}
 async function deleteTeam(tid){
   const T=SP.T[tid].team;
-  for(const c of ['events','programs','wellness','logs'])await delDocs(subCol(tid,c));
+  for(const c of ['events','programs','wellness','logs','quests'])await delDocs(subCol(tid,c));
   const ms=await subCol(tid,'members').get();for(const d of ms.docs)if(d.id!==UID)await d.ref.delete();
   if(T.code){try{await inviteRef(T.code).delete()}catch(e){}}
   try{await DB.doc(`teams/${tid}/config/quest`).delete()}catch(e){}

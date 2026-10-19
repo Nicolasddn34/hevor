@@ -93,7 +93,7 @@ service cloud.firestore {
           || (uid != me() && exists(tpath(tid)) && teamOwner(tid) == me()));
       }
 
-      // Planning : coachs et spectateurs voient tout, joueurs et clients seulement les créneaux où ils sont convoqués
+      // Planning : coachs et staff voient tout, joueurs et clients seulement les créneaux où ils sont convoqués
       match /events/{eid} {
         allow read: if hasRole(tid, ['coach', 'spectator']) || (hasRole(tid, ['player', 'client']) && me() in resource.data.invitees);
         allow create, update: if hasRole(tid, ['coach'])
@@ -103,16 +103,26 @@ service cloud.firestore {
           && request.resource.data.invitees.size() <= 200 && (!('video' in request.resource.data) || str(request.resource.data.video, 500));
         allow delete: if hasRole(tid, ['coach']);
       }
-      // Programmes du prépa : jamais visibles par les spectateurs
+      // Programmes du prépa : dans un club, visibles par tous les joueurs ; chez un coach indépendant, par les clients destinataires. Jamais par le staff
       match /programs/{pid} {
-        allow read: if hasRole(tid, ['coach']) || (hasRole(tid, ['player', 'client']) && me() in resource.data.invitees);
+        allow read: if hasRole(tid, ['coach', 'player']) || (hasRole(tid, ['client']) && me() in resource.data.invitees);
         allow create, update: if hasRole(tid, ['coach'])
           && request.resource.data.keys().hasOnly(['title', 'date', 'eventId', 'items', 'invitees', 'note', 'by', 'at'])
           && str(request.resource.data.title, 80) && request.resource.data.items is list && request.resource.data.items.size() <= 40
           && request.resource.data.invitees is list && request.resource.data.invitees.size() <= 200;
         allow delete: if hasRole(tid, ['coach']);
       }
-      // Questionnaire de santé créé par les coachs : lisible par les coachs et les joueurs, modifiable par les coachs
+      // Questionnaires créés par les coachs (matin, soir, après séance) : lisibles par les coachs et les joueurs
+      match /quests/{qid} {
+        allow read: if hasRole(tid, ['coach', 'player']);
+        allow create, update: if hasRole(tid, ['coach']) && qid.matches('^[A-Za-z0-9]{1,16}$')
+          && request.resource.data.keys().hasOnly(['title', 'when', 'aft', 'on', 'qs', 'at', 'by'])
+          && str(request.resource.data.title, 60) && request.resource.data.when in ['morning', 'evening', 'after']
+          && request.resource.data.aft is list && request.resource.data.aft.size() <= 6
+          && request.resource.data.on is bool && request.resource.data.qs is list && request.resource.data.qs.size() <= 15;
+        allow delete: if hasRole(tid, ['coach']);
+      }
+      // Ancien questionnaire unique (avant la version 2.6) : lu puis remplacé par /quests/quest
       match /config/{cid} {
         allow read: if hasRole(tid, ['coach', 'player']);
         allow create, update: if hasRole(tid, ['coach']) && cid == 'quest'
@@ -120,23 +130,31 @@ service cloud.firestore {
           && request.resource.data.on is bool && request.resource.data.qs is list && request.resource.data.qs.size() <= 15;
         allow delete: if hasRole(tid, ['coach']);
       }
-      // Réponses au questionnaire de santé (données de santé) : seulement le joueur concerné et les coachs de l'équipe
+      // Réponses aux questionnaires (données de santé) : seulement le joueur concerné et les coachs de l'équipe
+      // identifiant : uid_questionnaire_jour (matin, soir) ou uid_questionnaire_créneau (après séance)
+      function wellKey(d, wid) {
+        return (!('qid' in d) && !('ev' in d) && wid == me() + '_' + d.day)
+          || (('qid' in d) && d.qid is string && d.qid.matches('^[A-Za-z0-9]{1,16}$') && (
+            (!('ev' in d) && wid == me() + '_' + d.qid + '_' + d.day)
+            || (('ev' in d) && d.ev is string && d.ev.matches('^[A-Za-z0-9_-]{1,48}$') && wid == me() + '_' + d.qid + '_' + d.ev)));
+      }
       match /wellness/{wid} {
         allow read: if signed() && (resource.data.uid == me() || hasRole(tid, ['coach']));
         allow create, update: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
           && get(mpath(tid, me())).data.get('health', 0) != 0
-          && wid == me() + '_' + request.resource.data.day && request.resource.data.day.matches('^[0-9]{8}$')
-          && request.resource.data.keys().hasOnly(['uid', 'day', 'at', 'ans', 'pains'])
+          && request.resource.data.day is string && request.resource.data.day.matches('^[0-9]{8}$') && wellKey(request.resource.data, wid)
+          && request.resource.data.keys().hasOnly(['uid', 'qid', 'ev', 'day', 'at', 'ans', 'pains'])
           && request.resource.data.ans is map && request.resource.data.ans.size() <= 20
           && request.resource.data.pains is map && request.resource.data.pains.size() <= 40 && request.resource.data.pains.values().hasOnly([1, 2, 3, 4, 5]);
         allow delete: if signed() && (resource.data.uid == me() || teamOwner(tid) == me());
       }
-      // Ressentis et séances faites dans l'espace : le joueur concerné et les coachs (qui peuvent ajouter un retour)
+      // Séances faites dans l'espace et ressentis : le joueur concerné et les coachs (qui peuvent ajouter un retour)
       match /logs/{lid} {
         allow read: if signed() && (resource.data.uid == me() || hasRole(tid, ['coach']));
         allow create: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
           && request.resource.data.keys().hasOnly(['uid', 'kind', 'eventId', 'programId', 'title', 'at', 'dur', 'rpe', 'load', 'comment', 'items'])
-          && request.resource.data.rpe is int && request.resource.data.rpe >= 1 && request.resource.data.rpe <= 10
+          // la difficulté est facultative : dans un club, elle vient du questionnaire « après la séance »
+          && (!('rpe' in request.resource.data) || (request.resource.data.rpe is int && request.resource.data.rpe >= 1 && request.resource.data.rpe <= 10))
           && request.resource.data.dur is int && request.resource.data.dur >= 0 && request.resource.data.dur <= 600
           && (!('comment' in request.resource.data) || str(request.resource.data.comment, 500))
           && (!('items' in request.resource.data) || (request.resource.data.items is list && request.resource.data.items.size() <= 40));
