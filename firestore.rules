@@ -1,17 +1,129 @@
 rules_version = '2';
+// Règles de sécurité Hevor : à coller dans Firebase > Firestore Database > Règles, puis « Publier ».
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isOwner(uid) { return request.auth != null && request.auth.uid == uid; }
-    // Documents de l'utilisateur : meta (séances types, exercices perso, réglages), active (séance en cours), profile
+    function signed() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function isOwner(uid) { return signed() && me() == uid; }
+    function str(v, n) { return v is string && v.size() <= n; }
+    function num(v) { return v is int || v is float; }
+    function tpath(tid) { return /databases/$(database)/documents/teams/$(tid); }
+    function mpath(tid, uid) { return /databases/$(database)/documents/teams/$(tid)/members/$(uid); }
+    function isMem(tid) { return signed() && exists(mpath(tid, me())); }
+    function role(tid) { return get(mpath(tid, me())).data.role; }
+    function hasRole(tid, roles) { return isMem(tid) && role(tid) in roles; }
+    function teamOwner(tid) { return get(tpath(tid)).data.owner; }
+
+    // ===== Espace « Moi » : chaque utilisateur n'accède qu'à ses propres données =====
+    // meta (séances types, exercices perso, réglages), active (séance en cours), profile, spaces (liste de ses équipes)
     match /data/users/{uid}/{doc} {
-      allow read, delete: if isOwner(uid) && doc in ['meta', 'active', 'profile'];
-      allow create, update: if isOwner(uid) && doc in ['meta', 'active', 'profile'] && request.resource.data.keys().size() <= 10;
+      allow read, delete: if isOwner(uid) && doc in ['meta', 'active', 'profile', 'spaces'];
+      allow create, update: if isOwner(uid) && doc in ['meta', 'active', 'profile', 'spaces'] && request.resource.data.keys().size() <= 10;
     }
     // Séances terminées
     match /data/users/{uid}/profile/sessions/{sid} {
       allow read, delete: if isOwner(uid);
       allow create, update: if isOwner(uid) && sid.matches('^[A-Za-z0-9_-]{1,48}$') && request.resource.data.id == sid && request.resource.data.keys().size() <= 12;
     }
+
+    // ===== Espaces « Club » et « Coach » =====
+    // Code d'invitation : lisible par toute personne connectée qui a le code (il ne contient que le nom de l'équipe)
+    match /invites/{code} {
+      allow get: if signed();
+      // création, ou mise à jour du nom de l'équipe par son propriétaire
+      allow create, update: if signed() && code.matches('^[A-Z0-9]{6,12}$')
+        && request.resource.data.keys().hasOnly(['tid', 'name', 'club', 'kind', 'at'])
+        && str(request.resource.data.name, 60) && str(request.resource.data.club, 80)
+        && getAfter(tpath(request.resource.data.tid)).data.owner == me()
+        && getAfter(tpath(request.resource.data.tid)).data.code == code;
+      allow delete: if signed() && get(tpath(resource.data.tid)).data.owner == me();
+    }
+
+    function validTeam(d) {
+      return d.keys().hasOnly(['kind', 'name', 'club', 'sport', 'logo', 'theme', 'owner', 'ownerName', 'code', 'at'])
+        && d.kind in ['club', 'coach'] && str(d.name, 60) && str(d.club, 80) && str(d.owner, 128)
+        && (!('sport' in d) || str(d.sport, 40)) && (!('logo' in d) || str(d.logo, 200000))
+        && (!('ownerName' in d) || str(d.ownerName, 40)) && (!('theme' in d) || d.theme is map)
+        && str(d.code, 12);
+    }
+    match /teams/{tid} {
+      allow get: if isMem(tid);
+      allow create: if signed() && tid.matches('^[A-Za-z0-9_-]{1,48}$') && validTeam(request.resource.data)
+        && request.resource.data.owner == me() && getAfter(mpath(tid, me())).data.role == 'coach';
+      // Seul le propriétaire modifie l'équipe ; il ne peut transmettre la propriété qu'à un coach
+      allow update: if signed() && resource.data.owner == me() && validTeam(request.resource.data)
+        && request.resource.data.kind == resource.data.kind
+        && (request.resource.data.owner == me() || get(mpath(tid, request.resource.data.owner)).data.role == 'coach');
+      allow delete: if signed() && resource.data.owner == me();
+
+      function validMember(d, uid) {
+        return d.keys().hasOnly(['uid', 'name', 'role', 'poste', 'code', 'at', 'health'])
+          && d.uid == uid && str(d.name, 40) && (!('poste' in d) || str(d.poste, 40))
+          && d.role in ['pending', 'player', 'coach', 'spectator', 'client'];
+      }
+      match /members/{uid} {
+        // Les clients d'un coach indépendant ne voient pas les autres clients
+        allow get: if signed() && (uid == me() || hasRole(tid, ['coach', 'player', 'spectator']));
+        allow list: if hasRole(tid, ['coach', 'player', 'spectator']);
+        allow create: if signed() && uid == me() && validMember(request.resource.data, uid) && (
+          // rejoindre avec un code valide : on arrive « en attente »
+          (request.resource.data.role == 'pending' && str(request.resource.data.code, 12)
+            && get(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.tid == tid)
+          // le créateur de l'équipe devient coach à la création
+          || (request.resource.data.role == 'coach' && !exists(tpath(tid)) && getAfter(tpath(tid)).data.owner == me()));
+        allow update: if signed() && validMember(request.resource.data, uid) && (
+          // le propriétaire attribue les rôles (et ne peut pas cesser d'être coach)
+          (teamOwner(tid) == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'poste'])
+            && request.resource.data.role in ['player', 'coach', 'spectator', 'client']
+            && (uid != me() || request.resource.data.role == 'coach'))
+          // chacun modifie son nom, son poste et son consentement
+          || (uid == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'poste', 'health'])));
+        allow delete: if signed() && (
+          (uid == me() && (!exists(tpath(tid)) || teamOwner(tid) != me()))
+          || (uid != me() && exists(tpath(tid)) && teamOwner(tid) == me()));
+      }
+
+      // Planning : coachs et spectateurs voient tout, joueurs et clients seulement les créneaux où ils sont convoqués
+      match /events/{eid} {
+        allow read: if hasRole(tid, ['coach', 'spectator']) || (hasRole(tid, ['player', 'client']) && me() in resource.data.invitees);
+        allow create, update: if hasRole(tid, ['coach'])
+          && request.resource.data.keys().hasOnly(['type', 'title', 'start', 'dur', 'place', 'invitees', 'video', 'by', 'at'])
+          && str(request.resource.data.title, 80) && num(request.resource.data.start) && request.resource.data.invitees is list
+          && request.resource.data.invitees.size() <= 200 && (!('video' in request.resource.data) || str(request.resource.data.video, 500));
+        allow delete: if hasRole(tid, ['coach']);
+      }
+      // Programmes du prépa : jamais visibles par les spectateurs
+      match /programs/{pid} {
+        allow read: if hasRole(tid, ['coach']) || (hasRole(tid, ['player', 'client']) && me() in resource.data.invitees);
+        allow create, update: if hasRole(tid, ['coach'])
+          && request.resource.data.keys().hasOnly(['title', 'date', 'eventId', 'items', 'invitees', 'note', 'by', 'at'])
+          && str(request.resource.data.title, 80) && request.resource.data.items is list && request.resource.data.items.size() <= 40
+          && request.resource.data.invitees is list && request.resource.data.invitees.size() <= 200;
+        allow delete: if hasRole(tid, ['coach']);
+      }
+      // Questionnaire du matin (données de santé) : seulement le joueur concerné et les coachs de l'équipe
+      match /wellness/{wid} {
+        allow read: if signed() && (resource.data.uid == me() || hasRole(tid, ['coach']));
+        allow create, update: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
+          && wid == me() + '_' + request.resource.data.day && request.resource.data.day.matches('^[0-9]{8}$')
+          && request.resource.data.keys().hasOnly(['uid', 'day', 'at', 'mot', 'som', 'pains'])
+          && request.resource.data.pains is map && request.resource.data.pains.size() <= 40;
+        allow delete: if signed() && (resource.data.uid == me() || teamOwner(tid) == me());
+      }
+      // Ressentis et séances faites dans l'espace : le joueur concerné et les coachs (qui peuvent ajouter un retour)
+      match /logs/{lid} {
+        allow read: if signed() && (resource.data.uid == me() || hasRole(tid, ['coach']));
+        allow create: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
+          && request.resource.data.keys().hasOnly(['uid', 'kind', 'eventId', 'programId', 'title', 'at', 'dur', 'rpe', 'load', 'comment', 'items'])
+          && (!('comment' in request.resource.data) || str(request.resource.data.comment, 500))
+          && (!('items' in request.resource.data) || (request.resource.data.items is list && request.resource.data.items.size() <= 40));
+        allow update: if signed() && (
+          (resource.data.uid == me() && request.resource.data.uid == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rpe', 'dur', 'load', 'comment']))
+          || (hasRole(tid, ['coach']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['note', 'noteAt']) && str(request.resource.data.note, 500)));
+        allow delete: if signed() && (resource.data.uid == me() || teamOwner(tid) == me());
+      }
+    }
+
     // Tout le reste est interdit
     match /{document=**} { allow read, write: if false; }
   }
