@@ -103,7 +103,6 @@ function renderTeam(tid){
   if(D.err&&!D.members.length&&!D.events.length)h+=`<div class="card sp-warn">${SPICON.warn}<span>Certaines données n'ont pas pu être chargées. Vérifie ta connexion.</span></div>`;
   h+=tab==='effectif'?viewEffectif(tid):tab==='planning'?viewPlanning(tid):tab==='programs'?viewPrograms(tid):tab==='members'?membersSection(tid):tab==='team'?viewRoster(tid):viewPlayerHome(tid);
   $('#view').innerHTML=h+'</div>';
-  if(tab==='effectif')requestAnimationFrame(()=>{});
 }
 
 /* --- coach : effectif --- */
@@ -128,7 +127,7 @@ function viewEffectif(tid){
 }
 function openPlayer(tid,uid){
   const D=dataOf(tid),m=D.members.find(x=>x.uid===uid);if(!m)return;
-  const {s,st,w}=playerStatus(tid,uid),now=Date.now();
+  const {s,st}=playerStatus(tid,uid),now=Date.now();
   const well7=D.wellness.filter(x=>x.uid===uid&&x.day>=dayKey(now-6*DAY));
   const som=well7.length?well7.reduce((a,x)=>a+x.som,0)/well7.length:null;
   const pains={};well7.forEach(x=>{for(const k in x.pains)pains[k]=Math.max(pains[k]||0,x.pains[k])});

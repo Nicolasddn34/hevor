@@ -563,10 +563,11 @@ async function loginSubmit(e){
   e.preventDefault();const mail=$('#lg-mail').value.trim(),pass=$('#lg-pass')?.value||'',err=$('#lg-err'),btn=e.target.querySelector('button[type=submit]');
   err.textContent='';
   if(loginMode==='up'){const fi=($('#lg-first').value||'').trim().replace(/\s+/g,' ').slice(0,30),la=($('#lg-last').value||'').trim().replace(/\s+/g,' ').slice(0,30);if(!fi||!la){err.textContent='Indique ton prénom et ton nom.';return}pendingName={first:fi,last:la};if(pass.length<8){err.textContent='Choisis un mot de passe d\'au moins 8 caractères.';return}if(!$('#lg-ok').checked){err.textContent='Accepte les conditions d\'utilisation pour créer ton compte.';return}pendingConsent=Date.now()}
+  if(loginMode!=='up'){pendingName=null}
   btn.disabled=true;
   try{if(loginMode==='reset'){await fbAuth.sendPasswordResetEmail(mail);loginMode='in';showLogin('Lien envoyé. Regarde tes e-mails puis connecte-toi.');return}
     if(loginMode==='up')await fbAuth.createUserWithEmailAndPassword(mail,pass);else await fbAuth.signInWithEmailAndPassword(mail,pass);}
-  catch(x){err.textContent=AUTHERR[x&&x.code]||'Connexion impossible. Réessaie.';btn.disabled=false}
+  catch(x){pendingName=null;pendingConsent=0;err.textContent=AUTHERR[x&&x.code]||'Connexion impossible. Réessaie.';btn.disabled=false}
 }
 const isStandalone=()=>window.matchMedia&&matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function installHint(){
@@ -576,7 +577,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.1.0';let delAsk=false;
+const APP_VERSION='2.1.1';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';

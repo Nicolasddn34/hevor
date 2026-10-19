@@ -91,7 +91,7 @@ function spacesReset(){Object.values(SP.unsub).forEach(f=>{try{f()}catch(e){}});
 /* l'attente d'un rôle se met à jour toute seule */
 function watchPending(){
   for(const tid of SP.doc.teams){const T=SP.T[tid];if(!T||T.me.role!=='pending'||SP.unsub[tid])continue;
-    try{SP.unsub[tid]=memRef(tid,UID).onSnapshot(s=>{if(!s.exists){return}const m=cMember(s.data());const was=SP.T[tid]?.me?.role;if(SP.T[tid])SP.T[tid].me=m;
+    try{SP.unsub[tid]=memRef(tid,UID).onSnapshot(s=>{if(!s.exists){try{SP.unsub[tid]()}catch(e){}delete SP.unsub[tid];if(SP.T[tid]&&SP.T[tid].me.role==='pending'){const nm=SP.T[tid].team.name;afterGone(tid,`Ta demande pour ${nm} n'a pas été acceptée`)}return}const m=cMember(s.data());const was=SP.T[tid]?.me?.role;if(SP.T[tid])SP.T[tid].me=m;
       if(m.role!=='pending'){try{SP.unsub[tid]()}catch(e){}delete SP.unsub[tid];if(was==='pending'){delete SP.D[tid];if(curTid()===tid){render();toast(`Ton coach t'a ajouté comme ${ROLE_L[m.role].toLowerCase()}`)}}}},()=>{})}catch(e){}}
 }
 
@@ -433,7 +433,7 @@ async function removeMember(tid,uid,msg){
   try{await memRef(tid,uid).delete();SP.D[tid].members=(SP.D[tid].members||[]).filter(m=>m.uid!==uid);closeSheet('sp-mem');render();toast(msg||'Membre retiré')}catch(e){toast('Action impossible pour le moment.')}
 }
 function openMember(tid,uid){
-  const T=SP.T[tid],m=(SP.D[tid]?.members||[]).find(x=>x.uid===uid);if(!m)return;SPM.open={tid,uid,role:m.role,confirm:false};renderMember()}
+  const m=(SP.D[tid]?.members||[]).find(x=>x.uid===uid);if(!m)return;SPM.open={tid,uid,role:m.role,confirm:false};renderMember()}
 function renderMember(){
   const {tid,uid}=SPM.open,T=SP.T[tid],m=(SP.D[tid]?.members||[]).find(x=>x.uid===uid);if(!m){closeSheet('sp-mem');return}
   openSheet('sp-mem',sheetHead(m.name,'sp-mem-close')+`<div class="sheet-b"><div class="wrap sp-col">
