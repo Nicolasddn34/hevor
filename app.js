@@ -8,7 +8,7 @@ const fmtN=n=>(Math.round(n*10)/10).toLocaleString('fr-FR');
 const fmtKg=n=>fmtN(n)+' kg';
 const numStr=n=>String(Math.round(n*10)/10).replace('.',',');
 const parseW=v=>{if(v===''||v==null)return null;const n=parseFloat(String(v).replace(',','.'));return isFinite(n)&&n>=0?n:null};
-const mmss=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const mmss=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=String(s%60).padStart(2,'0');return h?h+':'+String(m).padStart(2,'0')+':'+r:m+':'+r};
 const dfr=t=>new Date(t).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
 const dfull=t=>new Date(t).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
 const sod=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
@@ -444,12 +444,12 @@ const okId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,48}$/.test(v);
 const cStr=(v,max)=>typeof v==='string'?v.replace(/[\u0000-\u001f\u007f]/g,'').slice(0,max):'';
 const cNum=(v,min,max,def)=>{const n=Number(v);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):def};
 const MODES=['reps','max','time'];
-function cTplItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||undefined,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,900,60)),restSet:Math.round(cNum(it.restSet,0,600,90)),restExo:Math.round(cNum(it.restExo,0,600,120))}}
+function cTplItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||undefined,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),restSet:Math.round(cNum(it.restSet,0,600,90)),restExo:Math.round(cNum(it.restExo,0,600,120))}}
 function cTemplate(t){if(!t||!okId(t.id))return null;return{id:t.id,name:cStr(t.name,60)||'Ma séance',items:(Array.isArray(t.items)?t.items:[]).slice(0,40).map(cTplItem).filter(Boolean)}}
 function cCustom(e){if(!e||!okId(e.id))return null;return{id:e.id,name:cStr(e.name,60)||'Exercice',cat:CATS.some(c=>c.id===e.cat)?e.cat:'pecs',eq:EQ[e.eq]?e.eq:'C',pat:PAT[e.pat]?e.pat:'squat'}}
 function cSession(x){if(!x||!okId(x.id))return null;
   const items=(Array.isArray(x.items)?x.items:[]).slice(0,60).map(it=>{if(!it||!okId(it.exoId))return null;const done=Math.round(cNum(it.done,0,20,0));
-    return{exoId:it.exoId,name:cStr(it.name,80),weight:it.weight==null?null:cNum(it.weight,0,2000,0),sets:Math.round(cNum(it.sets,1,20,1)),reps:Math.round(cNum(it.reps,0,100,0)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:it.dur==null?null:Math.round(cNum(it.dur,0,900,60)),
+    return{exoId:it.exoId,name:cStr(it.name,80),weight:it.weight==null?null:cNum(it.weight,0,2000,0),sets:Math.round(cNum(it.sets,1,20,1)),reps:Math.round(cNum(it.reps,0,100,0)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:it.dur==null?null:Math.round(cNum(it.dur,0,14400,60)),
       repsDone:Array.isArray(it.repsDone)?it.repsDone.slice(0,20).map(v=>Math.round(cNum(v,0,999,0))):null,totalReps:Math.round(cNum(it.totalReps,0,20000,0)),done}}).filter(Boolean);
   const prs=(Array.isArray(x.prs)?x.prs:[]).slice(0,60).filter(p=>p&&okId(p.exoId)).map(p=>({exoId:p.exoId,name:cStr(p.name,80),w:cNum(p.w,0,2000,0),prev:cNum(p.prev,0,2000,0)}));
   return{id:x.id,tplId:okId(x.tplId)?x.tplId:null,name:cStr(x.name,60)||'Séance',date:cNum(x.date,946684800000,4102444800000,Date.now()),dur:Math.round(cNum(x.dur,0,86400,0)),items,tonnage:cNum(x.tonnage,0,1e7,0),prs}}
@@ -527,14 +527,31 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 /* ---------- accounts (Firebase) ---------- */
 const FBC=window.HEVOR_FIREBASE||null;let fbAuth=null,fs=null,USER=null;
 function fbReady(){return !!(window.firebase&&FBC&&FBC.apiKey&&!/^A_REMPLIR/.test(FBC.apiKey))}
+/* Plusieurs comptes sur le même appareil : chaque compte a sa propre instance Firebase,
+   donc sa propre connexion gardée en mémoire. Changer de compte = recharger sur l'autre instance, sans retaper le mot de passe. */
+const ACC_RE=/^(\[DEFAULT\]|acc-[a-z0-9]{4,16})$/,ACC_MAX=5;let ACC_APP='[DEFAULT]',accSwitching=false;
+function accList(){try{const a=JSON.parse(localStorage.getItem('hevor.accounts')||'[]');return Array.isArray(a)?a.filter(x=>x&&ACC_RE.test(x.app)&&typeof x.email==='string'&&typeof x.uid==='string').slice(0,ACC_MAX):[]}catch(e){return[]}}
+function accSave(a){try{localStorage.setItem('hevor.accounts',JSON.stringify(a.slice(0,ACC_MAX)))}catch(e){}}
+function accCur(){let c='';try{c=localStorage.getItem('hevor.acc')||''}catch(e){}return ACC_RE.test(c)?c:'[DEFAULT]'}
+function accGo(app){accSwitching=true;try{localStorage.setItem('hevor.acc',app);localStorage.setItem('fonte.view','home')}catch(e){}location.reload()}
+function accRemember(u){
+  const a=accList(),dup=a.find(x=>x.uid===u.uid&&x.app!==ACC_APP);
+  if(dup){fbAuth.signOut().catch(()=>{}).finally(()=>accGo(dup.app));return false}
+  const i=a.findIndex(x=>x.app===ACC_APP),e={app:ACC_APP,uid:u.uid,email:String(u.email||'').slice(0,120)};
+  if(i>=0)a[i]=e;else a.push(e);accSave(a);try{localStorage.removeItem('hevor.accPrev')}catch(x){}return true;
+}
+function accForget(app){accSave(accList().filter(x=>x.app!==app))}
 function bootAccounts(){
   if(!fbReady()){startApp(null);return}
-  try{firebase.initializeApp(FBC);fbAuth=firebase.auth();fs=firebase.firestore();
+  ACC_APP=accCur();
+  try{const app=ACC_APP==='[DEFAULT]'?firebase.initializeApp(FBC):firebase.initializeApp(FBC,ACC_APP);fbAuth=app.auth();fs=app.firestore();
     try{fs.settings({ignoreUndefinedProperties:true,merge:true})}catch(e){}
     fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   }catch(e){startApp(null);return}
   fbAuth.onAuthStateChanged(async u=>{
+    if(accSwitching)return;
     if(!u){USER=null;DB=null;UID=null;if(typeof spacesReset==='function')spacesReset();showLogin();return}
+    if(!accRemember(u))return;
     USER=u;UID=u.uid;DB=fs;startApp(u);setSync('wait');if(typeof spacesBoot==='function')spacesBoot();
     try{await pull();if(pendingConsent){S.settings.consent={v:LEGAL_V,at:pendingConsent};pendingConsent=0;touchMeta()}await flush()}catch(e){setSync(navigator.onLine===false?'offline':'retry');setTimeout(()=>{pull().then(flush).catch(()=>{})},15000)}
   });
@@ -554,10 +571,13 @@ function showLogin(msg){
    <p class="err" id="lg-err" role="alert">${esc(msg||'')}</p>
    <button class="btn primary block" type="submit">${reset?'Envoyer le lien':up?'Créer mon compte':'Se connecter'}</button></form>
    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">${reset?'<button class="linkbtn" data-act="lg-mode" data-m="in">Retour à la connexion</button>':up?'<button class="linkbtn" data-act="lg-mode" data-m="in">J\'ai déjà un compte</button>':'<button class="linkbtn" data-act="lg-mode" data-m="up">Créer un compte</button><button class="linkbtn" data-act="lg-mode" data-m="reset">Mot de passe oublié</button>'}</div>
+   ${accBackRow()}
    ${installHint()}
    <p class="legal-foot"><button class="linkin" data-act="legal" data-k="privacy">Confidentialité</button> · <button class="linkin" data-act="legal" data-k="cgu">Conditions d'utilisation</button> · <button class="linkin" data-act="legal" data-k="legal">Mentions légales</button></p></div></div>`;
   $('#login-form').addEventListener('submit',loginSubmit);
 }
+function accBackRow(){const o=accList().filter(x=>x.app!==ACC_APP);if(!o.length)return'';
+  return `<div class="acc-back"><div class="small muted">Comptes déjà connectés sur cet appareil</div>${o.map(x=>`<button class="linkbtn" data-act="acc-switch" data-app="${esc(x.app)}">Revenir à ${esc(x.email)}</button>`).join('')}</div>`}
 const AUTHERR={'auth/invalid-email':'Adresse e-mail invalide.','auth/missing-password':'Indique ton mot de passe.','auth/weak-password':'Mot de passe trop faible : au moins 8 caractères.','auth/email-already-in-use':'Un compte existe déjà avec cet e-mail. Connecte-toi.','auth/invalid-credential':'E-mail ou mot de passe incorrect.','auth/wrong-password':'E-mail ou mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cet e-mail.','auth/too-many-requests':'Trop d\'essais. Réessaie dans quelques minutes.','auth/network-request-failed':'Pas de connexion. Il faut du réseau pour te connecter la première fois.'};
 async function loginSubmit(e){
   e.preventDefault();const mail=$('#lg-mail').value.trim(),pass=$('#lg-pass')?.value||'',err=$('#lg-err'),btn=e.target.querySelector('button[type=submit]');
@@ -578,7 +598,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.3.0';let delAsk=false;
+const APP_VERSION='2.4.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -602,6 +622,7 @@ let histOpen=null;
 
 /* ---------- render: main views ---------- */
 function render(){
+  if(document.getElementById('sheet-acc'))renderAcc();
   if(typeof spRender==='function'&&spRender())return;
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-current',b.dataset.v===VIEW?'page':'false'));
   const v=$('#view');
@@ -848,8 +869,7 @@ function viewMore(){
    <p style="margin:0 0 6px">${syncChip()}</p>
    <p class="small muted" style="margin:0">Tout est enregistré sur ton téléphone à chaque geste, puis envoyé sur ton compte Hevor dès qu'il y a du réseau. Connecte-toi avec le même compte sur ta tablette pour tout retrouver.</p>
    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn ghost" data-act="export-json">Exporter une copie</button><button class="btn ghost" data-act="import-json">Importer une copie</button></div></section>
-  ${USER?`<section class="card"><div class="h2">Compte</div>${typeof spNameRow==='function'?spNameRow():''}<p style="margin:0;font-weight:600">${esc(USER.email||'')}</p>${logoutAsk?`<div class="confirm" style="margin-top:10px"><p>${S.dirty.length?'Des données ne sont pas encore envoyées. Reconnecte-toi au réseau avant de te déconnecter.':'Te déconnecter de Hevor sur cet appareil ?'}</p><div class="r"><button class="btn ghost" data-act="logout-no">Annuler</button>${S.dirty.length?'':'<button class="btn danger" data-act="logout-yes">Se déconnecter</button>'}</div></div>`:'<button class="btn ghost" style="margin-top:10px" data-act="logout">Se déconnecter</button>'}
-   ${delAsk?`<form class="confirm" id="del-form" style="margin-top:10px" novalidate><p>Supprimer définitivement ton compte et toutes tes séances ? Cette action est irréversible. Pense à exporter une copie avant.</p><div class="field"><label for="del-pass">Ton mot de passe pour confirmer</label><input id="del-pass" type="password" autocomplete="current-password"></div><p class="err" id="del-err" role="alert"></p><div class="r"><button type="button" class="btn ghost" data-act="del-no">Annuler</button><button type="submit" class="btn danger">Supprimer mon compte</button></div></form>`:'<button class="linkbtn danger-link" data-act="del-ask">Supprimer mon compte</button>'}</section>`:''}
+  ${USER?`<section class="card"><div class="legal-list"><button class="row" data-act="acc-open"><span class="acc-av" aria-hidden="true">${esc((USER.email||'?').charAt(0).toUpperCase())}</span><div class="m"><div>Gérer mon compte</div><small>${esc(USER.email||'')}</small></div>${ICON.chev}</button></div></section>`:''}
   <section class="card"><div class="h2">Informations légales</div><div class="legal-list"><button class="row" data-act="legal" data-k="privacy"><div class="m"><div>Politique de confidentialité</div><small>Tes données et tes droits</small></div>${ICON.chev}</button><button class="row" data-act="legal" data-k="cgu"><div class="m"><div>Conditions d'utilisation</div><small>Règles d'usage et santé</small></div>${ICON.chev}</button><button class="row" data-act="legal" data-k="legal"><div class="m"><div>Mentions légales</div><small>Éditeur et hébergeurs</small></div>${ICON.chev}</button></div></section>
   <section class="card"><div class="h2">Repos par défaut</div>
    <div class="ed-grid">${stepper('Entre séries',st.restSet,'set-rs')}${stepper('Entre exercices',st.restExo,'set-re')}</div>
@@ -861,8 +881,43 @@ function viewMore(){
 }
 function stepper(label,val,act,i,k,fmt){
   const disp=fmt==='n'?val:mmss(val);
-  return `<div class="stp"><span>${label}</span><div><button data-act="${act}" data-d="-1" ${i!=null?`data-i="${i}" data-k="${k}"`:''} aria-label="Moins">−</button><output class="num">${disp}</output><button data-act="${act}" data-d="1" ${i!=null?`data-i="${i}" data-k="${k}"`:''} aria-label="Plus">+</button></div></div>`;
+  const out=k==='dur'?`<button type="button" class="num stp-val" data-act="dur-pick" data-src="${act}" data-i="${i}" aria-label="Choisir la durée : ${disp}">${disp}</button>`:`<output class="num">${disp}</output>`;
+  return `<div class="stp"><span>${label}</span><div><button data-act="${act}" data-d="-1" ${i!=null?`data-i="${i}" data-k="${k}"`:''} aria-label="Moins">−</button>${out}<button data-act="${act}" data-d="1" ${i!=null?`data-i="${i}" data-k="${k}"`:''} aria-label="Plus">+</button></div></div>`;
 }
+
+/* ---------- feuille « Mon compte » ---------- */
+function renderAcc(){
+  if(!USER){closeSheet('acc');return}
+  const list=accList(),others=list.filter(x=>x.app!==ACC_APP);
+  const row=x=>`<button class="row" data-act="acc-switch" data-app="${esc(x.app)}"><span class="acc-av" aria-hidden="true">${esc(x.email.charAt(0).toUpperCase()||'?')}</span><div class="m"><div>${esc(x.email)}</div><small>Passer sur ce compte</small></div>${ICON.chev}</button>`;
+  const h=sheetHead('Mon compte','acc-close')+`<div class="sheet-b"><div class="wrap" style="display:flex;flex-direction:column;gap:12px">
+   <section class="card"><div class="acc-me"><span class="acc-av lg" aria-hidden="true">${esc((USER.email||'?').charAt(0).toUpperCase())}</span><div><div style="font-weight:700">${esc(USER.email||'')}</div><div class="small muted">Compte connecté</div></div></div>${typeof spNameRow==='function'?spNameRow():''}</section>
+   <section class="card"><div class="h2">Changer de compte</div><div class="legal-list">${others.map(row).join('')}${list.length<ACC_MAX?`<button class="row" data-act="acc-add"><span class="acc-av add" aria-hidden="true">+</span><div class="m"><div>Ajouter un compte</div><small>Une autre adresse e-mail</small></div>${ICON.chev}</button>`:''}</div>
+    <p class="small muted" style="margin:8px 0 0">Chaque compte garde ses séances à part. Tu passes de l'un à l'autre sans retaper ton mot de passe.</p></section>
+   <section class="card">${logoutAsk?`<div class="confirm"><p>${S.dirty.length?'Des données ne sont pas encore envoyées. Reconnecte-toi au réseau avant de te déconnecter.':'Te déconnecter de '+esc(USER.email||'ce compte')+' sur cet appareil ?'}</p><div class="r"><button class="btn ghost" data-act="logout-no">Annuler</button>${S.dirty.length?'':'<button class="btn danger" data-act="logout-yes">Se déconnecter</button>'}</div></div>`:'<button class="btn ghost block" data-act="logout">Se déconnecter</button>'}
+    ${delAsk?`<form class="confirm" id="del-form" style="margin-top:10px" novalidate><p>Supprimer définitivement ton compte et toutes tes séances ? Cette action est irréversible. Pense à exporter une copie avant.</p><div class="field"><label for="del-pass">Ton mot de passe pour confirmer</label><input id="del-pass" type="password" autocomplete="current-password"></div><p class="err" id="del-err" role="alert"></p><div class="r"><button type="button" class="btn ghost" data-act="del-no">Annuler</button><button type="submit" class="btn danger">Supprimer mon compte</button></div></form>`:'<button class="linkbtn danger-link" style="margin-top:6px" data-act="del-ask">Supprimer mon compte</button>'}</section>
+  </div></div>`;
+  const el=openSheet('acc',h);const f=el.querySelector('#del-form');if(f&&!f.dataset.b){f.dataset.b='1';f.addEventListener('submit',deleteAccount)}
+}
+const accRe=()=>{if(document.getElementById('sheet-acc'))renderAcc();else render()};
+
+/* ---------- sélecteur de durée, façon minuteur iPhone ---------- */
+const DUR_MAX=14400,WH=40;let durCb=null;
+function durBump(v,dir){v=v||60;const st=dir>0?(v<60?5:v<600?15:v<3600?60:300):(v<=60?5:v<=600?15:v<=3600?60:300);return Math.min(DUR_MAX,Math.max(5,v+dir*st))}
+function wheelCol(id,n,step,unit,lab){let h='';for(let k=0;k<n;k++)h+=`<div class="whi">${unit==='h'?k*step:String(k*step).padStart(2,'0')}</div>`;return `<div class="whc"><div class="whl" id="${id}" tabindex="0" role="listbox" aria-label="${lab}">${h}</div><span class="whu">${unit}</span></div>`}
+function openDurPicker(val,cb){
+  durCb=cb;val=Math.max(5,Math.min(DUR_MAX,val||60));
+  modal(`<div class="k">Durée</div>
+   <div class="wheel"><div class="whbar" aria-hidden="true"></div>${wheelCol('wh-h',5,1,'h','Heures')}${wheelCol('wh-m',60,1,'min','Minutes')}${wheelCol('wh-s',12,5,'s','Secondes')}</div>
+   <div class="dur-quick">${[[30,'30 s'],[60,'1 min'],[300,'5 min'],[900,'15 min'],[1800,'30 min'],[3600,'1 h']].map(([v,l])=>`<button class="chip" data-act="dur-q" data-v="${v}">${l}</button>`).join('')}</div>
+   <div class="acts"><button class="btn primary" data-act="dur-ok">Valider</button><button class="btn ghost" data-act="modal-close">Annuler</button></div>`);
+  durSet(val,false);
+}
+function durSet(v,smooth){const ks=[Math.floor(v/3600),Math.floor(v%3600/60),Math.round(v%60/5)];['wh-h','wh-m','wh-s'].forEach((id,n)=>{const el=document.getElementById(id);if(el)el.scrollTo({top:ks[n]*WH,behavior:smooth?'smooth':'auto'})});durMark()}
+function durRead(){const g=id=>{const el=document.getElementById(id);return el?Math.max(0,Math.round(el.scrollTop/WH)):0};return Math.min(DUR_MAX,g('wh-h')*3600+g('wh-m')*60+g('wh-s')*5)}
+function durMark(){document.querySelectorAll('.whl').forEach(el=>{const k=Math.round(el.scrollTop/WH);[...el.children].forEach((c,j)=>c.classList.toggle('on',j===k))})}
+document.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('whl'))durMark()},true);
+document.addEventListener('keydown',e=>{const el=e.target;if(!el.classList||!el.classList.contains('whl'))return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();el.scrollBy({top:e.key==='ArrowDown'?WH:-WH,behavior:'smooth'})}else if(e.key==='Enter'){e.preventDefault();ACT['dur-ok']()}});
 
 /* ---------- sheets ---------- */
 function openSheet(id,html){let el=document.getElementById('sheet-'+id);if(!el){pushNav();el=document.createElement('div');el.id='sheet-'+id;el.className='sheet';el.style.zIndex=40+document.querySelectorAll('.sheet').length;document.body.appendChild(el)}el.innerHTML=html;return el}
@@ -888,7 +943,7 @@ function renderEditor(){
   h+=`</div></div><div class="sheet-f"><div class="in"><button class="btn primary" data-act="ed-save">Enregistrer</button></div></div>`;
   const el=openSheet('editor',h);el.querySelector('.sheet-b').scrollTop=sc;
 }
-const LIM={sets:[1,10,1],reps:[1,100,1],dur:[5,900,5],restSet:[0,600,15],restExo:[0,600,15]};
+const LIM={sets:[1,10,1],reps:[1,100,1],dur:[5,14400,5],restSet:[0,600,15],restExo:[0,600,15]};
 const TIMEIDS=new Set(['planche','gainage-lat','copenhague','iso-dos','iso-tractions','equilibre','corde','tapis','velo','rameur','elliptique','escalier','assault-bike']);
 const newItem=id=>{const st=S.settings,t=TIMEIDS.has(id);return{exoId:id,sets:3,reps:10,mode:t?'time':'reps',dur:t?60:60,restSet:st.restSet,restExo:st.restExo}};
 const modeOf=it=>it.mode||'reps';
@@ -1208,8 +1263,10 @@ async function deleteAccount(e){
     try{await fs.doc(`data/users/${uid}/spaces`).delete()}catch(x){}
     try{localStorage.removeItem('hevor.v1:'+uid)}catch(x){}
     S=fresh();DB=null;delAsk=false;
-    await USER.delete();
+    const me=ACC_APP,next=accList().find(x=>x.app!==me);accForget(me);if(next)accSwitching=true;
+    await USER.delete();closeSheet('acc');
     toast('Ton compte et toutes tes données ont été supprimés.');
+    if(next)setTimeout(()=>accGo(next.app),1200);
   }catch(x){btn.disabled=false;const c=x&&x.code;err.textContent=c==='auth/wrong-password'||c==='auth/invalid-credential'?'Mot de passe incorrect.':c==='auth/too-many-requests'?'Trop d\'essais. Réessaie dans quelques minutes.':c==='auth/network-request-failed'?'Pas de connexion. Réessaie avec du réseau.':'La suppression a échoué. Réessaie.'}
 }
 
@@ -1293,7 +1350,10 @@ const ACT={
   'new-tpl':()=>openEditor(null), edit:d=>openEditor(d.id), samples:addSamples,
   start:d=>startSession(d.id), resume:()=>openSession(),
   'ed-close':()=>{closeSheet('editor');ed=null},
-  'ed-stp':d=>{const it=ed.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=Math.min(mx,Math.max(mn,(it[d.k]??(d.k==='dur'?60:0))+st*(+d.d)));renderEditor()},
+  'ed-stp':d=>{const it=ed.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=d.k==='dur'?durBump(it.dur,+d.d):Math.min(mx,Math.max(mn,(it[d.k]??0)+st*(+d.d)));renderEditor()},
+  'dur-pick':d=>{if(d.src==='ed-stp'&&ed){const it=ed.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderEditor()})}else if(d.src==='pe-stp'&&typeof PE!=='undefined'&&PE){progVals();const it=PE.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderProgEdit()})}},
+  'dur-q':d=>durSet(+d.v,true),
+  'dur-ok':()=>{const v=Math.max(5,durRead()),cb=durCb;durCb=null;closeModal();if(cb)cb(v)},
   'ed-mode':d=>{const it=ed.items[+d.i];it.mode=d.m;if(d.m==='time'&&!it.dur)it.dur=60;renderEditor()},
   'ed-move':d=>{const i=+d.i,j=i+(+d.d);if(j<0||j>=ed.items.length)return;[ed.items[i],ed.items[j]]=[ed.items[j],ed.items[i]];renderEditor()},
   'ed-del':d=>{ed.items.splice(+d.i,1);renderEditor()},
@@ -1337,11 +1397,17 @@ const ACT={
   'see-pass':()=>{closeModal();ACT.tab({v:'pass'})},
   'go-back':()=>goBack(),
   'lg-mode':d=>{loginMode=d.m;showLogin()},
-  logout:()=>{logoutAsk=true;render()}, 'logout-no':()=>{logoutAsk=false;render()},
-  'del-ask':()=>{delAsk=true;render();setTimeout(()=>{const f=$('#del-form');if(f){f.addEventListener('submit',deleteAccount);f.scrollIntoView({block:'center'})}},30)},
-  'del-no':()=>{delAsk=false;render()},
+  logout:()=>{logoutAsk=true;accRe()}, 'logout-no':()=>{logoutAsk=false;accRe()},
+  'del-ask':()=>{delAsk=true;accRe();setTimeout(()=>{const f=$('#del-form');if(f){if(!f.dataset.b){f.dataset.b='1';f.addEventListener('submit',deleteAccount)}f.scrollIntoView({block:'center'})}},30)},
+  'del-no':()=>{delAsk=false;accRe()},
+  'acc-open':()=>{logoutAsk=false;delAsk=false;renderAcc()},
+  'acc-close':()=>{logoutAsk=false;delAsk=false;closeSheet('acc')},
+  'acc-switch':d=>{if(!ACC_RE.test(d.app||''))return;if(S&&S.active){toast('Termine ou abandonne ta séance en cours avant de changer de compte.');return}accGo(d.app)},
+  'acc-add':()=>{if(S&&S.active){toast('Termine ou abandonne ta séance en cours avant d\'ajouter un compte.');return}if(accList().length>=ACC_MAX){toast('5 comptes maximum sur cet appareil.');return}
+    let id='';try{const b=new Uint8Array(6);crypto.getRandomValues(b);id=[...b].map(x=>(x%36).toString(36)).join('')}catch(e){id=Math.random().toString(36).slice(2,8)}
+    loginMode='in';accGo('acc-'+id)},
   legal:d=>openLegal(d.k), 'legal-close':()=>closeSheet('legal'),
-  'logout-yes':async()=>{logoutAsk=false;try{await fbAuth.signOut()}catch(e){}},
+  'logout-yes':async()=>{logoutAsk=false;const me=ACC_APP,next=accList().find(x=>x.app!==me);accForget(me);if(next)accSwitching=true;try{await fbAuth.signOut()}catch(e){}if(next)accGo(next.app);else{closeSheet('acc');if(me!=='[DEFAULT]'){try{localStorage.removeItem('hevor.acc')}catch(e){}}}},
   pdf:(d,b)=>exportPDF(b), 'export-json':()=>exportJSON(), 'import-json':()=>$('#imp').click(),
   'set-rs':d=>{S.settings.restSet=Math.min(600,Math.max(0,S.settings.restSet+15*(+d.d)));touchMeta();render()},
   'set-re':d=>{S.settings.restExo=Math.min(600,Math.max(0,S.settings.restExo+15*(+d.d)));touchMeta();render()},

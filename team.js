@@ -21,7 +21,7 @@ const RPE_L=['','Très facile','Facile','Facile','Modéré','Assez dur','Dur','D
 /* ---------- nettoyage des données lues ---------- */
 const cIds=a=>(Array.isArray(a)?a:[]).filter(x=>typeof x==='string'&&x.length<=128).slice(0,200);
 function cEvent(id,d){d=d||{};return{id,type:EVT[d.type]?d.type:'training',title:cStr(d.title,80)||EVT[d.type]||'Créneau',start:cNum(d.start,0,4102444800000,0),dur:Math.round(cNum(d.dur,0,1440,60)),place:cStr(d.place,80),invitees:cIds(d.invitees),video:okUrl(d.video)?d.video:'',by:cStr(d.by,128)}}
-function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,900,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120)}}
+function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120)}}
 function cProgram(id,d){d=d||{};return{id,title:cStr(d.title,80)||'Programme',date:cNum(d.date,0,4102444800000,0),eventId:okId(d.eventId)?d.eventId:'',items:(Array.isArray(d.items)?d.items:[]).slice(0,40).map(cPItem).filter(Boolean),invitees:cIds(d.invitees),note:cStr(d.note,300),by:cStr(d.by,128)}}
 function cWell(id,d){d=d||{};const p={};if(d.pains&&typeof d.pains==='object')for(const k in d.pains){if(ZONE_L[k]){p[k]=Math.round(cNum(d.pains[k],1,5,1))}}
   return{id,uid:cStr(d.uid,128),day:/^\d{8}$/.test(d.day)?d.day:'00000000',at:cNum(d.at,0,4102444800000,0),mot:Math.round(cNum(d.mot,1,5,3)),som:Math.round(cNum(d.som,1,5,3)),pains:p}}
@@ -523,7 +523,7 @@ Object.assign(ACT,{
   'pe-move':d=>{progVals();const i=+d.i,j=i+(+d.d);if(j<0||j>=PE.items.length)return;[PE.items[i],PE.items[j]]=[PE.items[j],PE.items[i]];renderProgEdit()},
   'pe-mode':d=>{progVals();PE.items[+d.i].mode=d.m;renderProgEdit()},
   'pe-lt':d=>{progVals();const it=PE.items[+d.i];it.lt=d.m;if(d.m==='pct'&&!it.lv)it.lv=75;renderProgEdit()},
-  'pe-stp':d=>{progVals();const it=PE.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=Math.min(mx,Math.max(mn,(it[d.k]??0)+st*(+d.d)));renderProgEdit()},
+  'pe-stp':d=>{progVals();const it=PE.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=d.k==='dur'?durBump(it.dur,+d.d):Math.min(mx,Math.max(mn,(it[d.k]??0)+st*(+d.d)));renderProgEdit()},
   'pe-dest':d=>{progVals();PE.dest=d.v;renderProgEdit()},
   'pe-save':(d,b)=>saveProg(b),
   'tm-run':d=>startRun(d.id,d.p),'run-resume':()=>{RUN=runLoad();if(RUN)renderRun()},
