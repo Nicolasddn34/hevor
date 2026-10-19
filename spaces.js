@@ -5,7 +5,7 @@
    « Club » = équipes (coach, joueur, spectateur). « Coach » = coach indépendant et ses clients.
    Chaque espace a ses propres données, son accueil et ses couleurs.
    ===================================================================== */
-const SP={doc:{teams:[],home:'auto',name:''},ready:false,cur:'moi',open:{club:null,coach:null},tab:{},T:{},D:{},booted:false,touched:false,unsub:{}};
+const SP={doc:{teams:[],home:'auto',name:'',first:'',last:''},ready:false,cur:'moi',open:{club:null,coach:null},tab:{},T:{},D:{},booted:false,touched:false,unsub:{}};
 const MOI_TABS_HTML=document.querySelector('#tabs .in').innerHTML;
 const ROLE_L={pending:'En attente',player:'Joueur',coach:'Coach',spectator:'Spectateur',client:'Client'};
 const SPORTS=['Volley-ball','Handball','Football','Basket-ball','Rugby','Hockey','Water-polo','Athlétisme','Tennis','Natation','Cyclisme','Sports de combat','Autre'];
@@ -40,8 +40,8 @@ const inviteRef=code=>DB.doc(`invites/${code}`);
 const spKey=()=>'hevor.sp:'+(UID||'local');
 function spSaveLocal(){try{localStorage.setItem(spKey(),JSON.stringify({cur:SP.cur,open:SP.open,tab:SP.tab,doc:SP.doc}))}catch(e){}}
 function spLoadLocal(){try{const o=JSON.parse(localStorage.getItem(spKey())||'null');if(o){SP.open={club:okId(o.open?.club)?o.open.club:null,coach:okId(o.open?.coach)?o.open.coach:null};SP.tab=o.tab&&typeof o.tab==='object'?o.tab:{};if(o.doc)SP.doc=cSpDoc(o.doc)}}catch(e){}}
-function cSpDoc(o){o=o&&typeof o==='object'?o:{};return{teams:(Array.isArray(o.teams)?o.teams:[]).filter(okId).slice(0,50),home:typeof o.home==='string'&&/^(auto|moi|club|coach)(:[A-Za-z0-9_-]{1,48})?$/.test(o.home)?o.home:'auto',name:cStr(o.name,40)}}
-async function spSaveDoc(){spSaveLocal();if(!DB)return;try{await q(spRef().set({teams:SP.doc.teams,home:SP.doc.home,name:SP.doc.name,stamp:Date.now()}))}catch(e){}}
+function cSpDoc(o){o=o&&typeof o==='object'?o:{};return{teams:(Array.isArray(o.teams)?o.teams:[]).filter(okId).slice(0,50),home:typeof o.home==='string'&&/^(auto|moi|club|coach)(:[A-Za-z0-9_-]{1,48})?$/.test(o.home)?o.home:'auto',name:cStr(o.name,60),first:cStr(o.first,30),last:cStr(o.last,30)}}
+async function spSaveDoc(){spSaveLocal();if(!DB)return;try{await q(spRef().set({teams:SP.doc.teams,home:SP.doc.home,name:SP.doc.name,first:SP.doc.first,last:SP.doc.last,stamp:Date.now()}))}catch(e){}}
 
 /* ---------- équipes ---------- */
 const teamsOf=kind=>SP.doc.teams.filter(t=>SP.T[t]&&SP.T[t].team&&SP.T[t].team.kind===kind);
@@ -50,8 +50,8 @@ const curT=()=>{const t=curTid();return t?SP.T[t]:null};
 const myRole=tid=>SP.T[tid]?.me?.role||null;
 const isTeamOwner=tid=>SP.T[tid]?.team?.owner===UID;
 function cTeam(id,d){d=d||{};const th=d.theme&&typeof d.theme==='object'?d.theme:null;
-  return{id,kind:d.kind==='coach'?'coach':'club',name:cStr(d.name,60)||'Équipe',club:cStr(d.club,80),sport:cStr(d.sport,40),logo:typeof d.logo==='string'&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(d.logo)?d.logo:'',theme:th?cTheme(th):null,owner:cStr(d.owner,128),ownerName:cStr(d.ownerName,40),code:cStr(d.code,12)}}
-function cMember(d){d=d||{};return{uid:cStr(d.uid,128),name:cStr(d.name,40)||'Sans nom',role:ROLE_L[d.role]?d.role:'pending',poste:cStr(d.poste,40),at:cNum(d.at,0,4102444800000,0),health:d.health?cNum(d.health,0,4102444800000,0):0}}
+  return{id,kind:d.kind==='coach'?'coach':'club',name:cStr(d.name,60)||'Équipe',club:cStr(d.club,80),sport:cStr(d.sport,40),logo:typeof d.logo==='string'&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(d.logo)?d.logo:'',theme:th?cTheme(th):null,owner:cStr(d.owner,128),ownerName:cStr(d.ownerName,60),code:cStr(d.code,12)}}
+function cMember(d){d=d||{};return{uid:cStr(d.uid,128),name:cStr(d.name,60)||'Sans nom',role:ROLE_L[d.role]?d.role:'pending',poste:cStr(d.poste,40),at:cNum(d.at,0,4102444800000,0),health:d.health?cNum(d.health,0,4102444800000,0):0}}
 async function loadTeamHead(tid){
   try{
     const m=await memRef(tid,UID).get();
@@ -65,6 +65,8 @@ async function spacesBoot(){
   if(!DB||!UID)return;
   spLoadLocal();
   try{const d=await spRef().get();if(d.exists)SP.doc=cSpDoc(d.data())}catch(e){}
+  if(typeof pendingName!=='undefined'&&pendingName){const n=pendingName;pendingName=null;await setMyName(n.first,n.last,true)}
+  else if(!SP.doc.first&&USER&&USER.displayName){const p=USER.displayName.trim().split(/\s+/);if(p.length>1){SP.doc.first=p[0].slice(0,30);SP.doc.last=p.slice(1).join(' ').slice(0,30);SP.doc.name=fullName()}}
   const res=await Promise.all(SP.doc.teams.map(async t=>[t,await loadTeamHead(t)]));
   const gone=res.filter(([,r])=>r==='gone').map(([t])=>t);
   if(gone.length){SP.doc.teams=SP.doc.teams.filter(t=>!gone.includes(t));gone.forEach(t=>{delete SP.T[t]});spSaveDoc()}
@@ -73,6 +75,7 @@ async function spacesBoot(){
   watchPending();
   applyTheme();render();
   const code=pendingJoin();if(code)openJoin(code);
+  else if(!SP.doc.first){let asked=false;try{asked=!!localStorage.getItem('hevor.askname:'+UID)}catch(e){}if(!asked)askName(true)}
 }
 function pickHome(){
   const h=SP.doc.home,[sp,tid]=h.split(':');
@@ -84,7 +87,7 @@ function pickHome(){
   if(teamsOf('coach').length)return{space:'coach'};
   return{space:'moi'};
 }
-function spacesReset(){Object.values(SP.unsub).forEach(f=>{try{f()}catch(e){}});Object.assign(SP,{doc:{teams:[],home:'auto',name:''},ready:false,cur:'moi',open:{club:null,coach:null},tab:{},T:{},D:{},booted:false,touched:false,unsub:{}});applyTheme()}
+function spacesReset(){Object.values(SP.unsub).forEach(f=>{try{f()}catch(e){}});Object.assign(SP,{doc:{teams:[],home:'auto',name:'',first:'',last:''},ready:false,cur:'moi',open:{club:null,coach:null},tab:{},T:{},D:{},booted:false,touched:false,unsub:{}});applyTheme()}
 /* l'attente d'un rôle se met à jour toute seule */
 function watchPending(){
   for(const tid of SP.doc.teams){const T=SP.T[tid];if(!T||T.me.role!=='pending'||SP.unsub[tid])continue;
@@ -259,22 +262,49 @@ function viewPending(tid){
    <button class="btn ghost block" data-act="sp-go" data-v="moi">Aller dans mon espace Moi</button><button class="linkbtn danger-link" data-act="sp-cancel-join" data-id="${tid}">Annuler ma demande</button></div></div>`;
 }
 
+/* ---------- identité : prénom et nom du compte ---------- */
+const fullName=()=>((SP.doc.first||'')+' '+(SP.doc.last||'')).trim()||SP.doc.name||'';
+function idBlock(pfx,who){
+  if(SP.doc.first&&SP.doc.last)return `<div class="card sp-id"><span class="ini">${esc(initials(fullName()))}</span><div class="m"><small class="muted">Visible ${who} sous le nom</small><b class="sp-id-n">${esc(fullName())}</b></div><button class="linkbtn" data-act="sp-name">Modifier</button></div>`;
+  return `<div class="sp-2"><div class="field"><label for="${pfx}-first">Prénom</label><input id="${pfx}-first" maxlength="30" autocomplete="given-name"></div><div class="field"><label for="${pfx}-last">Nom</label><input id="${pfx}-last" maxlength="30" autocomplete="family-name"></div></div><p class="small muted" style="margin:0">Visible ${who}. Enregistré sur ton compte pour les prochaines fois.</p>`;
+}
+async function readId(pfx){
+  if(SP.doc.first&&SP.doc.last)return fullName();
+  const f=($('#'+pfx+'-first')?.value||'').trim().replace(/\s+/g,' ').slice(0,30),l=($('#'+pfx+'-last')?.value||'').trim().replace(/\s+/g,' ').slice(0,30);
+  if(!f){$('#'+pfx+'-first')?.focus();return null}if(!l){$('#'+pfx+'-last')?.focus();return null}
+  await setMyName(f,l,true);return fullName();
+}
+async function setMyName(first,last,quiet){
+  SP.doc.first=first;SP.doc.last=last;SP.doc.name=fullName();await spSaveDoc();
+  try{USER&&USER.updateProfile&&await USER.updateProfile({displayName:SP.doc.name})}catch(e){}
+  if(quiet)return;
+  for(const tid of SP.doc.teams){const T=SP.T[tid];if(!T)continue;
+    try{await memRef(tid,UID).update({name:SP.doc.name});T.me.name=SP.doc.name;const m=(SP.D[tid]?.members||[]).find(x=>x.uid===UID);if(m)m.name=SP.doc.name}catch(e){}
+    if(T.team.owner===UID){try{await teamRef(tid).update({ownerName:SP.doc.name});T.team.ownerName=SP.doc.name}catch(e){}}}
+}
+function spNameRow(){return `<div class="set-row" style="padding-top:0"><div><div style="font-weight:600">${SP.doc.first?esc(fullName()):'<span class="muted">Nom non renseigné</span>'}</div><div class="small muted">Visible seulement par tes équipes et ton coach</div></div><button class="btn ghost sm" data-act="sp-name">${SP.doc.first?'Modifier':'Ajouter'}</button></div>`}
+function askName(first){
+  if(first){try{localStorage.setItem('hevor.askname:'+UID,'1')}catch(e){}}
+  modal(`<h3>${first?'Comment tu t\'appelles ?':'Ton nom'}</h3><p class="muted" style="margin:0">${first?'Hevor demande maintenant ton prénom et ton nom. ':''}Ils restent privés : seuls les coachs et équipes que tu rejoins les voient, pour savoir qui tu es.</p>
+   <div class="ed-grid" style="text-align:left"><div class="field"><label for="nm-first">Prénom</label><input id="nm-first" value="${esc(SP.doc.first)}" maxlength="30" autocomplete="given-name"></div><div class="field"><label for="nm-last">Nom</label><input id="nm-last" value="${esc(SP.doc.last)}" maxlength="30" autocomplete="family-name"></div></div>
+   <div class="acts"><button class="btn primary" data-act="sp-name-save">Enregistrer</button><button class="btn ghost" data-act="modal-close">${first?'Plus tard':'Annuler'}</button></div>`);
+}
+
 /* ---------- créer une équipe ---------- */
 let CT=null;
 function openCreate(kind){
   closeModal();CT={kind,logo:'',colors:[null,null],theme:null};
-  const nm=SP.doc.name||'';
   const clubs=[...new Set(teamsOf('club').map(t=>SP.T[t].team.club).filter(Boolean))];
   const h=kind==='club'?`
    <div class="field"><label for="ct-club">Club</label><input id="ct-club" list="ct-clubs" placeholder="Ex. Volley Club de ta ville" autocomplete="off" maxlength="80"><datalist id="ct-clubs">${clubs.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
    <div class="field"><span class="flabel">Logo du club</span><div class="ct-logo"><span id="ct-logo-prev">${teamLogo(null,'lg')}</span><div class="m"><b id="ct-logo-name">Aucun logo</b><small class="muted">Les couleurs de l'espace seront prises dans le logo.</small><div class="sw" id="ct-sw"></div></div><label class="btn ghost" for="ct-file">Importer</label><input type="file" id="ct-file" accept="image/png,image/jpeg,image/webp" hidden></div></div>
    <div class="sp-2"><div class="field"><label for="ct-name">Nom de l'équipe</label><input id="ct-name" placeholder="Ex. Seniors M" maxlength="60" autocomplete="off"></div>
    <div class="field"><label for="ct-sport">Sport</label><select id="ct-sport">${SPORTS.map(s=>`<option>${s}</option>`).join('')}</select></div></div>
-   <div class="field"><label for="ct-me">Ton prénom (visible par l'équipe)</label><input id="ct-me" value="${esc(nm)}" maxlength="40" autocomplete="given-name"></div>
+   ${idBlock('ct',"par l'équipe")}
    <div class="field"><span class="flabel">Aperçu de l'espace</span><div id="ct-prev"></div></div>
    <p class="small muted" style="margin:0">Tu en deviens le propriétaire. Tu pourras transmettre ce rôle à un autre coach.</p>`:`
-   <div class="field"><label for="ct-me">Ton prénom (visible par tes clients)</label><input id="ct-me" value="${esc(nm)}" maxlength="40" autocomplete="given-name"></div>
-   <div class="field"><label for="ct-name">Nom de ton coaching</label><input id="ct-name" placeholder="Ex. Coaching de ${esc(nm||'Nico')}" maxlength="60" autocomplete="off"></div>
+   ${idBlock('ct','par tes clients')}
+   <div class="field"><label for="ct-name">Nom de ton coaching</label><input id="ct-name" placeholder="Ex. Coaching de ${esc(SP.doc.first||'Nico')}" maxlength="60" autocomplete="off"></div>
    <p class="small muted" style="margin:0">Tes clients rejoignent avec un lien. Tu valides chaque demande, puis tu leur envoies leurs programmes.</p>`;
   openSheet('sp-create',sheetHead(kind==='club'?'Créer une équipe':'Créer mon coaching','sp-create-close')+`<div class="sheet-b"><div class="wrap sp-col">${h}</div></div>
    <div class="sheet-f"><div class="in"><button class="btn primary" data-act="sp-create-save">${kind==='club'?"Créer l'équipe":'Créer mon espace coaching'}</button></div></div>`);
@@ -289,18 +319,19 @@ function ctPreview(){const el=$('#ct-prev');if(!el)return;const th=makeTheme(CT.
    <div class="r2"><span style="background:${th.accent};color:${th['on-accent']}">Bouton</span><span style="background:${th.surface};color:${th.pr}">Record</span></div></div>`}
 function genCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(8);crypto.getRandomValues(b);return[...b].map(x=>A[x%A.length]).join('')}
 async function createSave(btn){
-  const kind=CT.kind,me=($('#ct-me').value||'').trim().slice(0,40);
+  const kind=CT.kind;
   let name=($('#ct-name').value||'').trim().slice(0,60);const club=kind==='club'?($('#ct-club').value||'').trim().slice(0,80):'';
   if(kind==='club'&&!club){$('#ct-club').focus();toast('Indique le nom du club');return}
-  if(!me){$('#ct-me').focus();toast('Indique ton prénom');return}
-  if(!name){if(kind==='club'){$('#ct-name').focus();toast("Donne un nom à l'équipe");return}name='Coaching de '+me}
+  if(kind==='club'&&!name){$('#ct-name').focus();toast("Donne un nom à l'équipe");return}
+  btn.disabled=true;const me=await readId('ct');btn.disabled=false;if(!me){toast('Indique ton prénom et ton nom');return}
+  if(!name)name='Coaching de '+(SP.doc.first||me);
   if(navigator.onLine===false){toast('Il faut du réseau pour créer une équipe.');return}
   btn.disabled=true;
   const tid=gid(),code=genCode(),now=Date.now();
   const team={kind,name,club,owner:UID,ownerName:me,code,at:now};
   if(kind==='club'){team.sport=$('#ct-sport').value;if(CT.logo)team.logo=CT.logo;team.theme=CT.theme||makeTheme(CT.colors[0],CT.colors[1])}
   try{const b=DB.batch();b.set(teamRef(tid),team);b.set(memRef(tid,UID),{uid:UID,name:me,role:'coach',at:now});b.set(inviteRef(code),{tid,name,club,kind,at:now});await b.commit();
-    SP.doc.teams.push(tid);SP.doc.name=me;await spSaveDoc();SP.T[tid]={team:cTeam(tid,team),me:cMember({uid:UID,name:me,role:'coach',at:now})};
+    SP.doc.teams.push(tid);await spSaveDoc();SP.T[tid]={team:cTeam(tid,team),me:cMember({uid:UID,name:me,role:'coach',at:now})};
     closeSheet('sp-create');CT=null;SP.tab[tid]='members';setSpace(kind,tid);toast(kind==='club'?'Équipe créée. Invite tes joueurs avec le lien.':'Espace coaching créé. Invite tes clients avec le lien.')}
   catch(e){btn.disabled=false;toast(e&&e.code==='permission-denied'?"Création refusée par le serveur. Les règles de sécurité Firebase doivent être mises à jour.":"La création a échoué. Vérifie ta connexion et réessaie.")}
 }
@@ -319,18 +350,17 @@ async function openJoin(code){
   closeSheet('sp-joinc');
   openSheet('sp-join',sheetHead(kind==='club'?'Rejoindre une équipe':'Rejoindre mon coach','sp-join-close')+`<div class="sheet-b"><div class="wrap sp-col">
    <div class="card sp-inv"><span class="sp-ic">${kind==='club'?SPICON.shield:SPICON.team}</span><div><b>${esc(cStr(inv.name,60))}</b><small class="muted">${esc(kind==='club'?cStr(inv.club,80):'Espace coaching')}</small></div></div>
-   <div class="field"><label for="jn-me">Ton prénom (visible par ${kind==='club'?"l'équipe":'ton coach'})</label><input id="jn-me" value="${esc(SP.doc.name||'')}" maxlength="40" autocomplete="given-name"></div>
+   ${idBlock('jn',kind==='club'?"par l'équipe":'par ton coach')}
    ${kind==='club'?`<div class="field"><label for="jn-poste">Poste (facultatif)</label><input id="jn-poste" placeholder="Ex. Passeur, ailier, gardien…" maxlength="40" autocomplete="off"></div>`:`<div class="field"><label for="jn-poste">Ton objectif (facultatif)</label><input id="jn-poste" placeholder="Ex. Prise de masse, reprise…" maxlength="40" autocomplete="off"></div>`}
    <p class="small muted" style="margin:0">Tu arriveras en attente : ${kind==='club'?'un coach':'ton coach'} choisit ensuite ton rôle. Ton espace « Moi » reste privé.</p></div></div>
    <div class="sheet-f"><div class="in"><button class="btn primary" data-act="sp-join-go" data-id="${tid}" data-code="${code}" data-k="${kind}">Rejoindre</button></div></div>`);
 }
 async function joinGo(d,btn){
-  const tid=d.id,code=d.code,kind=d.k,me=($('#jn-me').value||'').trim().slice(0,40),poste=($('#jn-poste').value||'').trim().slice(0,40);
-  if(!me){$('#jn-me').focus();toast('Indique ton prénom');return}
-  btn.disabled=true;
+  const tid=d.id,code=d.code,kind=d.k,poste=($('#jn-poste').value||'').trim().slice(0,40);
+  btn.disabled=true;const me=await readId('jn');if(!me){btn.disabled=false;toast('Indique ton prénom et ton nom');return}
   try{const ex=await memRef(tid,UID).get();
     if(!ex.exists){const m={uid:UID,name:me,role:'pending',code,at:Date.now()};if(poste)m.poste=poste;await memRef(tid,UID).set(m)}
-    if(!SP.doc.teams.includes(tid))SP.doc.teams.push(tid);SP.doc.name=me;await spSaveDoc();
+    if(!SP.doc.teams.includes(tid))SP.doc.teams.push(tid);await spSaveDoc();
     const r=await loadTeamHead(tid);if(r!=='ok')throw 0;
     closeSheet('sp-join');setSpace(kind,tid);watchPending()}
   catch(e){btn.disabled=false;toast(e&&e.code==='permission-denied'?"Ce lien d'invitation n'est plus valable.":'Impossible de rejoindre pour le moment. Réessaie.')}
@@ -435,15 +465,13 @@ function openTransfer(tid){
 function openMeEdit(tid){
   const T=SP.T[tid];
   openSheet('sp-meed',sheetHead('Mon profil','sp-meed-close')+`<div class="sheet-b"><div class="wrap sp-col">
-   <div class="field"><label for="me-name">Prénom</label><input id="me-name" value="${esc(T.me.name)}" maxlength="40"></div>
+   <div class="card sp-id"><span class="ini">${esc(initials(T.me.name))}</span><div class="m"><small class="muted">Nom affiché</small><b class="sp-id-n">${esc(T.me.name)}</b></div><button class="linkbtn" data-act="sp-name">Modifier</button></div>
    <div class="field"><label for="me-poste">${T.team.kind==='club'?'Poste':'Objectif'}</label><input id="me-poste" value="${esc(T.me.poste)}" maxlength="40"></div></div></div>
    <div class="sheet-f"><div class="in"><button class="btn primary" data-act="sp-me-save" data-id="${tid}">Enregistrer</button></div></div>`);
 }
 async function meSave(tid){
-  const T=SP.T[tid],name=($('#me-name').value||'').trim().slice(0,40),poste=($('#me-poste').value||'').trim().slice(0,40);
-  if(!name){toast('Indique ton prénom');return}
-  try{await memRef(tid,UID).update({name,poste});T.me.name=name;T.me.poste=poste;const m=(SP.D[tid]?.members||[]).find(x=>x.uid===UID);if(m){m.name=name;m.poste=poste}
-    if(T.team.owner===UID&&T.team.ownerName!==name){try{await teamRef(tid).update({ownerName:name});T.team.ownerName=name}catch(e){}}
+  const T=SP.T[tid],poste=($('#me-poste').value||'').trim().slice(0,40);
+  try{await memRef(tid,UID).update({poste});T.me.poste=poste;const m=(SP.D[tid]?.members||[]).find(x=>x.uid===UID);if(m)m.poste=poste;
     closeSheet('sp-meed');render();toast('Profil enregistré')}catch(e){toast('Enregistrement impossible.')}
 }
 let TE=null;
@@ -496,6 +524,9 @@ async function spacesWipe(){
 /* ---------- actions ---------- */
 Object.assign(ACT,{
   'sp-sheet':()=>openSpaces(),
+  'sp-name':()=>askName(false),
+  'sp-name-save':async(d,b)=>{const f=($('#nm-first').value||'').trim().replace(/\s+/g,' ').slice(0,30),l=($('#nm-last').value||'').trim().replace(/\s+/g,' ').slice(0,30);if(!f||!l){toast('Indique ton prénom et ton nom');return}
+    b.disabled=true;await setMyName(f,l,false);closeModal();document.querySelectorAll('.sp-id-n').forEach(el=>{el.textContent=fullName()});render();toast('Nom enregistré')},
   'sp-go':d=>setSpace(d.v),
   'sp-home':()=>openHomePick(),'sp-home-close':()=>closeSheet('sp-home'),
   'sp-account':()=>{setSpace('moi');VIEW='more';render()},

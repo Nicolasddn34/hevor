@@ -543,12 +543,12 @@ function startApp(u){
   loadLocal(u?'hevor.v1:'+u.uid:'hevor.v1:local');
   $('#tabs').hidden=false;buildIdx();passScrolled=false;render();if(S.active)ensureTick();if(!u)setSync('local');
 }
-let loginMode='in',pendingConsent=0;const LEGAL_V='2026-10-19';
+let loginMode='in',pendingConsent=0,pendingName=null;const LEGAL_V='2026-10-19b';
 function showLogin(msg){
   $('#tabs').hidden=true;document.querySelectorAll('.sheet').forEach(e=>e.remove());closeModal();
   const up=loginMode==='up',reset=loginMode==='reset';
   $('#view').innerHTML=`<div class="wrap"><div class="login"><div class="logo xl">${LOGO}</div><div><div class="brand">Hevor</div><div class="sub muted">${reset?'Reçois un lien pour choisir un nouveau mot de passe.':up?'Crée ton compte pour sauvegarder tes séances.':'Ton carnet de musculation. Connecte-toi pour retrouver tes séances.'}</div></div>
-   <form id="login-form" novalidate><div class="field"><label for="lg-mail">E-mail</label><input id="lg-mail" type="email" autocomplete="email" inputmode="email" required></div>
+   <form id="login-form" novalidate>${up?`<div class="ed-grid"><div class="field"><label for="lg-first">Prénom</label><input id="lg-first" autocomplete="given-name" maxlength="30" required></div><div class="field"><label for="lg-last">Nom</label><input id="lg-last" autocomplete="family-name" maxlength="30" required></div></div><p class="small muted" style="margin:-4px 0 0">Ton nom reste privé. Il n'est visible que par les coachs et équipes que tu rejoins, pour qu'ils sachent qui tu es.</p>`:''}<div class="field"><label for="lg-mail">E-mail</label><input id="lg-mail" type="email" autocomplete="email" inputmode="email" required></div>
    ${reset?'':`<div class="field"><label for="lg-pass">Mot de passe</label><input id="lg-pass" type="password" autocomplete="${up?'new-password':'current-password'}" minlength="${up?8:6}" required></div>`}
    ${up?`<label class="consent" for="lg-ok"><input type="checkbox" id="lg-ok"><span>J'accepte les <button type="button" class="linkin" data-act="legal" data-k="cgu">conditions d'utilisation</button> et j'ai lu la <button type="button" class="linkin" data-act="legal" data-k="privacy">politique de confidentialité</button>.</span></label>`:''}
    <p class="err" id="lg-err" role="alert">${esc(msg||'')}</p>
@@ -562,7 +562,7 @@ const AUTHERR={'auth/invalid-email':'Adresse e-mail invalide.','auth/missing-pas
 async function loginSubmit(e){
   e.preventDefault();const mail=$('#lg-mail').value.trim(),pass=$('#lg-pass')?.value||'',err=$('#lg-err'),btn=e.target.querySelector('button[type=submit]');
   err.textContent='';
-  if(loginMode==='up'){if(pass.length<8){err.textContent='Choisis un mot de passe d\'au moins 8 caractères.';return}if(!$('#lg-ok').checked){err.textContent='Accepte les conditions d\'utilisation pour créer ton compte.';return}pendingConsent=Date.now()}
+  if(loginMode==='up'){const fi=($('#lg-first').value||'').trim().replace(/\s+/g,' ').slice(0,30),la=($('#lg-last').value||'').trim().replace(/\s+/g,' ').slice(0,30);if(!fi||!la){err.textContent='Indique ton prénom et ton nom.';return}pendingName={first:fi,last:la};if(pass.length<8){err.textContent='Choisis un mot de passe d\'au moins 8 caractères.';return}if(!$('#lg-ok').checked){err.textContent='Accepte les conditions d\'utilisation pour créer ton compte.';return}pendingConsent=Date.now()}
   btn.disabled=true;
   try{if(loginMode==='reset'){await fbAuth.sendPasswordResetEmail(mail);loginMode='in';showLogin('Lien envoyé. Regarde tes e-mails puis connecte-toi.');return}
     if(loginMode==='up')await fbAuth.createUserWithEmailAndPassword(mail,pass);else await fbAuth.signInWithEmailAndPassword(mail,pass);}
@@ -576,7 +576,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.0.0';let delAsk=false;
+const APP_VERSION='2.1.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -846,7 +846,7 @@ function viewMore(){
    <p style="margin:0 0 6px">${syncChip()}</p>
    <p class="small muted" style="margin:0">Tout est enregistré sur ton téléphone à chaque geste, puis envoyé sur ton compte Hevor dès qu'il y a du réseau. Connecte-toi avec le même compte sur ta tablette pour tout retrouver.</p>
    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn ghost" data-act="export-json">Exporter une copie</button><button class="btn ghost" data-act="import-json">Importer une copie</button></div></section>
-  ${USER?`<section class="card"><div class="h2">Compte</div><p style="margin:0;font-weight:600">${esc(USER.email||'')}</p>${logoutAsk?`<div class="confirm" style="margin-top:10px"><p>${S.dirty.length?'Des données ne sont pas encore envoyées. Reconnecte-toi au réseau avant de te déconnecter.':'Te déconnecter de Hevor sur cet appareil ?'}</p><div class="r"><button class="btn ghost" data-act="logout-no">Annuler</button>${S.dirty.length?'':'<button class="btn danger" data-act="logout-yes">Se déconnecter</button>'}</div></div>`:'<button class="btn ghost" style="margin-top:10px" data-act="logout">Se déconnecter</button>'}
+  ${USER?`<section class="card"><div class="h2">Compte</div>${typeof spNameRow==='function'?spNameRow():''}<p style="margin:0;font-weight:600">${esc(USER.email||'')}</p>${logoutAsk?`<div class="confirm" style="margin-top:10px"><p>${S.dirty.length?'Des données ne sont pas encore envoyées. Reconnecte-toi au réseau avant de te déconnecter.':'Te déconnecter de Hevor sur cet appareil ?'}</p><div class="r"><button class="btn ghost" data-act="logout-no">Annuler</button>${S.dirty.length?'':'<button class="btn danger" data-act="logout-yes">Se déconnecter</button>'}</div></div>`:'<button class="btn ghost" style="margin-top:10px" data-act="logout">Se déconnecter</button>'}
    ${delAsk?`<form class="confirm" id="del-form" style="margin-top:10px" novalidate><p>Supprimer définitivement ton compte et toutes tes séances ? Cette action est irréversible. Pense à exporter une copie avant.</p><div class="field"><label for="del-pass">Ton mot de passe pour confirmer</label><input id="del-pass" type="password" autocomplete="current-password"></div><p class="err" id="del-err" role="alert"></p><div class="r"><button type="button" class="btn ghost" data-act="del-no">Annuler</button><button type="submit" class="btn danger">Supprimer mon compte</button></div></form>`:'<button class="linkbtn danger-link" data-act="del-ask">Supprimer mon compte</button>'}</section>`:''}
   <section class="card"><div class="h2">Informations légales</div><div class="legal-list"><button class="row" data-act="legal" data-k="privacy"><div class="m"><div>Politique de confidentialité</div><small>Tes données et tes droits</small></div>${ICON.chev}</button><button class="row" data-act="legal" data-k="cgu"><div class="m"><div>Conditions d'utilisation</div><small>Règles d'usage et santé</small></div>${ICON.chev}</button><button class="row" data-act="legal" data-k="legal"><div class="m"><div>Mentions légales</div><small>Éditeur et hébergeurs</small></div>${ICON.chev}</button></div></section>
   <section class="card"><div class="h2">Repos par défaut</div>
@@ -1221,19 +1221,19 @@ privacy:{t:'Confidentialité',h:()=>`
 <h3>1. Qui est responsable de tes données ?</h3>
 <p>Hevor est édité par un particulier, à titre gratuit et non commercial (voir les mentions légales). Il est responsable du traitement de tes données. Tu peux le contacter ${contactLine()}.</p>
 <h3>2. Quelles données sont collectées ?</h3>
-<ul><li><b>Ton compte</b> : ton adresse e-mail et ton mot de passe. Le mot de passe est chiffré par Google : personne, pas même l'éditeur, ne peut le lire.</li>
+<ul><li><b>Ton compte</b> : ton prénom, ton nom, ton adresse e-mail et ton mot de passe. Le mot de passe est chiffré par Google : personne, pas même l'éditeur, ne peut le lire.</li>
 <li><b>Ton entraînement</b> : tes séances, exercices, poids, séries, répétitions, durées, dates, exercices personnalisés et réglages.</li>
-<li><b>Si tu utilises un espace Club ou Coach</b> : le prénom et le poste (ou l'objectif) que tu indiques, ton rôle, le planning, les programmes reçus, les séances faites dans cet espace et tes ressentis (durée, difficulté, commentaire). Dans un club, et seulement avec ton accord, tes réponses au questionnaire du matin : motivation, sommeil et douleurs.</li>
+<li><b>Si tu utilises un espace Club ou Coach</b> : ton nom, le poste (ou l'objectif) que tu indiques, ton rôle, le planning, les programmes reçus, les séances faites dans cet espace et tes ressentis (durée, difficulté, commentaire). Dans un club, et seulement avec ton accord, tes réponses au questionnaire du matin : motivation, sommeil et douleurs.</li>
 <li><b>Des données techniques</b> : l'identifiant de ton compte et, pour la sécurité, les données de connexion (dont l'adresse IP) traitées par les hébergeurs.</li></ul>
-<p>Hevor ne demande ni ton âge, ni ta position, ni tes contacts, ni tes photos. Un prénom n'est demandé que pour rejoindre une équipe ou un coach. Dans l'espace « Moi », n'y saisis pas d'informations médicales.</p>
+<p>Hevor ne demande ni ton âge, ni ta position, ni tes contacts, ni tes photos. Ton prénom et ton nom servent uniquement à ce que les coachs et équipes que tu rejoins sachent qui tu es : ils ne sont jamais affichés publiquement ni aux autres utilisateurs. Dans l'espace « Moi », n'y saisis pas d'informations médicales.</p>
 <h3>3. Pourquoi ?</h3>
 <p>Uniquement pour faire fonctionner Hevor : ton compte, la sauvegarde et la synchronisation de tes séances, tes records, tes statistiques et tes niveaux, et, si tu rejoins une équipe ou un coach, le suivi de ton entraînement par eux. Base légale : l'exécution des conditions d'utilisation que tu acceptes (article 6.1.b du RGPD). Les réponses au questionnaire du matin sont des données de santé : elles ne sont traitées qu'avec ton consentement explicite (article 9.2.a du RGPD), que tu peux retirer à tout moment. La sécurité du service repose sur l'intérêt légitime (article 6.1.f).</p>
 <h3>4. Ce que Hevor ne fait pas</h3>
 <p>Pas de publicité, pas de revente de données, pas de profilage, pas de mesure d'audience, pas de cookies de suivi.</p>
 <h3>5. Qui a accès à tes données ?</h3>
 <p>Ton espace « Moi » : toi seul. Des règles d'accès empêchent tout autre utilisateur de le lire, même les coachs de tes équipes.</p>
-<p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton prénom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses au questionnaire du matin.</li><li><b>Les autres joueurs et les spectateurs</b> voient seulement ton prénom, ton poste et ton rôle. Les spectateurs voient aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
-<p>Avec un coach indépendant (espace Coach) : ton coach voit ton prénom, ton objectif, les séances faites dans cet espace et tes ressentis. Les autres clients ne voient rien de toi.</p>
+<p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton nom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses au questionnaire du matin.</li><li><b>Les autres joueurs et les spectateurs</b> voient seulement ton nom, ton poste et ton rôle. Les spectateurs voient aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
+<p>Avec un coach indépendant (espace Coach) : ton coach voit ton nom, ton objectif, les séances faites dans cet espace et tes ressentis. Les autres clients ne voient rien de toi.</p>
 <p>Deux prestataires techniques interviennent :</p>
 <ul><li><b>Google (Firebase)</b> gère les comptes et stocke tes séances. Les séances sont stockées en France (Paris). Les données de compte peuvent être traitées aux États-Unis, dans le cadre du Data Privacy Framework UE–États-Unis et des clauses contractuelles types de la Commission européenne.</li>
 <li><b>GitHub</b> héberge l'appli. Il reçoit ton adresse IP quand l'appli se charge. Ce transfert est encadré de la même façon.</li></ul>
@@ -1243,10 +1243,10 @@ privacy:{t:'Confidentialité',h:()=>`
 <h3>7. Stockage sur ton appareil</h3>
 <p>Hevor enregistre tes données et ta session sur ton téléphone pour fonctionner hors connexion. Ce stockage est strictement nécessaire au service : il ne demande pas de consentement (article 82 de la loi Informatique et Libertés). Les polices et bibliothèques sont livrées avec l'appli : aucun site tiers n'est appelé pour l'affichage.</p>
 <h3>8. Sécurité</h3>
-<p>Connexion chiffrée (HTTPS), accès limité à ton propre compte, mots de passe chiffrés par Google, politique de sécurité qui bloque le chargement de code extérieur.</p>
+<p>Connexion chiffrée (HTTPS), mots de passe chiffrés par Google, politique de sécurité qui bloque le chargement de code extérieur. Des règles d'accès vérifiées par le serveur, et non par l'appli, limitent chaque personne à ce que son rôle permet : ton espace « Moi » n'est lisible que par toi ; dans une équipe, les données de forme ne sont lisibles que par toi et les coachs. Les codes d'invitation sont aléatoires, peuvent être renouvelés par le propriétaire, et une personne qui rejoint ne voit rien tant qu'un rôle ne lui a pas été attribué.</p>
 <h3>9. Tes droits</h3>
 <p>Tu as un droit d'accès, de rectification, d'effacement, de portabilité, de limitation et d'opposition. Tu peux les exercer directement :</p>
-<ul><li><b>Accès et portabilité</b> : Réglages › Exporter une copie.</li><li><b>Rectification</b> : modifie ou supprime tes séances et exercices, ton prénom et ton poste (Équipe › Mon profil).</li><li><b>Retrait du consentement</b> : Équipe › Mes réponses aux questionnaires.</li><li><b>Effacement</b> : quitte l'équipe, ou Réglages › Supprimer mon compte.</li></ul>
+<ul><li><b>Accès et portabilité</b> : Réglages › Exporter une copie.</li><li><b>Rectification</b> : modifie ou supprime tes séances et exercices, ton nom (Réglages › Compte) et ton poste (Équipe › Mon profil).</li><li><b>Retrait du consentement</b> : Équipe › Mes réponses aux questionnaires.</li><li><b>Effacement</b> : quitte l'équipe, ou Réglages › Supprimer mon compte.</li></ul>
 <p>Pour toute autre demande, contacte l'éditeur ${contactLine()}. Réponse sous un mois. Tu peux aussi adresser une réclamation à la CNIL (cnil.fr).</p>
 <h3>10. Âge</h3>
 <p>Hevor est destiné aux personnes de 15 ans et plus. En dessous, l'accord d'un parent est nécessaire, notamment pour rejoindre une équipe et pour répondre au questionnaire du matin.</p>
@@ -1255,7 +1255,7 @@ privacy:{t:'Confidentialité',h:()=>`
 cgu:{t:'Conditions d\'utilisation',h:()=>`
 <p class="lg-date">Conditions générales d'utilisation · mise à jour le 19 octobre 2026</p>
 <h3>1. Objet</h3><p>Hevor est un carnet d'entraînement gratuit : séances, chronomètre de repos, records, statistiques et niveaux dans ton espace « Moi » ; suivi d'équipe (planning, programmes, questionnaires, ressentis) dans l'espace Club ; suivi par un coach indépendant dans l'espace Coach.</p>
-<h3>2. Accès et compte</h3><p>L'utilisation demande un compte avec une adresse e-mail valide. Hevor est destiné aux personnes de 15 ans et plus, ou avec l'accord d'un parent. Tu es responsable de la confidentialité de ton mot de passe.</p>
+<h3>2. Accès et compte</h3><p>L'utilisation demande un compte avec une adresse e-mail valide, ton prénom et ton nom réels : ils permettent aux coachs de savoir qui rejoint leur équipe. Il est interdit d'usurper l'identité d'une autre personne. Hevor est destiné aux personnes de 15 ans et plus, ou avec l'accord d'un parent. Tu es responsable de la confidentialité de ton mot de passe.</p>
 <h3>3. Bonne utilisation</h3><p>Il est interdit de tenter d'accéder aux données d'autres utilisateurs, de perturber le service ou d'y enregistrer des contenus illicites. Le propriétaire d'une équipe ou d'un espace coaching n'invite que les personnes concernées, attribue les rôles avec soin et utilise les informations de ses joueurs ou clients uniquement pour leur entraînement. Il s'assure que les joueurs mineurs ont l'accord d'un parent. Les liens vidéo ajoutés au planning restent sous la responsabilité de celui qui les publie.</p>
 <h3>4. Santé et sécurité</h3><p><b>Hevor n'est pas un dispositif médical et ne donne pas de conseil médical.</b> Les exercices, illustrations, séances exemples et temps de repos sont indicatifs. Les indicateurs de charge et de forme (rouge, orange, vert) sont une aide pour le coach, pas un diagnostic. Consulte un médecin avant de commencer un programme ou en cas de douleur, échauffe-toi et adapte tes charges à ton niveau. La pratique sportive se fait sous ta responsabilité.</p>
 <h3>5. Disponibilité</h3><p>Hevor est fourni gratuitement, en l'état. L'éditeur fait de son mieux pour que le service fonctionne, sans pouvoir le garantir en permanence. Il peut le faire évoluer, le suspendre ou l'arrêter. Pense à exporter régulièrement une copie de tes données.</p>
@@ -1265,11 +1265,11 @@ cgu:{t:'Conditions d\'utilisation',h:()=>`
 <h3>9. Modifications</h3><p>Ces conditions peuvent évoluer. Tu en seras informé dans l'appli. Continuer à utiliser Hevor vaut acceptation de la nouvelle version.</p>
 <h3>10. Droit applicable</h3><p>Ces conditions sont soumises au droit français. En cas de désaccord, contacte d'abord l'éditeur ${contactLine()} pour trouver une solution amiable.</p>`},
 legal:{t:'Mentions légales',h:()=>`
-<p class="lg-date">Mentions légales · mise à jour le 17 octobre 2026</p>
+<p class="lg-date">Mentions légales · mise à jour le 19 octobre 2026</p>
 <h3>Éditeur</h3><p>Hevor est édité par un particulier, à titre non professionnel et non commercial. Conformément à l'article 6, III, 2° de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique, l'éditeur a choisi de ne pas publier son identité ; ses coordonnées ont été communiquées à l'hébergeur. Contact : ${contactLine()}.</p>
 <h3>Directeur de la publication</h3><p>L'éditeur.</p>
 <h3>Hébergement de l'appli</h3><p>GitHub, Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. github.com</p>
-<h3>Hébergement des données</h3><p>Google (Firebase Authentication et Cloud Firestore). Séances stockées dans la région europe-west9 (Paris, France). firebase.google.com</p>
+<h3>Hébergement des données</h3><p>Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande (Firebase Authentication et Cloud Firestore). Données d'entraînement et d'équipe stockées dans la région europe-west9 (Paris, France). firebase.google.com</p>
 <h3>Propriété intellectuelle</h3><p>Le nom Hevor, le logo, le design, les pictogrammes et les textes sont la propriété de l'éditeur. Police Barlow : SIL Open Font License. Bibliothèques Firebase (licence Apache 2.0), jsPDF et QR Code Generator de Kazuhiko Arase (licence MIT). « QR Code » est une marque déposée de DENSO WAVE INCORPORATED. Les émojis sont affichés par le système de ton appareil. Les noms de produits cités dans les niveaux (avions, trains, fusées…) le sont à titre descriptif et restent la propriété de leurs titulaires.</p>
 <h3>Données personnelles</h3><p>Voir la politique de confidentialité.</p>`}
 };

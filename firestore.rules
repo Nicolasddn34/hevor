@@ -18,7 +18,13 @@ service cloud.firestore {
     // meta (séances types, exercices perso, réglages), active (séance en cours), profile, spaces (liste de ses équipes)
     match /data/users/{uid}/{doc} {
       allow read, delete: if isOwner(uid) && doc in ['meta', 'active', 'profile', 'spaces'];
-      allow create, update: if isOwner(uid) && doc in ['meta', 'active', 'profile', 'spaces'] && request.resource.data.keys().size() <= 10;
+      allow create, update: if isOwner(uid) && doc in ['meta', 'active', 'profile'] && request.resource.data.keys().size() <= 10;
+      // liste de ses équipes, espace d'accueil, prénom et nom
+      allow create, update: if isOwner(uid) && doc == 'spaces'
+        && request.resource.data.keys().hasOnly(['teams', 'home', 'name', 'first', 'last', 'stamp'])
+        && request.resource.data.teams is list && request.resource.data.teams.size() <= 50
+        && str(request.resource.data.name, 60) && (!('first' in request.resource.data) || str(request.resource.data.first, 30))
+        && (!('last' in request.resource.data) || str(request.resource.data.last, 30));
     }
     // Séances terminées
     match /data/users/{uid}/profile/sessions/{sid} {
@@ -43,7 +49,7 @@ service cloud.firestore {
       return d.keys().hasOnly(['kind', 'name', 'club', 'sport', 'logo', 'theme', 'owner', 'ownerName', 'code', 'at'])
         && d.kind in ['club', 'coach'] && str(d.name, 60) && str(d.club, 80) && str(d.owner, 128)
         && (!('sport' in d) || str(d.sport, 40)) && (!('logo' in d) || str(d.logo, 200000))
-        && (!('ownerName' in d) || str(d.ownerName, 40)) && (!('theme' in d) || d.theme is map)
+        && (!('ownerName' in d) || str(d.ownerName, 60)) && (!('theme' in d) || (d.theme is map && d.theme.size() <= 20))
         && str(d.code, 12);
     }
     match /teams/{tid} {
@@ -58,7 +64,7 @@ service cloud.firestore {
 
       function validMember(d, uid) {
         return d.keys().hasOnly(['uid', 'name', 'role', 'poste', 'code', 'at', 'health'])
-          && d.uid == uid && str(d.name, 40) && (!('poste' in d) || str(d.poste, 40))
+          && d.uid == uid && str(d.name, 60) && d.name.size() > 0 && (!('poste' in d) || str(d.poste, 40))
           && d.role in ['pending', 'player', 'coach', 'spectator', 'client'];
       }
       match /members/{uid} {
@@ -89,6 +95,7 @@ service cloud.firestore {
         allow create, update: if hasRole(tid, ['coach'])
           && request.resource.data.keys().hasOnly(['type', 'title', 'start', 'dur', 'place', 'invitees', 'video', 'by', 'at'])
           && str(request.resource.data.title, 80) && num(request.resource.data.start) && request.resource.data.invitees is list
+          && request.resource.data.type in ['training', 'muscu', 'match', 'video', 'meeting', 'recup'] && request.resource.data.dur is int && request.resource.data.dur >= 0 && request.resource.data.dur <= 1440
           && request.resource.data.invitees.size() <= 200 && (!('video' in request.resource.data) || str(request.resource.data.video, 500));
         allow delete: if hasRole(tid, ['coach']);
       }
@@ -107,7 +114,9 @@ service cloud.firestore {
         allow create, update: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
           && wid == me() + '_' + request.resource.data.day && request.resource.data.day.matches('^[0-9]{8}$')
           && request.resource.data.keys().hasOnly(['uid', 'day', 'at', 'mot', 'som', 'pains'])
-          && request.resource.data.pains is map && request.resource.data.pains.size() <= 40;
+          && request.resource.data.mot is int && request.resource.data.mot >= 1 && request.resource.data.mot <= 5
+          && request.resource.data.som is int && request.resource.data.som >= 1 && request.resource.data.som <= 5
+          && request.resource.data.pains is map && request.resource.data.pains.size() <= 40 && request.resource.data.pains.values().hasOnly([1, 2, 3, 4, 5]);
         allow delete: if signed() && (resource.data.uid == me() || teamOwner(tid) == me());
       }
       // Ressentis et séances faites dans l'espace : le joueur concerné et les coachs (qui peuvent ajouter un retour)
@@ -115,6 +124,8 @@ service cloud.firestore {
         allow read: if signed() && (resource.data.uid == me() || hasRole(tid, ['coach']));
         allow create: if signed() && request.resource.data.uid == me() && hasRole(tid, ['player', 'client'])
           && request.resource.data.keys().hasOnly(['uid', 'kind', 'eventId', 'programId', 'title', 'at', 'dur', 'rpe', 'load', 'comment', 'items'])
+          && request.resource.data.rpe is int && request.resource.data.rpe >= 1 && request.resource.data.rpe <= 10
+          && request.resource.data.dur is int && request.resource.data.dur >= 0 && request.resource.data.dur <= 600
           && (!('comment' in request.resource.data) || str(request.resource.data.comment, 500))
           && (!('items' in request.resource.data) || (request.resource.data.items is list && request.resource.data.items.size() <= 40));
         allow update: if signed() && (

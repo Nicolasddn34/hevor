@@ -554,3 +554,4 @@ span.bz{border:0;box-shadow:none}span.bz.s1,span.bz.s2{background:#F2C230}span.b
 .sp-today h3{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:26px;text-transform:uppercase;margin:0;line-height:1}
 .sp-cl{display:flex;flex-direction:column;gap:6px}.sp-cl .r{display:flex;justify-content:space-between;gap:8px}
 .sp-q2{margin:0;font-size:14px}.sp-fb{margin:0;font-size:14px;background:var(--accent-soft);border-radius:8px;padding:6px 10px}
+.sp-id{display:flex;flex-direction:row;align-items:center;gap:12px}.sp-id .m{flex:1;min-width:0}.sp-id .m b{display:block;font-size:17px}.sp-id small{font-size:12px}
