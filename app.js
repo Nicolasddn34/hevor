@@ -598,7 +598,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.6.1';let delAsk=false;
+const APP_VERSION='2.7.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -638,7 +638,7 @@ function tplMin(t){let s=0;t.items.forEach((it,i)=>{s+=it.sets*(modeOf(it)==='ti
 function lastDoneTpl(id){for(let i=S.sessions.length-1;i>=0;i--)if(S.sessions[i].tplId===id)return S.sessions[i].date;return null}
 function viewHome(){
   const now=Date.now();
-  let h=`<div class="wrap"><header class="top">${backBtn()}<div class="logo-row"><div class="logo">${LOGO}</div><div><div class="brand">Hevor</div><div class="sub">${new Date(now).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div></div></div>${(typeof spPill==='function'&&spPill())||syncChip()}</header>`;
+  let h=`<div class="wrap"><header class="top">${backBtn()}<div class="logo-row"><div class="logo">${LOGO}</div><div><div class="brand">Hevor</div><div class="sub">${new Date(now).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div></div></div>${typeof spPill==='function'?spPill():''}</header>`;
   if(S.active){const a=S.active,done=a.items.reduce((n,it)=>n+it.done.filter(Boolean).length,0),tot=a.items.reduce((n,it)=>n+it.done.length,0);
     h+=`<div class="banner"><div><small>Séance en cours</small><br><b>${esc(a.name)}</b><div class="small">${done}/${tot} séries · ${Math.round((now-a.start)/60000)} min</div></div><button class="btn" data-act="resume">Reprendre</button></div>`}
   h+=`<section><div class="h2">Mes séances</div>`;
@@ -671,7 +671,7 @@ function browseRes(B,mode){
   return `<div class="folders">${CATS.map(c=>{const n=allExos().filter(e=>e.cat===c.id).length;return `<button class="folder" style="--fc:var(--c-${c.col})" data-act="${mode}-folder" data-id="${c.id}"><div class="fig">${figSVG({pat:c.pat,eq:CATDEF[c.id]},1)}</div><b><i class="dot"></i>${esc(c.name)}</b><span>${n} exercices</span></button>`}).join('')}</div>`;
 }
 function viewLib(){
-  return `<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Exercices</div><div class="sub">${allExos().length} exercices rangés par zone</div></div>${syncChip()}</header>
+  return `<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Exercices</div><div class="sub">${allExos().length} exercices rangés par zone</div></div>${typeof spPill==='function'?spPill():''}</header>
   <div class="search">${ICON.search}<input id="lib-q" type="search" placeholder="Chercher un exercice, une machine…" value="${esc(libB.q)}" autocomplete="off"></div>
   <section id="lib-res">${browseRes(libB,'lib')}</section>
   <section><button class="btn line" data-act="custom-new">+ Créer un exercice</button></section></div>`;
@@ -796,7 +796,7 @@ function levelPct(T,P){if(T.n<=P.lvl)return 100;if(T.n===P.lvl+1)return P.pct;re
 function viewPass(){
   const P=passAt(totalKg()),M=buildMap(),H=M.H,pts=M.pts;
   const done=P.lvl?smoothPath(M.road.slice(0,Math.min(M.road.length,P.lvl*2+1))):'';
-  let h=`<div class="wrap map-wrap"><div class="pass-top"><header class="top ptop">${backBtn()}<div><div class="brand">Niveaux</div></div>${syncChip()}</header>
+  let h=`<div class="wrap map-wrap"><div class="pass-top"><header class="top ptop">${backBtn()}<div><div class="brand">Niveaux</div></div>${typeof spPill==='function'?spPill():''}</header>
   <section class="pass-hero2"><div class="ph-emo">${P.no?P.no.emo:'🏆'}</div>
    <div class="ph-main"><div class="ph-k">Niveau</div><div class="ph-lvl num">${P.lvl}<span>/100</span></div>${P.done?'<div class="ph-next">Tout est débloqué !</div>':`<div class="ph-next">Prochain : <b>${esc(P.no.name)}</b></div>`}</div>
    <div class="ph-side"><button class="ph-go" data-act="map-cur">Voir mon niveau ↓</button><div class="ph-tot">Total soulevé<b class="num">${fmtT(P.t)}</b></div></div>
@@ -845,7 +845,7 @@ function figHuman(ex,t){
 }
 function scrollToCur(smooth){const c=document.getElementById('nd-cur')||document.querySelector('.nd.done:last-of-type');if(c)c.scrollIntoView({block:'center',behavior:smooth?'smooth':'auto'})}
 function viewStats(){
-  let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Stats</div><div class="sub">Ta progression, séance après séance</div></div>${syncChip()}</header>`;
+  let h=`<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Stats</div><div class="sub">Ta progression, séance après séance</div></div>${typeof spPill==='function'?spPill():''}</header>`;
   if(!S.sessions.length)return h+`<div class="card empty"><div class="fig">${figSVG(EXMAP['squat'],1)}</div><h3>Pas encore de données</h3><p>Termine une première séance : le poids soulevé, tes records et ta progression par exercice apparaîtront ici.</p></div></div>`;
   const tot=S.sessions.reduce((a,s)=>a+s.tonnage,0);const m30=S.sessions.filter(s=>s.date>Date.now()-30*864e5).length;
   h+=`<div class="tiles"><div class="tile"><span>Séances</span><b class="num">${S.sessions.length}</b></div><div class="tile"><span>30 derniers j</span><b class="num">${m30}</b></div><div class="tile"><span>Total soulevé</span><b class="num">${tot>=1000?fmtN(tot/1000)+' t':fmtKg(tot)}</b></div></div>`;
@@ -863,11 +863,10 @@ function viewMore(){
   return `<div class="wrap"><header class="top">${backBtn()}<div><div class="brand">Réglages</div><div class="sub">Sauvegarde et préférences</div></div>${typeof spPill==='function'?spPill():''}</header>
   ${USER&&typeof spacesUsed==='function'?`<section class="card"><div class="h2">Mes espaces</div><p class="small muted" style="margin:0 0 6px">Chaque espace est séparé : ton espace « Moi » reste privé.</p><div class="legal-list">
    <button class="row" data-act="sp-go" data-v="club"><div class="m"><div>Club</div><small>${teamsOf('club').length?teamsOf('club').length+' équipe'+(teamsOf('club').length>1?'s':''):'Créer ou rejoindre une équipe'}</small></div>${ICON.chev}</button>
-   <button class="row" data-act="sp-go" data-v="coach"><div class="m"><div>Coach</div><small>${teamsOf('coach').length?coachSub(teamsOf('coach')):'Coacher des clients ou rejoindre ton coach'}</small></div>${ICON.chev}</button>
+   <button class="row" data-act="sp-go" data-v="coach"><div class="m"><div>Coaching</div><small>${teamsOf('coach').length?coachSub(teamsOf('coach')):'Coacher des clients ou rejoindre ton coach'}</small></div>${ICON.chev}</button>
    <button class="row" data-act="sp-home"><div class="m"><div>Espace d'accueil</div><small>Celui qui s'ouvre au lancement</small></div>${ICON.chev}</button></div></section>`:''}
   <section class="card"><div class="h2" style="margin-bottom:4px">Sauvegarde</div>
-   <p style="margin:0 0 6px">${syncChip()}</p>
-   <p class="small muted" style="margin:0">Tout est enregistré sur ton téléphone à chaque geste, puis envoyé sur ton compte Hevor dès qu'il y a du réseau. Connecte-toi avec le même compte sur ta tablette pour tout retrouver.</p>
+   <p style="margin:0">${syncChip()}</p>
    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn ghost" data-act="export-json">Exporter une copie</button><button class="btn ghost" data-act="import-json">Importer une copie</button></div></section>
   ${USER?`<section class="card"><div class="legal-list"><button class="row" data-act="acc-open"><span class="acc-av" aria-hidden="true">${esc((USER.email||'?').charAt(0).toUpperCase())}</span><div class="m"><div>Gérer mon compte</div><small>${esc(USER.email||'')}</small></div>${ICON.chev}</button></div></section>`:''}
   <section class="card"><div class="h2">Informations légales</div><div class="legal-list"><button class="row" data-act="legal" data-k="privacy"><div class="m"><div>Politique de confidentialité</div><small>Tes données et tes droits</small></div>${ICON.chev}</button><button class="row" data-act="legal" data-k="cgu"><div class="m"><div>Conditions d'utilisation</div><small>Règles d'usage et santé</small></div>${ICON.chev}</button><button class="row" data-act="legal" data-k="legal"><div class="m"><div>Mentions légales</div><small>Éditeur et hébergeurs</small></div>${ICON.chev}</button></div></section>
@@ -893,7 +892,7 @@ function renderAcc(){
   const h=sheetHead('Mon compte','acc-close')+`<div class="sheet-b"><div class="wrap" style="display:flex;flex-direction:column;gap:12px">
    <section class="card"><div class="acc-me"><span class="acc-av lg" aria-hidden="true">${esc((USER.email||'?').charAt(0).toUpperCase())}</span><div><div style="font-weight:700">${esc(USER.email||'')}</div><div class="small muted">Compte connecté</div></div></div>${typeof spNameRow==='function'?spNameRow():''}</section>
    <section class="card"><div class="h2">Changer de compte</div><div class="legal-list">${others.map(row).join('')}${list.length<ACC_MAX?`<button class="row" data-act="acc-add"><span class="acc-av add" aria-hidden="true">+</span><div class="m"><div>Ajouter un compte</div><small>Une autre adresse e-mail</small></div>${ICON.chev}</button>`:''}</div>
-    <p class="small muted" style="margin:8px 0 0">Chaque compte garde ses séances à part. Tu passes de l'un à l'autre sans retaper ton mot de passe.</p></section>
+</section>
    <section class="card">${logoutAsk?`<div class="confirm"><p>${S.dirty.length?'Des données ne sont pas encore envoyées. Reconnecte-toi au réseau avant de te déconnecter.':'Te déconnecter de '+esc(USER.email||'ce compte')+' sur cet appareil ?'}</p><div class="r"><button class="btn ghost" data-act="logout-no">Annuler</button>${S.dirty.length?'':'<button class="btn danger" data-act="logout-yes">Se déconnecter</button>'}</div></div>`:'<button class="btn ghost block" data-act="logout">Se déconnecter</button>'}
     ${delAsk?`<form class="confirm" id="del-form" style="margin-top:10px" novalidate><p>Supprimer définitivement ton compte et toutes tes séances ? Cette action est irréversible. Pense à exporter une copie avant.</p><div class="field"><label for="del-pass">Ton mot de passe pour confirmer</label><input id="del-pass" type="password" autocomplete="current-password"></div><p class="err" id="del-err" role="alert"></p><div class="r"><button type="button" class="btn ghost" data-act="del-no">Annuler</button><button type="submit" class="btn danger">Supprimer mon compte</button></div></form>`:'<button class="linkbtn danger-link" style="margin-top:6px" data-act="del-ask">Supprimer mon compte</button>'}</section>
   </div></div>`;
@@ -1292,7 +1291,7 @@ privacy:{t:'Confidentialité',h:()=>`
 <h3>5. Qui a accès à tes données ?</h3>
 <p>Ton espace « Moi » : toi seul. Des règles d'accès empêchent tout autre utilisateur de le lire, même les coachs de tes équipes.</p>
 <p>Dans une équipe (espace Club) :</p><ul><li><b>Les coachs de l'équipe</b> voient ton nom, ton poste, les séances et ressentis faits dans l'équipe et, si tu as donné ton accord, tes réponses aux questionnaires (santé, ressenti après les séances).</li><li><b>Les autres joueurs et le staff</b> voient seulement ton nom, ton poste et ton rôle. Le staff voit aussi le planning de l'équipe. Ils ne voient jamais tes données de forme ou de santé.</li><li><b>Toi, joueur</b>, tu ne vois que les créneaux et programmes auxquels ton coach t'a convoqué.</li></ul>
-<p>Avec un coach indépendant (espace Coach) : ton coach voit ton nom, ton objectif, les séances faites dans cet espace et tes ressentis. Les autres clients ne voient rien de toi.</p>
+<p>Avec un coach indépendant (espace Coaching) : ton coach voit ton nom, ton objectif, les séances faites dans cet espace et tes ressentis. Les autres clients ne voient rien de toi.</p>
 <p>Deux prestataires techniques interviennent :</p>
 <ul><li><b>Google (Firebase)</b> gère les comptes et stocke tes séances. Les séances sont stockées en France (Paris). Les données de compte peuvent être traitées aux États-Unis, dans le cadre du Data Privacy Framework UE–États-Unis et des clauses contractuelles types de la Commission européenne.</li>
 <li><b>GitHub</b> héberge l'appli. Il reçoit ton adresse IP quand l'appli se charge. Ce transfert est encadré de la même façon.</li></ul>
@@ -1313,7 +1312,7 @@ privacy:{t:'Confidentialité',h:()=>`
 <p>Cette politique peut évoluer. La date de mise à jour figure en haut de la page.</p>`},
 cgu:{t:'Conditions d\'utilisation',h:()=>`
 <p class="lg-date">Conditions générales d'utilisation · mise à jour le 19 octobre 2026</p>
-<h3>1. Objet</h3><p>Hevor est un carnet d'entraînement gratuit : séances, chronomètre de repos, records, statistiques et niveaux dans ton espace « Moi » ; suivi d'équipe (planning, programmes, questionnaires, ressentis) dans l'espace Club ; suivi par un coach indépendant dans l'espace Coach.</p>
+<h3>1. Objet</h3><p>Hevor est un carnet d'entraînement gratuit : séances, chronomètre de repos, records, statistiques et niveaux dans ton espace « Moi » ; suivi d'équipe (planning, programmes, questionnaires, ressentis) dans l'espace Club ; suivi par un coach indépendant dans l'espace Coaching.</p>
 <h3>2. Accès et compte</h3><p>L'utilisation demande un compte avec une adresse e-mail valide, ton prénom et ton nom réels : ils permettent aux coachs de savoir qui rejoint leur équipe. Il est interdit d'usurper l'identité d'une autre personne. Hevor est destiné aux personnes de 15 ans et plus, ou avec l'accord d'un parent. Tu es responsable de la confidentialité de ton mot de passe.</p>
 <h3>3. Bonne utilisation</h3><p>Il est interdit de tenter d'accéder aux données d'autres utilisateurs, de perturber le service ou d'y enregistrer des contenus illicites. Le propriétaire d'une équipe ou d'un espace coaching n'invite que les personnes concernées, attribue les rôles avec soin et utilise les informations de ses joueurs ou clients uniquement pour leur entraînement. Il s'assure que les joueurs mineurs ont l'accord d'un parent. Les liens vidéo ajoutés au planning restent sous la responsabilité de celui qui les publie.</p>
 <h3>4. Santé et sécurité</h3><p><b>Hevor n'est pas un dispositif médical et ne donne pas de conseil médical.</b> Les exercices, illustrations, séances exemples et temps de repos sont indicatifs. Les indicateurs de charge et de forme (rouge, orange, vert) sont une aide pour le coach, pas un diagnostic. Consulte un médecin avant de commencer un programme ou en cas de douleur, échauffe-toi et adapte tes charges à ton niveau. La pratique sportive se fait sous ta responsabilité.</p>

@@ -21,7 +21,7 @@ const RPE_L=['','Très facile','Facile','Facile','Modéré','Assez dur','Dur','D
 /* ---------- nettoyage des données lues ---------- */
 const cIds=a=>(Array.isArray(a)?a:[]).filter(x=>typeof x==='string'&&x.length<=128).slice(0,200);
 function cEvent(id,d){d=d||{};return{id,type:EVT[d.type]?d.type:'training',title:cStr(d.title,80)||EVT[d.type]||'Créneau',start:cNum(d.start,0,4102444800000,0),dur:Math.round(cNum(d.dur,0,1440,60)),place:cStr(d.place,80),invitees:cIds(d.invitees),video:okUrl(d.video)?d.video:'',by:cStr(d.by,128)}}
-function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120)}}
+function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120),restSet:Math.round(cNum(it.restSet,0,600,0)),restExo:Math.round(cNum(it.restExo,0,600,0))}}
 function cProgram(id,d){d=d||{};return{id,title:cStr(d.title,80)||'Programme',date:cNum(d.date,0,4102444800000,0),eventId:okId(d.eventId)?d.eventId:'',items:(Array.isArray(d.items)?d.items:[]).slice(0,40).map(cPItem).filter(Boolean),invitees:cIds(d.invitees),note:cStr(d.note,300),by:cStr(d.by,128)}}
 const avgOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 /* questionnaires créés par les coachs du club : matin, soir ou après une séance */
@@ -170,12 +170,9 @@ function viewEffectif(tid){
   const rows=players.map(p=>{const due=dueList(tid,p.uid);return{p,due,...playerStatus(tid,p.uid)}});
   const cnt=s=>rows.filter(r=>r.s===s).length,hasQ=activeQuests(tid).length>0;
   const upToDate=rows.filter(r=>r.due.length&&r.due.every(x=>x.done)).length,withDue=rows.filter(r=>r.due.length).length;
-  const alert=rows.filter(r=>r.s==='r').sort((a,b)=>(b.st.ratio||0)-(a.st.ratio||0))[0];
   const order={r:0,o:1,v:2,none:3};rows.sort((a,b)=>order[a.s]-order[b.s]||(b.st.ratio||0)-(a.st.ratio||0));
   let h=`<div class="tiles st3"><div class="tile t-r"><b class="num">${cnt('r')}</b><span>Rouge</span></div><div class="tile t-o"><b class="num">${cnt('o')}</b><span>Orange</span></div><div class="tile t-v"><b class="num">${cnt('v')}</b><span>Vert</span></div></div>`;
   if(hasQ&&withDue)h+=`<div class="sp-qline"><span class="small">Questionnaires du jour : <b class="num">${upToDate} / ${withDue}</b> à jour</span>${upToDate<withDue?`<button class="btn ghost sm" data-act="tm-remind" data-id="${tid}">Rappel</button>`:''}</div>`;
-  if(alert){const w=alert.w,pz=w?Object.entries(w.pains).sort((a,b)=>b[1]-a[1])[0]:null;
-    h+=`<div class="card sp-alert">${SPICON.warn}<div><b>${esc(alert.p.name)}</b> ${alert.st.ratio!=null?`a une charge ${pctTxt(alert.st.ratio)} par rapport à son habitude`:'est à surveiller'}${pz?`, douleur ${esc(ZONE_L[pz[0]].toLowerCase())} ${pz[1]}/5`:''}.</div></div>`}
   h+=`<section><div class="h2">Effectif · ${players.length}<span class="small">Charge 7 j · douleur${hasQ?' · questionnaires':''}</span></div><div class="list">`;
   for(const r of rows){const pz=r.w?Object.entries(r.w.pains).sort((a,b)=>b[1]-a[1])[0]:null,nd=r.due.filter(x=>x.done).length;
     const qc=!hasQ?'':!r.due.length?`<span class="qchip na" title="Rien à remplir pour le moment">–</span>`:nd===r.due.length?`<span class="qchip ok" title="Questionnaires remplis" aria-label="Questionnaires remplis">${ICON.check}</span>`:`<span class="qchip no" title="${nd} sur ${r.due.length} rempli${nd>1?'s':''}" aria-label="Questionnaires pas remplis">${r.due.length>1?nd+'/'+r.due.length:'✕'}</span>`;
@@ -186,7 +183,7 @@ function viewEffectif(tid){
 function staffSection(tid){
   const T=SP.T[tid],D=dataOf(tid),own=isTeamOwner(tid),st=D.members.filter(m=>m.role==='coach'||m.role==='spectator');
   if(!st.length)return'';
-  return `<section><div class="h2">Staff · ${st.length}</div><div class="list">${st.map(m=>`<button class="row sp-mem" ${own&&m.uid!==UID?`data-act="sp-mem" data-id="${tid}" data-u="${esc(m.uid)}"`:'disabled'}><div class="m"><div>${esc(m.name)}${m.uid===UID?' <span class="muted small">(toi)</span>':''}</div><small>${esc(m.poste||'')}</small></div>${T.team.owner===m.uid?`<span class="rpill r-owner">${SPICON.crown}Propriétaire</span>`:`<span class="rpill r-${m.role}">${ROLE_L[m.role]}</span>`}</button>`).join('')}</div>${own?'<p class="small muted" style="margin:4px 0 0">Touche un joueur ou un membre du staff pour changer son rôle ou le retirer.</p>':''}</section>`;
+  return `<section><div class="h2">Staff · ${st.length}</div><div class="list">${st.map(m=>`<button class="row sp-mem" ${own&&m.uid!==UID?`data-act="sp-mem" data-id="${tid}" data-u="${esc(m.uid)}"`:'disabled'}><div class="m"><div>${esc(m.name)}${m.uid===UID?' <span class="muted small">(toi)</span>':''}</div><small>${esc(m.poste||'')}</small></div>${T.team.owner===m.uid?`<span class="rpill r-owner">${SPICON.crown}Propriétaire</span>`:`<span class="rpill r-${m.role}">${ROLE_L[m.role]}</span>`}</button>`).join('')}</div></section>`;
 }
 function teamTop(tid,sub){
   const T=SP.T[tid],n=teamsOf(T.team.kind).length;
@@ -388,7 +385,7 @@ function viewClubPrograms(tid){
   if(sub==='quests')return h+viewQuestList(tid);
   const last=pid=>{const l=D.logs.filter(x=>x.programId===pid&&x.uid===UID);return l.length?l[l.length-1]:null};
   const card=p=>{const l=role==='coach'?null:last(p.id);return `<button class="row sp-prog" data-act="tm-prog" data-id="${tid}" data-p="${p.id}"><div class="m"><div>${esc(p.title)}</div><small>${p.items.length} exercice${p.items.length>1?'s':''}${l?' · fait '+ago(l.at):''}</small></div>${ICON.chev}</button>`};
-  if(role==='coach')h+=`<section><button class="btn primary block" data-act="tm-prog-new" data-id="${tid}">+ Nouveau programme</button><p class="small muted" style="margin:0">Tous tes joueurs voient tes programmes et peuvent les démarrer quand ils veulent, autant de fois qu'ils veulent. Dans le planning, crée simplement un créneau « Muscu » et dis-leur lequel faire.</p></section>`;
+  if(role==='coach')h+=`<section><button class="btn primary block" data-act="tm-prog-new" data-id="${tid}">+ Nouveau programme</button></section>`;
   const run=role==='player'?runLoad():null;if(run&&run.tid===tid)h+=`<div class="banner"><div><small>Programme en cours</small><br><b>${esc(run.title)}</b></div><button class="btn" data-act="run-resume">Reprendre</button></div>`;
   h+=`<section><div class="h2">Programmes · ${D.programs.length}</div>${D.programs.length?`<div class="list">${D.programs.map(card).join('')}</div>`:`<p class="muted small" style="margin:0">${role==='coach'?'Aucun programme pour le moment.':'Ton coach n\'a pas encore créé de programme.'}</p>`}</section>`;
   return h;
@@ -396,8 +393,8 @@ function viewClubPrograms(tid){
 /* coach : liste des questionnaires */
 function viewQuestList(tid){
   const Qs=questsOf(tid);
-  let h=`<section><button class="btn primary block" data-act="tm-qe-new" data-id="${tid}">+ Nouveau questionnaire</button><p class="small muted" style="margin:0">Choisis quand tes joueurs le remplissent : chaque matin, chaque soir ou juste après une séance. Il apparaît dans leur planning, avec une pastille rouge tant qu'il n'est pas rempli.</p></section>`;
-  if(!Qs.length)return h+`<div class="card empty"><h3>Aucun questionnaire</h3><p>Tant que tu n'en crées pas, tes joueurs n'ont rien à remplir et l'effectif se base seulement sur la charge.</p></div>`;
+  let h=`<section><button class="btn primary block" data-act="tm-qe-new" data-id="${tid}">+ Nouveau questionnaire</button></section>`;
+  if(!Qs.length)return h+`<div class="card empty"><h3>Aucun questionnaire</h3></div>`;
   h+=`<div class="list">${Qs.map(q=>`<div class="row sp-quest"><button class="m" data-act="tm-qe" data-id="${tid}" data-q="${q.id}"><div>${esc(q.title)}</div><small>${QWHEN[q.when]}${q.when==='after'?' · '+esc(q.aft.map(t=>QAFT[t].toLowerCase()).join(', ')):''} · ${q.qs.length} question${q.qs.length>1?'s':''}</small></button><span class="rpill ${q.on?'r-done':'r-off'}">${q.on?'Activé':'Désactivé'}</span><button class="toggle" data-act="tm-qon" data-id="${tid}" data-q="${q.id}" aria-pressed="${q.on}" aria-label="${q.on?'Désactiver':'Activer'} ${esc(q.title)}" ${q.qs.length?'':'disabled'}></button></div>`).join('')}</div>`;
   return h+`<p class="small muted" style="margin:0">Les réponses sont des données de santé : chaque joueur donne son accord une seule fois, et seuls les coachs de l'équipe les voient.</p>`;
 }
@@ -452,7 +449,7 @@ function renderProgEdit(){
      <button class="icon-btn" data-act="pe-move" data-i="${i}" data-d="-1" aria-label="Monter" ${i===0?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></button>
      <button class="icon-btn" data-act="pe-del" data-i="${i}" aria-label="Retirer">${ICON.close}</button></div>
      <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="pe-mode" data-i="${i}" data-m="${m}" aria-pressed="${it.mode===m}">${l}</button>`).join('')}</div>
-     <div class="ed-grid">${stepper('Séries',it.sets,'pe-stp',i,'sets','n')}${it.mode==='reps'?stepper('Reps',it.reps,'pe-stp',i,'reps','n'):it.mode==='time'?stepper('Durée',it.dur,'pe-stp',i,'dur'):'<div class="ed-note">Le joueur note ses reps</div>'}</div>
+     <div class="ed-grid">${stepper('Séries',it.sets,'pe-stp',i,'sets','n')}${it.mode==='reps'?stepper('Reps',it.reps,'pe-stp',i,'reps','n'):it.mode==='time'?stepper('Durée',it.dur,'pe-stp',i,'dur'):'<div class="ed-note">Le joueur note ses reps</div>'}${stepper('Repos entre séries',it.restSet||0,'pe-stp',i,'restSet')}${stepper('Repos après l\'exo',it.restExo||0,'pe-stp',i,'restExo')}</div>
      <div class="seg" role="group" aria-label="Charge">${[['free','Libre'],['pct','% du record'],['kg','Kg fixe']].map(([m,l])=>`<button data-act="pe-lt" data-i="${i}" data-m="${m}" aria-pressed="${it.lt===m}">${l}</button>`).join('')}</div>
      ${it.lt!=='free'?`<div class="field"><label for="pe-v-${i}">${it.lt==='pct'?'Pourcentage du record du joueur':'Charge en kg'}</label><input id="pe-v-${i}" inputmode="decimal" value="${it.lv?numStr(it.lv):''}" placeholder="${it.lt==='pct'?'80':'20'}"></div>`:''}
      <div class="field"><label for="pe-n-${i}">Consigne (facultatif)</label><input id="pe-n-${i}" value="${esc(it.note)}" maxlength="120" placeholder="Ex. Tempo lent, repos 2 min"></div></div>`});
@@ -471,7 +468,7 @@ async function saveProg(btn){
   progVals();const date=PE.club?(PE.at0||Date.now()):fromIso(PE.date,'12:00');
   if(!PE.items.length){toast('Ajoute au moins un exercice');return}if(!date){toast('Indique une date');return}
   const invitees=PE.club?[]:progDest();if(!PE.club&&!invitees.length){toast('Choisis au moins un destinataire');return}
-  const doc={title:(PE.title||'').trim().slice(0,80)||'Programme',date,eventId:PE.eventId||'',items:PE.items.map(it=>({exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),sets:it.sets,reps:it.reps,mode:it.mode,dur:it.dur,lt:it.lt,lv:it.lv||0,note:(it.note||'').slice(0,120)})),invitees,note:(PE.note||'').trim().slice(0,300),by:UID,at:Date.now()};
+  const doc={title:(PE.title||'').trim().slice(0,80)||'Programme',date,eventId:PE.eventId||'',items:PE.items.map(it=>({exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),sets:it.sets,reps:it.reps,mode:it.mode,dur:it.dur,lt:it.lt,lv:it.lv||0,note:(it.note||'').slice(0,120),restSet:it.restSet||0,restExo:it.restExo||0})),invitees,note:(PE.note||'').trim().slice(0,300),by:UID,at:Date.now()};
   btn.disabled=true;const id=PE.id||gid();
   try{await subCol(PE.tid,'programs').doc(id).set(doc);const D=dataOf(PE.tid);const club=PE.club;D.programs=D.programs.filter(p=>p.id!==id).concat(cProgram(id,doc)).sort((a,b)=>club?b.date-a.date:a.date-b.date);
     closeSheet('tm-ped');closeSheet('tm-prog');const n=invitees.length;PE=null;render();toast(club?'Programme publié · visible par tous les joueurs':`Programme envoyé à ${n} client${n>1?'s':''}`)}
@@ -504,13 +501,36 @@ function renderRun(){
      <div class="stats3"><div class="st rec"><span class="lbl">Record club</span><b class="num">${r?fmtKg(r):'—'}</b><small>dans cet espace</small></div><div class="st"><span class="lbl">Objectif</span><b class="num">${it.lt==='kg'?fmtKg(it.lv):it.lt==='pct'&&r?fmtKg(round05(r*it.lv/100)):'—'}</b><small>${it.lt==='pct'?fmtN(it.lv)+' %':it.lt==='kg'?'fixé par le coach':'libre'}</small></div>
      <label class="st in" for="rw-${i}"><span class="lbl">Aujourd'hui</span><span class="inrow"><input id="rw-${i}" data-rwi="${i}" inputmode="decimal" placeholder="0" value="${esc(it.w)}" autocomplete="off" aria-label="Poids en kg"><span>kg</span></span><small>${r&&parseW(it.w)>r?'<span class="prtag">Nouveau record !</span>':'&nbsp;'}</small></label></div>
      <div class="sets">${it.done.map((d,j)=>it.mode==='max'?`<div class="set max ${d?'on':''}"><span class="sn">Série ${j+1}</span><input data-rri="${i}" data-rrj="${j}" inputmode="numeric" placeholder="reps" value="${esc(it.rd[j])}" aria-label="Reps série ${j+1}"><button class="ck" data-act="run-set" data-i="${i}" data-j="${j}" aria-pressed="${d}" aria-label="Valider la série ${j+1}">✓</button></div>`:`<button class="set ${d?'on':''}" data-act="run-set" data-i="${i}" data-j="${j}" aria-pressed="${d}"><span class="sn">Série ${j+1}</span><span class="sr">${it.mode==='time'?mmss(it.dur):it.reps+' reps'}</span><span class="ck">✓</span></button>`).join('')}</div></article>`});
-  h+=`<p class="small muted" style="margin:0">Cette séance est enregistrée dans l'espace de l'équipe, pas dans « Moi ».</p></div></div>`;
-  const el=openSheet('tm-run',h);el.querySelector('.sheet-b').scrollTop=sc;
+  h+=`<p class="small muted" style="margin:0">Cette séance est enregistrée dans l'espace de l'équipe, pas dans « Moi ».</p>${RUN.timer?'<div style="height:170px"></div>':''}</div></div><div id="run-rest-slot"></div>`;
+  const el=openSheet('tm-run',h);el.querySelector('.sheet-b').scrollTop=sc;runRestUpdate();
+}
+/* minuteur de repos, comme dans « Moi » */
+let runTickH=null;
+function runStartRest(kind,sec,label){if(!RUN)return;if(!sec){RUN.timer=null;return}RUN.timer={kind,end:Date.now()+sec*1000,total:sec,label,fired:false};if(!runTickH)runTickH=setInterval(runTick,250)}
+function runTick(){
+  const t=RUN&&RUN.timer;if(!t||!document.getElementById('run-rest-slot')){if(!t){clearInterval(runTickH);runTickH=null}return}
+  if(!t.fired&&Date.now()>=t.end){t.fired=true;ding();runSave();setTimeout(()=>{if(RUN&&RUN.timer===t){RUN.timer=null;runSave();renderRun()}},3000)}
+  runRestUpdate();
+}
+function runRestUpdate(){
+  const slot=document.getElementById('run-rest-slot');if(!slot)return;const t=RUN&&RUN.timer;
+  if(!t){slot.innerHTML='';return}
+  if(!runTickH)runTickH=setInterval(runTick,250);
+  const rem=Math.max(0,(t.end-Date.now())/1000),pct=Math.min(100,(1-rem/t.total)*100);
+  const html=`<div class="rest ${t.fired?'ding':''}" role="timer" aria-live="off"><div class="in"><div class="r1"><div class="clock num">${t.fired?'0:00':mmss(Math.ceil(rem))}</div><div class="lab"><small>${t.fired?"C'est reparti":t.kind==='set'?'Repos · prochaine':'Repos · exercice suivant'}</small><div>${esc(t.label)}</div></div></div><div class="bar"><i style="width:${pct.toFixed(1)}%"></i></div>
+   <div class="r2"><button data-act="run-rest-adj" data-d="-15">−15 s</button><button data-act="run-rest-adj" data-d="15">+15 s</button><button class="go" data-act="run-rest-skip">${t.fired?'OK':'Passer'}</button></div></div></div>`;
+  if(!slot.firstChild){slot.innerHTML=html;return}
+  slot.querySelector('.clock').textContent=t.fired?'0:00':mmss(Math.ceil(rem));slot.querySelector('.bar i').style.width=pct.toFixed(1)+'%';
+  const r=slot.querySelector('.rest');if(t.fired!==r.classList.contains('ding'))slot.innerHTML=html;
 }
 function runSet(i,j){const it=RUN.items[i];if(!it)return;
   if(!it.done[j]&&it.mode==='max'&&!(parseInt(it.rd[j],10)>0)){toast('Indique le nombre de reps faites');return}
   if(!it.done[j]&&parseW(it.w)==null&&!['C','X'].includes(exo(it.exoId).eq)){$('#rw-'+i)?.focus();toast("Indique d'abord le poids utilisé");return}
-  it.done[j]=!it.done[j];runSave();renderRun()}
+  it.done[j]=!it.done[j];
+  if(it.done[j]){try{unlockAudio()}catch(e){}
+    if(!it.done.every(Boolean)){const nx=it.done.indexOf(false);runStartRest('set',it.restSet||0,`Série ${nx+1} · ${exo(it.exoId,it.name).name}`)}
+    else{const ni=RUN.items.findIndex(x=>!x.done.every(Boolean));if(ni>=0)runStartRest('exo',it.restExo||0,exo(RUN.items[ni].exoId,RUN.items[ni].name).name);else RUN.timer=null}}
+  runSave();renderRun()}
 function runFinish(){
   const items=RUN.items.map(it=>{const n=it.done.filter(Boolean).length,w=parseW(it.w);return{exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),weight:n?(w??0):null,done:n,sets:it.sets,reps:it.mode==='max'?it.rd.reduce((a,v,j)=>a+(it.done[j]?(parseInt(v,10)||0):0),0):it.mode==='time'?0:it.reps*n}});
   if(!items.some(x=>x.done)){toast('Valide au moins une série');return}
@@ -734,7 +754,7 @@ async function revokeHealth(tid,btn){
 /* ---------- actions ---------- */
 const origPickDone=ACT['pick-done'],origPickClose=ACT['pick-close'];
 Object.assign(ACT,{
-  'pick-done':()=>{if(pick&&pick.target==='program'&&PE){[...pick.sel].forEach(id=>{const e=exo(id);PE.items.push({exoId:id,name:e.name,sets:3,reps:10,mode:TIMEIDS.has(id)?'time':'reps',dur:60,lt:'free',lv:0,note:''})});closeSheet('picker');pick=null;restoreIdx();renderProgEdit();return}origPickDone()},
+  'pick-done':()=>{if(pick&&pick.target==='program'&&PE){[...pick.sel].forEach(id=>{const e=exo(id);PE.items.push({exoId:id,name:e.name,sets:3,reps:10,mode:TIMEIDS.has(id)?'time':'reps',dur:60,lt:'free',lv:0,note:'',restSet:0,restExo:0})});closeSheet('picker');pick=null;restoreIdx();renderProgEdit();return}origPickDone()},
   'pick-close':()=>{const p=pick&&pick.target==='program';origPickClose();if(p)restoreIdx()},
   'tm-player':d=>openPlayer(d.id,d.u),'tm-player-close':()=>closeSheet('tm-player'),
   'tm-remind':async()=>{const t='Pensez à remplir vos questionnaires sur Hevor 💪';if(navigator.share){try{await navigator.share({text:t})}catch(e){}}else{try{await navigator.clipboard.writeText(t);toast('Message de rappel copié : colle-le dans le groupe de l\'équipe')}catch(e){toast(t)}}},
@@ -764,6 +784,8 @@ Object.assign(ACT,{
   'pe-save':(d,b)=>saveProg(b),
   'tm-run':d=>startRun(d.id,d.p),'run-resume':()=>{RUN=runLoad();if(RUN)renderRun()},
   'run-min':()=>{closeSheet('tm-run');render()},'run-set':d=>runSet(+d.i,+d.j),
+  'run-rest-adj':d=>{const t=RUN&&RUN.timer;if(!t)return;if(t.fired){t.fired=false;t.end=Date.now()}t.end=Math.max(Date.now()+1000,t.end+(+d.d)*1000);t.total=Math.max(t.total,(t.end-Date.now())/1000);runSave();runRestUpdate()},
+  'run-rest-skip':()=>{if(!RUN)return;RUN.timer=null;runSave();renderRun()},
   'run-end':()=>{const nd=RUN.items.reduce((n,it)=>n+it.done.filter(Boolean).length,0);modal(`<h3>Terminer la séance ?</h3><p class="muted" style="margin:0">${nd} série${nd>1?'s':''} validée${nd>1?'s':''}. Tu donneras ensuite ton ressenti.</p><div class="acts"><button class="btn primary" data-act="run-finish" ${nd?'':'disabled'}>Terminer</button><button class="btn ghost" data-act="modal-close">Continuer</button><button class="btn danger" data-act="run-discard">Abandonner</button></div>`)},
   'run-finish':()=>{closeModal();runFinish()},
   'run-discard':()=>{closeModal();RUN=null;try{localStorage.removeItem(runKey())}catch(e){}closeSheet('tm-run');render();toast('Séance abandonnée')},

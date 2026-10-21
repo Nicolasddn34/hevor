@@ -42,7 +42,11 @@ service cloud.firestore {
         && str(request.resource.data.name, 60) && str(request.resource.data.club, 80)
         && getAfter(tpath(request.resource.data.tid)).data.owner == me()
         && getAfter(tpath(request.resource.data.tid)).data.code == code;
-      allow delete: if signed() && get(tpath(resource.data.tid)).data.owner == me();
+      allow delete: if signed() && (get(tpath(resource.data.tid)).data.owner == me()
+        // coaching : un code ne sert qu'une fois, le client le supprime en rejoignant
+        || (resource.data.kind == 'coach' && !exists(mpath(resource.data.tid, me()))
+          && getAfter(mpath(resource.data.tid, me())).data.role == 'pending'
+          && getAfter(mpath(resource.data.tid, me())).data.code == code));
     }
 
     function validTeam(d) {

@@ -2,7 +2,7 @@
 /* =====================================================================
    Hevor — espaces Moi / Club / Coach
    « Moi » = l'appli perso (app.js), totalement privée : rien n'en sort.
-   « Club » = équipes (coach, joueur, staff). « Coach » = coach indépendant et ses clients.
+   « Club » = équipes (coach, joueur, staff). « Coaching » = coach indépendant et ses clients.
    Chaque espace a ses propres données, son accueil et ses couleurs.
    ===================================================================== */
 const SP={doc:{teams:[],home:'auto',name:'',first:'',last:''},ready:false,cur:'moi',open:{club:null,coach:null},tab:{},T:{},D:{},booted:false,touched:false,unsub:{}};
@@ -98,12 +98,9 @@ function watchPending(){
 
 /* ---------- espaces utilisés et bascule ---------- */
 function spacesUsed(){const u=[];if(S.templates.length||S.sessions.length||S.active)u.push('moi');if(teamsOf('club').length)u.push('club');if(teamsOf('coach').length)u.push('coach');return u}
-const SPACE_L={moi:'Moi',club:'Club',coach:'Coach'};
+const SPACE_L={moi:'Moi',club:'Club',coach:'Coaching'};
 function spPill(){
-  const used=spacesUsed();
-  if(used.length>=2||SP.cur!=='moi'||teamsOf('club').length||teamsOf('coach').length)return `<button class="sp-pill" data-act="sp-sheet" aria-label="Changer d'espace (espace actuel : ${SPACE_L[SP.cur]})"><span class="sp-pill-ic">${SP.cur==='moi'?SPICON.user:SP.cur==='club'?SPICON.shield:SPICON.team}</span>${SPACE_L[SP.cur]}${SPICON.down}</button>`;
-  if(SP.cur!=='moi')return `<button class="icon-btn sp-me" data-act="sp-sheet" aria-label="Mes espaces et mon compte">${SPICON.user}</button>`;
-  return '';
+  return `<button class="sp-pill" data-act="sp-sheet" aria-label="Changer d'espace (espace actuel : ${SPACE_L[SP.cur]})"><span class="sp-pill-ic">${SP.cur==='moi'?SPICON.user:SP.cur==='club'?SPICON.shield:SPICON.team}</span>${SPACE_L[SP.cur]}${SPICON.down}</button>`;
 }
 function setSpace(sp,tid){
   SP.touched=true;closeModal();document.querySelectorAll('.sheet').forEach(e=>e.remove());
@@ -119,8 +116,7 @@ function openSpaces(){
   drawer(`<div class="sp-dh"><h3>Mes espaces</h3><button class="linkbtn" data-act="sp-home">Espace d'accueil</button></div>
    ${row('moi','Moi','Mon entraînement perso · privé',`<span class="logo">${LOGO}</span>`,'moi')}
    ${row('club','Club',club.length?`${club.length} équipe${club.length>1?'s':''} · ${clubs.size} club${clubs.size>1?'s':''}`:'Créer ou rejoindre une équipe',SPICON.shield,'club')}
-   ${row('coach','Coach',coach.length?coachSub(coach):'Coacher des clients ou rejoindre ton coach',SPICON.team,'coach')}
-   <p class="small muted sp-note">${SPICON.lock}Chaque espace est séparé : rien de « Moi » n'est visible ailleurs.</p>
+   ${row('coach','Coaching',coach.length?coachSub(coach):'Coacher des clients ou rejoindre ton coach',SPICON.team,'coach')}
    <button class="btn ghost block" data-act="sp-account">Mon compte et réglages</button>`);
 }
 function coachSub(list){const mine=list.filter(t=>myRole(t)==='coach'),cl=list.filter(t=>myRole(t)!=='coach');const a=[];if(mine.length)a.push(mine.length>1?`${mine.length} espaces coaching`:'Mes clients');if(cl.length)a.push(cl.length>1?`${cl.length} coachs`:'Mon coach');return a.join(' · ')}
@@ -128,7 +124,7 @@ function openHomePick(){
   closeModal();
   const opts=[['auto','Automatique',"Ouvre l'espace où tu as de l'activité. Si « Moi » est vide, tu arrives sur ton club."],['moi','Moi','Mon entraînement perso']];
   teamsOf('club').forEach(t=>{const T=SP.T[t].team;opts.push(['club:'+t,'Club · '+T.name,T.club])});
-  if(teamsOf('coach').length)opts.push(['coach','Coach',coachSub(teamsOf('coach'))]);
+  if(teamsOf('coach').length)opts.push(['coach','Coaching',coachSub(teamsOf('coach'))]);
   const cur=SP.doc.home==='club'&&teamsOf('club').length===1?'club:'+teamsOf('club')[0]:SP.doc.home;
   openSheet('sp-home',sheetHead("Espace d'accueil",'sp-home-close')+`<div class="sheet-b"><div class="wrap sp-col">
    <p class="muted small" style="margin:0">L'espace qui s'ouvre quand tu lances Hevor.</p>
@@ -231,7 +227,7 @@ function viewClubEmpty(){
    ${joinCard()}</section></div>`;
 }
 function viewCoachEmpty(){
-  return `<div class="wrap">${spTop('Coach','')}
+  return `<div class="wrap">${spTop('Coaching','')}
    <div class="sp-hero"><h1>Coaching<br>en direct</h1><p class="muted">Envoie des programmes à tes clients et suis leurs séances, ou rejoins ton coach. Séparé de ton espace perso.</p></div>
    <section><button class="sp-big" data-act="sp-create" data-k="coach"><span class="sp-ic">${SPICON.team}</span><b>Je suis coach</b><span class="muted small">Crée ton espace coaching et invite tes clients avec un code.</span></button>
    ${joinCard('Tu as un coach ? Entre le code qu\'il t\'a donné')}</section></div>`;
@@ -317,7 +313,6 @@ function openCreate(kind,opt){
    <div class="field"><span class="flabel">Aperçu de l'espace</span><div id="ct-prev"></div></div>
    <p class="small muted" style="margin:0">Tu en deviens le propriétaire. Tu pourras transmettre ce rôle à un autre coach.</p>`:`
    ${idBlock('ct','par tes clients')}
-   <div class="field"><label for="ct-max">Nombre maximum de clients</label><input id="ct-max" type="number" inputmode="numeric" min="2" max="200" value="${DEF_MAX}"></div>
    <div class="field"><label for="ct-name">Nom de ton coaching</label><input id="ct-name" placeholder="Ex. Coaching de ${esc(SP.doc.first||'Nico')}" maxlength="60" autocomplete="off"></div>
    <p class="small muted" style="margin:0">Tes clients rejoignent avec un code. Tu valides chaque demande, puis tu leur envoies leurs programmes.</p>`;
   openSheet('sp-create',sheetHead(pre?'Nouvelle équipe':kind==='club'?'Créer une équipe':'Créer mon coaching','sp-create-close')+`<div class="sheet-b"><div class="wrap sp-col">${h}</div></div>
@@ -340,7 +335,7 @@ async function createSave(btn){
   btn.disabled=true;const me=await readId('ct');btn.disabled=false;if(!me){toast('Indique ton prénom et ton nom');return}
   if(!name)name='Coaching de '+(SP.doc.first||me);
   if(navigator.onLine===false){toast('Il faut du réseau pour créer une équipe.');return}
-  const max=Math.round(cNum($('#ct-max')?.value,2,200,DEF_MAX));
+  const max=kind==='coach'?200:Math.round(cNum($('#ct-max')?.value,2,200,DEF_MAX));
   btn.disabled=true;
   const tid=gid(),code=genCode(),now=Date.now();
   const team={kind,name,club,owner:UID,ownerName:me,code,at:now};
@@ -359,7 +354,7 @@ function pendingJoin(){let c=null;try{c=sessionStorage.getItem('hevor.join');ses
 function openJoinSheet(){closeModal();openSheet('sp-joinc',sheetHead('Rejoindre','sp-joinc-close')+`<div class="sheet-b"><div class="wrap sp-col">${joinCard()}</div></div>`)}
 async function openJoin(code){
   if(!DB){toast('Connecte-toi pour rejoindre une équipe.');return}
-  let inv;try{const d=await inviteRef(code).get();if(!d.exists){toast("Ce code n'est pas valable, a été remplacé ou l'équipe est complète. Demande un nouveau code à ton coach.");return}inv=d.data()}catch(e){toast("Impossible de vérifier l'invitation. Vérifie ta connexion.");return}
+  let inv;try{const d=await inviteRef(code).get();if(!d.exists){toast("Ce code n'est pas valable, a déjà été utilisé ou a été remplacé. Demande un nouveau code à ton coach.");return}inv=d.data()}catch(e){toast("Impossible de vérifier l'invitation. Vérifie ta connexion.");return}
   const tid=okId(inv.tid)?inv.tid:null;if(!tid)return;
   if(SP.doc.teams.includes(tid)&&SP.T[tid]){setSpace(SP.T[tid].team.kind,tid);toast('Tu fais déjà partie de cette équipe');return}
   const kind=inv.kind==='coach'?'coach':'club';
@@ -375,7 +370,8 @@ async function joinGo(d,btn){
   const tid=d.id,code=d.code,kind=d.k,poste=kind==='club'?'':($('#jn-poste')?.value||'').trim().slice(0,40);
   btn.disabled=true;const me=await readId('jn');if(!me){btn.disabled=false;toast('Indique ton prénom et ton nom');return}
   try{const ex=await memRef(tid,UID).get();
-    if(!ex.exists){const m={uid:UID,name:me,role:'pending',code,at:Date.now()};if(poste)m.poste=poste;await memRef(tid,UID).set(m)}
+    if(!ex.exists){const m={uid:UID,name:me,role:'pending',code,at:Date.now()};if(poste)m.poste=poste;
+      if(kind==='coach'){const b=DB.batch();b.set(memRef(tid,UID),m);b.delete(inviteRef(code));await b.commit()}else await memRef(tid,UID).set(m)}
     if(!SP.doc.teams.includes(tid))SP.doc.teams.push(tid);await spSaveDoc();
     const r=await loadTeamHead(tid);if(r!=='ok')throw 0;
     closeSheet('sp-join');setSpace(kind,tid);watchPending()}
@@ -392,9 +388,10 @@ const APP_URL=location.origin+location.pathname.replace(/index\.html$/,'');
 function teamCounts(tid){const ms=(SP.D[tid]?.members)||[];return{act:ms.filter(m=>m.role!=='pending').length,pend:ms.filter(m=>m.role==='pending').length}}
 const prettyCode=c=>c&&c.length===10?c.slice(0,5)+' '+c.slice(5):(c||'');
 function inviteCard(tid){
+  if(SP.T[tid].team.kind==='coach')return coachInviteCard(tid);
   const T=SP.T[tid].team,own=isTeamOwner(tid),c=teamCounts(tid),full=c.act+c.pend>=T.max,code=T.code||'';
   return `<section class="card sp-invite"><div class="h2">Inviter ${T.kind==='club'?"dans l'équipe":'des clients'}</div>
-   <p class="small muted" style="margin:0">Donne ce code à tes ${T.kind==='club'?'joueurs, aux autres coachs et au staff':'clients'}. Ils l'entrent dans Hevor › ${T.kind==='club'?'Club':'Coach'} › Rejoindre.</p>
+   <p class="small muted" style="margin:0">Donne ce code à tes ${T.kind==='club'?'joueurs, aux autres coachs et au staff':'clients'}. Ils l'entrent dans Hevor › ${T.kind==='club'?'Club':'Coaching'} › Rejoindre.</p>
    ${full?`<div class="sp-full">${SPICON.lock}<span>${T.kind==='club'?'Équipe complète':'Limite atteinte'} : le code est désactivé.${own?' Augmente la limite pour inviter de nouvelles personnes.':''}</span></div>`:''}
    <div class="inv-code num ${full?'off':''}" aria-label="Code d'invitation">${esc(prettyCode(code))}</div>
    <div class="sp-2"><button class="btn primary" data-act="sp-copy" data-u="${esc(code)}" ${full?'disabled':''}>Copier le code</button><button class="btn ghost" data-act="sp-share" data-u="${esc(code)}" data-n="${esc(T.name)}" ${full?'disabled':''}>Partager</button></div>
@@ -403,10 +400,29 @@ function inviteCard(tid){
    ${own?`<button class="linkbtn" data-act="sp-newcode" data-id="${tid}">Générer un nouveau code</button>`:''}
    <p class="small muted sp-note">${SPICON.clock}Ceux qui rejoignent arrivent en attente : ils ne voient rien tant que ${own?'tu ne leur as pas':"le propriétaire ne leur a pas"} donné un rôle.</p></section>`;
 }
+/* coaching : pas de limite, chaque code ne sert qu'à un seul client */
+const SPUSED={};
+function codeUsed(tid){
+  const T=SP.T[tid].team,code=T.code||'';if(!code)return true;
+  if(SPUSED[tid]&&SPUSED[tid].code===code)return SPUSED[tid].used;
+  SPUSED[tid]={code,used:false};
+  if(DB)inviteRef(code).get().then(d=>{if(SP.T[tid]&&SP.T[tid].team.code===code&&!d.exists){SPUSED[tid]={code,used:true};render()}}).catch(()=>{});
+  return false;
+}
+function coachInviteCard(tid){
+  const T=SP.T[tid].team,own=isTeamOwner(tid),code=T.code||'',used=codeUsed(tid);
+  return `<section class="card sp-invite"><div class="h2">Inviter un client</div>
+   <p class="small muted" style="margin:0">Donne ce code à ton client. Il l'entre dans Hevor › Coaching › Rejoindre. Chaque code ne sert qu'une seule fois : génère-en un nouveau pour chaque client.</p>
+   ${used?`<div class="sp-full">${SPICON.lock}<span>Ce code a déjà été utilisé.${own?' Génère un nouveau code pour inviter un autre client.':''}</span></div>`:''}
+   <div class="inv-code num ${used?'off':''}" aria-label="Code d'invitation">${esc(prettyCode(code))}</div>
+   <div class="sp-2"><button class="btn primary" data-act="sp-copy" data-u="${esc(code)}" ${used?'disabled':''}>Copier le code</button><button class="btn ghost" data-act="sp-share" data-u="${esc(code)}" data-n="${esc(T.name)}" ${used?'disabled':''}>Partager</button></div>
+   ${own?`<button class="${used?'btn primary block':'linkbtn'}" data-act="sp-newcode" data-id="${tid}">Générer un nouveau code</button>`:''}
+   <p class="small muted sp-note">${SPICON.clock}Le client arrive en attente : il ne voit rien tant que ${own?"tu ne l'as pas":"le propriétaire ne l'a pas"} validé.</p></section>`;
+}
 /* le code se désactive tout seul quand l'équipe est pleine (membres + demandes en attente) */
 const SPINV={};
 async function syncInvite(tid){
-  const T=SP.T[tid];if(!T||!isTeamOwner(tid)||!T.team.code||!SP.D[tid]||SP.D[tid].loading||!DB)return;
+  const T=SP.T[tid];if(!T||T.team.kind==='coach'||!isTeamOwner(tid)||!T.team.code||!SP.D[tid]||SP.D[tid].loading||!DB)return;
   const c=teamCounts(tid),key=c.act+c.pend>=T.team.max?'closed':'open';if(SPINV[tid]===key)return;SPINV[tid]=key;
   try{if(key==='closed')await inviteRef(T.team.code).delete();else await inviteRef(T.team.code).set({tid,name:T.team.name,club:T.team.club,kind:T.team.kind,at:Date.now()})}catch(e){delete SPINV[tid]}
 }
@@ -420,7 +436,8 @@ async function saveMax(tid,btn){
 async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||'Code copié')}catch(e){toast('Copie impossible : recopie le code à la main.')}}
 async function newCode(tid){
   const T=SP.T[tid].team,code=genCode();
-  try{const b=DB.batch();b.update(teamRef(tid),{code});b.set(inviteRef(code),{tid,name:T.name,club:T.club,kind:T.kind,at:Date.now()});if(T.code)b.delete(inviteRef(T.code));await b.commit();T.code=code;delete SPINV[tid];await syncInvite(tid);render();toast("Nouveau code créé. L'ancien ne fonctionne plus.")}
+  const run=async del=>{const b=DB.batch();b.update(teamRef(tid),{code});b.set(inviteRef(code),{tid,name:T.name,club:T.club,kind:T.kind,at:Date.now()});if(del&&T.code)b.delete(inviteRef(T.code));await b.commit()};
+  try{try{await run(true)}catch(e){if(T.kind!=='coach')throw e;await run(false)}T.code=code;delete SPUSED[tid];delete SPINV[tid];await syncInvite(tid);render();toast("Nouveau code créé. L'ancien ne fonctionne plus.")}
   catch(e){toast('Impossible de changer le code pour le moment.')}
 }
 
@@ -469,7 +486,7 @@ function teamSettings(tid){
 }
 async function acceptMember(tid,uid){
   const T=SP.T[tid],role=SPM.pick[uid]||(T.team.kind==='club'?'player':'client'),c=teamCounts(tid);
-  if(c.act>=T.team.max){toast(`${T.team.kind==='club'?'Équipe complète':'Limite atteinte'} (${c.act}/${T.team.max}). Augmente la limite dans les réglages.`);return}
+  if(T.team.kind!=='coach'&&c.act>=T.team.max){toast(`${T.team.kind==='club'?'Équipe complète':'Limite atteinte'} (${c.act}/${T.team.max}). Augmente la limite dans les réglages.`);return}
   try{await memRef(tid,uid).update({role});const m=(SP.D[tid].members||[]).find(x=>x.uid===uid);if(m)m.role=role;delete SPM.pick[uid];syncInvite(tid);render();toast(`${m?m.name:'Membre'} ajouté comme ${ROLE_L[role].toLowerCase()}`)}
   catch(e){toast('Validation impossible pour le moment.')}
 }
@@ -534,7 +551,7 @@ async function teamSave(){
   const T=SP.T[TE.tid].team,club=($('#te-club').value||'').trim().slice(0,80),name=($('#te-name').value||'').trim().slice(0,60),sport=$('#te-sport').value;
   if(!club||!name){toast('Le club et le nom sont obligatoires');return}
   const up={club,name,sport};if(TE.logo&&TE.logo!==T.logo){up.logo=TE.logo;up.theme=TE.theme}
-  try{const b=DB.batch();b.update(teamRef(TE.tid),up);if(T.code)b.set(inviteRef(T.code),{tid:TE.tid,name,club,kind:T.kind,at:Date.now()});await b.commit();
+  try{const b=DB.batch();b.update(teamRef(TE.tid),up);if(T.code&&T.kind!=='coach')b.set(inviteRef(T.code),{tid:TE.tid,name,club,kind:T.kind,at:Date.now()});await b.commit();
     Object.assign(T,{club,name,sport},up.logo?{logo:up.logo,theme:cTheme(up.theme)}:{});closeSheet('sp-ted');TE=null;applyTheme();render();toast('Équipe mise à jour')}
   catch(e){toast('Enregistrement impossible.')}
 }
@@ -585,7 +602,7 @@ Object.assign(ACT,{
   'sp-join-close':()=>closeSheet('sp-join'),'sp-join-go':(d,b)=>joinGo(d,b),
   'sp-cancel-join':d=>cancelJoin(d.id),
   'sp-copy':d=>copyText(d.u),
-  'sp-share':async d=>{const txt=`Rejoins ${d.n} sur Hevor avec le code ${d.u} : ouvre l'appli › ${SP.cur==='coach'?'Coach':'Club'} › Rejoindre. ${APP_URL}`;if(navigator.share){try{await navigator.share({title:'Hevor · '+d.n,text:txt})}catch(e){}}else copyText(txt,'Message copié')},
+  'sp-share':async d=>{const txt=`Rejoins ${d.n} sur Hevor avec le code ${d.u} : ouvre l'appli › ${SP.cur==='coach'?'Coaching':'Club'} › Rejoindre. ${APP_URL}`;if(navigator.share){try{await navigator.share({title:'Hevor · '+d.n,text:txt})}catch(e){}}else copyText(txt,'Message copié')},
   'sp-teams':()=>openTeamSwitch(SP.cur==='coach'?'coach':'club'),
   'sp-new-same':d=>openCreate('club',{same:d.id}),
   'sp-max-save':(d,b)=>saveMax(d.id,b),

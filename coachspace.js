@@ -1,9 +1,9 @@
 "use strict";
 /* =====================================================================
-   Hevor — espace Coach : coach indépendant et ses clients
+   Hevor — espace Coaching : coach indépendant et ses clients
    ===================================================================== */
 const TABS_COACH={
-  coach:[['clients','Clients',SPICON.team],['programs','Programmes',SPICON.dumb],['members','Inviter',SPICON.link]],
+  coach:[['clients','Clients',SPICON.team],['programs','Programmes',SPICON.dumb],['members','Réglages',SPICON.gear]],
   client:[['mycoach','Mon coach',SPICON.user],['programs','Programmes',SPICON.dumb]]
 };
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
@@ -23,7 +23,7 @@ function viewClients(tid){
   const pend=D.members.filter(m=>m.role==='pending').length;
   const active=cl.filter(c=>D.logs.some(l=>l.uid===c.uid&&l.at>=now-14*DAY)).length,s7=D.logs.filter(l=>l.at>=now-7*DAY&&cl.some(c=>c.uid===l.uid)).length,p7=D.programs.filter(p=>p.date>=now-7*DAY&&p.date<=now+7*DAY).length;
   let h=`<div class="tiles"><div class="tile"><span>Clients actifs</span><b class="num">${active}<small class="muted">/${cl.length}</small></b></div><div class="tile"><span>Séances 7 j</span><b class="num">${s7}</b></div><div class="tile"><span>Programmes</span><b class="num">${p7}</b></div></div>`;
-  if(pend)h+=`<button class="card sp-rate" data-act="sp-tab" data-v="members"><span class="sp-ic">${SPICON.clock}</span><span class="m"><b>${pend} demande${pend>1?'s':''} en attente</b><small>Valide-les dans l'onglet Inviter</small></span>${ICON.chev}</button>`;
+  if(pend)h+=`<button class="card sp-rate" data-act="sp-tab" data-v="members"><span class="sp-ic">${SPICON.clock}</span><span class="m"><b>${pend} demande${pend>1?'s':''} en attente</b><small>Valide-les dans l'onglet Réglages</small></span>${ICON.chev}</button>`;
   h+=`<section><div class="list">`;
   for(const c of cl){const L=D.logs.filter(l=>l.uid===c.uid),last=L[L.length-1],wk=L.filter(l=>l.at>=w0).length,pw=D.programs.filter(p=>p.invitees.includes(c.uid)&&p.date>=w0&&p.date<w0+7*DAY).length;
     const idle=!last||now-last.at>6*DAY,tot=Math.max(pw,wk);
@@ -64,7 +64,7 @@ function viewMyCoach(tid){
     h+=`<div class="wd ${today?'today':''}"><i class="d ${done?'done':plan?'plan':''}"></i><span>${new Date(t).toLocaleDateString('fr-FR',{weekday:'narrow'})}</span></div>`}
   h+=`</div></section>`;
   if(fb)h+=`<section class="card"><div class="h2">Dernier retour de ${esc(T.team.ownerName||'ton coach')}</div><p style="margin:0">« ${esc(fb.note)} »</p><span class="small muted">${esc(fb.title)} · ${ago(fb.noteAt||fb.at)}</span></section>`;
-  h+=`<p class="small muted sp-note">${SPICON.lock}Ces séances restent dans l'espace Coach. Ton espace « Moi » reste privé.</p>`+teamSettings(tid);
+  h+=`<p class="small muted sp-note">${SPICON.lock}Ces séances restent dans l'espace Coaching. Ton espace « Moi » reste privé.</p>`+teamSettings(tid);
   return h;
 }
 Object.assign(ACT,{
