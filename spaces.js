@@ -340,7 +340,7 @@ async function createSave(btn){
   const tid=gid(),code=genCode(),now=Date.now();
   const team={kind,name,club,owner:UID,ownerName:me,code,at:now};
   if(kind==='club'){team.sport=$('#ct-sport').value;if(CT.logo)team.logo=CT.logo;team.theme=CT.theme||CT.fixed||makeTheme(CT.colors[0],CT.colors[1])}
-  try{const b=DB.batch();b.set(teamRef(tid),team);b.set(memRef(tid,UID),{uid:UID,name:me,role:'coach',at:now});b.set(inviteRef(code),{tid,name,club,kind,at:now});await b.commit();
+  try{const b=DB.batch();b.set(teamRef(tid),team);b.set(memRef(tid,UID),{uid:UID,name:me,role:'coach',at:now});b.set(inviteRef(code),kind==='club'?{tid,name,club,kind,at:now,uses:0}:{tid,name,club,kind,at:now});await b.commit();
     SP.doc.teams.push(tid);await spSaveDoc();SP.T[tid]={team:cTeam(tid,team),me:cMember({uid:UID,name:me,role:'coach',at:now})};SP.T[tid].team.max=max;
     try{await teamRef(tid).update({max})}catch(e){}
     closeSheet('sp-create');CT=null;SP.tab[tid]=kind==='club'?'settings':'members';setSpace(kind,tid);toast(kind==='club'?'Équipe créée. Invite tes joueurs avec le code.':'Espace coaching créé. Invite tes clients avec le code.')}
@@ -354,7 +354,7 @@ function pendingJoin(){let c=null;try{c=sessionStorage.getItem('hevor.join');ses
 function openJoinSheet(){closeModal();openSheet('sp-joinc',sheetHead('Rejoindre','sp-joinc-close')+`<div class="sheet-b"><div class="wrap sp-col">${joinCard()}</div></div>`)}
 async function openJoin(code){
   if(!DB){toast('Connecte-toi pour rejoindre une équipe.');return}
-  let inv;try{const d=await inviteRef(code).get();if(!d.exists){toast("Ce code n'est pas valable, a déjà été utilisé ou a été remplacé. Demande un nouveau code à ton coach.");return}inv=d.data()}catch(e){toast("Impossible de vérifier l'invitation. Vérifie ta connexion.");return}
+  let inv;try{const d=await inviteRef(code).get();if(!d.exists){toast("Ce code n'est pas valable, a déjà été utilisé ou a été remplacé. Demande un nouveau code à ton coach.");return}inv=d.data();if(inv.kind!=='coach'&&(inv.off||(+inv.uses||0)>=INV_MAX)){toast(inv.off?"L'équipe est complète : ce code est désactivé pour le moment.":`Ce code a déjà servi ${INV_MAX} fois. Demande un nouveau code à ton coach.`);return}}catch(e){toast("Impossible de vérifier l'invitation. Vérifie ta connexion.");return}
   const tid=okId(inv.tid)?inv.tid:null;if(!tid)return;
   if(SP.doc.teams.includes(tid)&&SP.T[tid]){setSpace(SP.T[tid].team.kind,tid);toast('Tu fais déjà partie de cette équipe');return}
   const kind=inv.kind==='coach'?'coach':'club';
@@ -371,11 +371,13 @@ async function joinGo(d,btn){
   btn.disabled=true;const me=await readId('jn');if(!me){btn.disabled=false;toast('Indique ton prénom et ton nom');return}
   try{const ex=await memRef(tid,UID).get();
     if(!ex.exists){const m={uid:UID,name:me,role:'pending',code,at:Date.now()};if(poste)m.poste=poste;
-      if(kind==='coach'){const b=DB.batch();b.set(memRef(tid,UID),m);b.delete(inviteRef(code));await b.commit()}else await memRef(tid,UID).set(m)}
+      const b=DB.batch();b.set(memRef(tid,UID),m);
+      if(kind==='coach')b.delete(inviteRef(code));else b.update(inviteRef(code),{uses:firebase.firestore.FieldValue.increment(1)});
+      await b.commit()}
     if(!SP.doc.teams.includes(tid))SP.doc.teams.push(tid);await spSaveDoc();
     const r=await loadTeamHead(tid);if(r!=='ok')throw 0;
     closeSheet('sp-join');setSpace(kind,tid);watchPending()}
-  catch(e){btn.disabled=false;toast(e&&e.code==='permission-denied'?"Ce code n'est plus valable ou l'équipe est complète.":'Impossible de rejoindre pour le moment. Réessaie.')}
+  catch(e){btn.disabled=false;toast(e&&e.code==='permission-denied'?`Ce code n'est plus valable, a déjà servi ${INV_MAX} fois ou l'équipe est complète.`:'Impossible de rejoindre pour le moment. Réessaie.')}
 }
 async function cancelJoin(tid){
   try{await memRef(tid,UID).delete()}catch(e){}
@@ -387,17 +389,29 @@ async function cancelJoin(tid){
 const APP_URL=location.origin+location.pathname.replace(/index\.html$/,'');
 function teamCounts(tid){const ms=(SP.D[tid]?.members)||[];return{act:ms.filter(m=>m.role!=='pending').length,pend:ms.filter(m=>m.role==='pending').length}}
 const prettyCode=c=>c&&c.length===10?c.slice(0,5)+' '+c.slice(5):(c||'');
+/* club : un code sert au plus INV_MAX fois (compteur « uses » dans invites/{code}) */
+const INV_MAX=10,SPUSES={};
+function codeUses(tid){
+  const T=SP.T[tid].team,code=T.code||'';if(!code)return 0;
+  const c=SPUSES[tid];if(c&&c.code===code&&Date.now()-c.at<30000)return c.n;
+  SPUSES[tid]={code,n:c&&c.code===code?c.n:0,at:Date.now()};
+  if(DB)inviteRef(code).get().then(d=>{if(!SP.T[tid]||SP.T[tid].team.code!==code||!d.exists)return;const n=Math.max(0,Math.round(+d.data().uses||0));
+    const old=SPUSES[tid].n;SPUSES[tid]={code,n,at:Date.now()};if(n!==old&&SP.cur!=='moi'&&curTid()===tid)render()}).catch(()=>{});
+  return SPUSES[tid].n;
+}
 function inviteCard(tid){
   if(SP.T[tid].team.kind==='coach')return coachInviteCard(tid);
-  const T=SP.T[tid].team,own=isTeamOwner(tid),c=teamCounts(tid),full=c.act+c.pend>=T.max,code=T.code||'';
+  const T=SP.T[tid].team,own=isTeamOwner(tid),c=teamCounts(tid),code=T.code||'',uses=codeUses(tid),spent=uses>=INV_MAX,full=c.act+c.pend>=T.max||spent;
   return `<section class="card sp-invite"><div class="h2">Inviter ${T.kind==='club'?"dans l'équipe":'des clients'}</div>
    <p class="small muted" style="margin:0">Donne ce code à tes ${T.kind==='club'?'joueurs, aux autres coachs et au staff':'clients'}. Ils l'entrent dans Hevor › ${T.kind==='club'?'Club':'Coaching'} › Rejoindre.</p>
-   ${full?`<div class="sp-full">${SPICON.lock}<span>${T.kind==='club'?'Équipe complète':'Limite atteinte'} : le code est désactivé.${own?' Augmente la limite pour inviter de nouvelles personnes.':''}</span></div>`:''}
+   ${spent?`<div class="sp-full">${SPICON.lock}<span>Ce code a servi ${INV_MAX} fois : il est désactivé.${own?' Génère un nouveau code pour inviter d\'autres personnes.':''}</span></div>`
+     :full?`<div class="sp-full">${SPICON.lock}<span>${T.kind==='club'?'Équipe complète':'Limite atteinte'} : le code est désactivé.${own?' Augmente la limite pour inviter de nouvelles personnes.':''}</span></div>`:''}
    <div class="inv-code num ${full?'off':''}" aria-label="Code d'invitation">${esc(prettyCode(code))}</div>
+   <div class="small muted" style="text-align:center;margin-top:-4px">Utilisé ${Math.min(uses,INV_MAX)} / ${INV_MAX} fois</div>
    <div class="sp-2"><button class="btn primary" data-act="sp-copy" data-u="${esc(code)}" ${full?'disabled':''}>Copier le code</button><button class="btn ghost" data-act="sp-share" data-u="${esc(code)}" data-n="${esc(T.name)}" ${full?'disabled':''}>Partager</button></div>
    <div class="sp-max-row"><div class="m"><b>Nombre maximum de personnes</b><small class="muted">${c.act} membre${c.act>1?'s':''}${c.pend?` + ${c.pend} en attente`:''} · limite ${T.max}</small></div>
     ${own?`<div class="sp-max"><input id="sp-max" type="number" inputmode="numeric" min="2" max="200" value="${T.max}" aria-label="Nombre maximum de personnes"><button class="btn ghost" data-act="sp-max-save" data-id="${tid}">OK</button></div>`:''}</div>
-   ${own?`<button class="linkbtn" data-act="sp-newcode" data-id="${tid}">Générer un nouveau code</button>`:''}
+   ${own?`<button class="${spent?'btn primary block':'linkbtn'}" data-act="sp-newcode" data-id="${tid}">Générer un nouveau code</button>`:''}
    <p class="small muted sp-note">${SPICON.clock}Ceux qui rejoignent arrivent en attente : ils ne voient rien tant que ${own?'tu ne leur as pas':"le propriétaire ne leur a pas"} donné un rôle.</p></section>`;
 }
 /* coaching : pas de limite, chaque code ne sert qu'à un seul client */
@@ -424,7 +438,7 @@ const SPINV={};
 async function syncInvite(tid){
   const T=SP.T[tid];if(!T||T.team.kind==='coach'||!isTeamOwner(tid)||!T.team.code||!SP.D[tid]||SP.D[tid].loading||!DB)return;
   const c=teamCounts(tid),key=c.act+c.pend>=T.team.max?'closed':'open';if(SPINV[tid]===key)return;SPINV[tid]=key;
-  try{if(key==='closed')await inviteRef(T.team.code).delete();else await inviteRef(T.team.code).set({tid,name:T.team.name,club:T.team.club,kind:T.team.kind,at:Date.now()})}catch(e){delete SPINV[tid]}
+  try{await inviteRef(T.team.code).set({tid,name:T.team.name,club:T.team.club,kind:T.team.kind,at:Date.now(),off:key==='closed'},{merge:true})}catch(e){delete SPINV[tid]}
 }
 async function saveMax(tid,btn){
   const T=SP.T[tid].team,c=teamCounts(tid),v=Math.round(cNum($('#sp-max')?.value,2,200,T.max));
@@ -436,8 +450,8 @@ async function saveMax(tid,btn){
 async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||'Code copié')}catch(e){toast('Copie impossible : recopie le code à la main.')}}
 async function newCode(tid){
   const T=SP.T[tid].team,code=genCode();
-  const run=async del=>{const b=DB.batch();b.update(teamRef(tid),{code});b.set(inviteRef(code),{tid,name:T.name,club:T.club,kind:T.kind,at:Date.now()});if(del&&T.code)b.delete(inviteRef(T.code));await b.commit()};
-  try{try{await run(true)}catch(e){if(T.kind!=='coach')throw e;await run(false)}T.code=code;delete SPUSED[tid];delete SPINV[tid];await syncInvite(tid);render();toast("Nouveau code créé. L'ancien ne fonctionne plus.")}
+  const run=async del=>{const b=DB.batch();b.update(teamRef(tid),{code});b.set(inviteRef(code),T.kind==='coach'?{tid,name:T.name,club:T.club,kind:T.kind,at:Date.now()}:{tid,name:T.name,club:T.club,kind:T.kind,at:Date.now(),uses:0});if(del&&T.code)b.delete(inviteRef(T.code));await b.commit()};
+  try{try{await run(true)}catch(e){if(T.kind!=='coach')throw e;await run(false)}T.code=code;delete SPUSED[tid];delete SPINV[tid];delete SPUSES[tid];await syncInvite(tid);render();toast("Nouveau code créé. L'ancien ne fonctionne plus.")}
   catch(e){toast('Impossible de changer le code pour le moment.')}
 }
 
@@ -551,7 +565,7 @@ async function teamSave(){
   const T=SP.T[TE.tid].team,club=($('#te-club').value||'').trim().slice(0,80),name=($('#te-name').value||'').trim().slice(0,60),sport=$('#te-sport').value;
   if(!club||!name){toast('Le club et le nom sont obligatoires');return}
   const up={club,name,sport};if(TE.logo&&TE.logo!==T.logo){up.logo=TE.logo;up.theme=TE.theme}
-  try{const b=DB.batch();b.update(teamRef(TE.tid),up);if(T.code&&T.kind!=='coach')b.set(inviteRef(T.code),{tid:TE.tid,name,club,kind:T.kind,at:Date.now()});await b.commit();
+  try{const b=DB.batch();b.update(teamRef(TE.tid),up);if(T.code&&T.kind!=='coach')b.set(inviteRef(T.code),{tid:TE.tid,name,club,kind:T.kind,at:Date.now()},{merge:true});await b.commit();
     Object.assign(T,{club,name,sport},up.logo?{logo:up.logo,theme:cTheme(up.theme)}:{});closeSheet('sp-ted');TE=null;applyTheme();render();toast('Équipe mise à jour')}
   catch(e){toast('Enregistrement impossible.')}
 }

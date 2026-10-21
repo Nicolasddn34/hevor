@@ -38,10 +38,20 @@ service cloud.firestore {
       allow get: if signed();
       // création, ou mise à jour du nom de l'équipe par son propriétaire
       allow create, update: if signed() && code.matches('^[A-Z0-9]{6,12}$')
-        && request.resource.data.keys().hasOnly(['tid', 'name', 'club', 'kind', 'at'])
+        && request.resource.data.keys().hasOnly(['tid', 'name', 'club', 'kind', 'at', 'uses', 'off'])
         && str(request.resource.data.name, 60) && str(request.resource.data.club, 80)
+        && (!('uses' in request.resource.data) || (request.resource.data.uses is int && request.resource.data.uses >= 0 && request.resource.data.uses <= 10))
+        && (!('off' in request.resource.data) || request.resource.data.off is bool)
         && getAfter(tpath(request.resource.data.tid)).data.owner == me()
         && getAfter(tpath(request.resource.data.tid)).data.code == code;
+      // club : un code sert 10 fois au plus ; celui qui rejoint ajoute 1 au compteur dans le même envoi que sa demande
+      allow update: if signed() && resource.data.kind == 'club' && resource.data.get('off', false) != true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses'])
+        && resource.data.get('uses', 0) < 10
+        && request.resource.data.uses == resource.data.get('uses', 0) + 1
+        && !exists(mpath(resource.data.tid, me()))
+        && getAfter(mpath(resource.data.tid, me())).data.role == 'pending'
+        && getAfter(mpath(resource.data.tid, me())).data.code == code;
       allow delete: if signed() && (get(tpath(resource.data.tid)).data.owner == me()
         // coaching : un code ne sert qu'une fois, le client le supprime en rejoignant
         || (resource.data.kind == 'coach' && !exists(mpath(resource.data.tid, me()))
@@ -80,6 +90,11 @@ service cloud.firestore {
           // rejoindre avec un code valide : on arrive « en attente »
           (request.resource.data.role == 'pending' && str(request.resource.data.code, 12)
             && get(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.tid == tid
+            // club : le code n'est pas désactivé et le compteur d'utilisations augmente de 1 (10 fois au plus)
+            && (get(tpath(tid)).data.kind == 'coach' || (
+              get(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.get('off', false) != true
+              && getAfter(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.get('uses', 0)
+                == get(/databases/$(database)/documents/invites/$(request.resource.data.code)).data.get('uses', 0) + 1))
             // dans un club, c'est le coach qui attribue le poste
             && (!('poste' in request.resource.data) || get(tpath(tid)).data.kind == 'coach'))
           // le créateur de l'équipe devient coach à la création

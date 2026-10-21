@@ -731,3 +731,6 @@ button.st-r:hover{background:var(--surface2)}
 .r-off{background:var(--surface2);color:var(--muted)}
 .toggle:disabled{opacity:.4}
 .sp-wait .sp-consent{text-align:left;margin-top:8px}
+
+.list .row .ini{width:36px;height:36px;font-size:13px}
+.cs-st-back{margin-bottom:12px}

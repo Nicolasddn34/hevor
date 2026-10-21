@@ -1,6 +1,6 @@
 /* Service worker Hevor : garde l'appli sur le téléphone pour l'ouvrir sans réseau.
    Change VERSION à chaque mise à jour pour renouveler le cache. */
-const VERSION = 'hevor-2.7.0';
+const VERSION = 'hevor-2.8.0';
 const CORE = [
   './', './index.html', './app.css', './app.js', './spaces.js', './team.js', './coachspace.js', './config.js', './manifest.webmanifest',
   './vendor/firebase-app-compat.js', './vendor/firebase-auth-compat.js', './vendor/firebase-firestore-compat.js',
