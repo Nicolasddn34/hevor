@@ -36,25 +36,25 @@ const PAT={
  chestpress:{a:'H40,22 N40,32 P40,60 K58,62 F60,88 E33,40 W44,36',b:'E54,36 W68,35',props:['seatback']},
  fly:{sym:1,a:FRONT+' E32,34 W22,40',b:'E38,38 W47,44',pul:[6,6]},
  revfly:{like:'fly',swap:1},
- pullover:{a:LYING+' E14,60 W3,61',b:'E26,52 W28,38',props:['bench']},
+ pullover:{a:LYING+' E14,60 W3,61',b:'E26,52 W28,38',props:['bench'],arc:.35},
  pushup:{a:'H18,54 N25,59 E26,74 W26,90 P56,75 K70,82 F86,90',b:'H18,72 N25,78 E37,82 P56,84 K70,87',notoe:1},
  dips:{a:'H50,18 N50,28 E50,40 W50,52 P50,56 K54,73 F46,86',b:'H52,34 N50,44 E38,44 P50,70 K56,84 F44,90',props:['parallel'],notoe:1},
  pullup:{a:HANG,b:'E40,16 H53,12 N50,20 P50,46 K52,62 F48,77',props:['pullbar'],notoe:1},
  hangraise:{a:HANG,b:'K66,57 F82,57',props:['pullbar'],notoe:1},
  pulldown:{a:'H50,30 N50,40 P50,64 K64,66 F64,88 E46,25 W44,11',b:'E40,46 W44,34',props:['seat'],pul:[45,-6]},
  row:{a:'H70,38 N63,43 E63,58 W64,72 P40,52 K47,72 F45,92',b:'E52,50 W60,61',pul:[66,93]},
- kickback:{a:'H70,38 N63,43 E52,49 W58,62 P40,52 K47,72 F45,92',b:'W38,47'},
+ kickback:{a:'H70,38 N63,43 E52,49 W58,62 P40,52 K47,72 F45,92',b:'W38,47',pul:[94,64],arc:-.3},
  seatedrow:{a:'H54,53 N50,60 E58,68 W70,72 P40,82 K55,74 F70,84',b:'H40,50 N42,57 E30,66 W44,68',props:['lowrow'],pul:[96,72],notoe:1},
  clean:{a:'H62,40 N57,46 E57,65 W57,83 P40,55 K55,72 F50,92',b:STD+' E60,30 W53,24'},
  legraise:{a:'H12,86 N20,88 E28,90 W36,90 P48,90 K66,89 F84,90',b:'K60,72 F62,52',notoe:1},
  deadlift:{a:'H62,40 N57,46 E57,65 W57,83 P40,55 K55,72 F50,92',b:STD},
  goodmorning:{a:STD+' E40,31 W46,25',b:'H76,44 N67,46 E58,48 W63,44 P46,54 K50,72 F50,92',bar:'N',off:[-4,1]},
- swing:{a:'H60,40 N56,46 E54,62 W48,78 P40,55 K54,72 F50,92',b:STD+' E63,31 W77,27'},
+ swing:{a:'H60,40 N56,46 E54,62 W48,78 P40,55 K54,72 F50,92',b:STD+' E63,31 W77,27',arc:.4},
  backext:{a:'F16,88 K29,76 P42,64 N56,82 H62,89 E52,74 W57,77',b:'N57,48 H62,42 E53,55 W58,52',props:['backext'],notoe:1},
  shrug:{sym:1,a:FRONT,b:'H50,10 N50,22 S44,23 E42,37 W41,51'},
  upright:{sym:1,a:FRONT+' E44,42 W47,56',b:'E33,28 W46,29'},
- lateral:{sym:1,a:FRONT+' E43,41 W44,55',b:'E33,30 W21,29',pul:[57,95]},
- frontraise:{a:STD,b:'E64,26 W78,27',pul:[60,95]},
+ lateral:{sym:1,a:FRONT+' E43,41 W44,55',b:'E33,30 W21,29',pul:[57,95],arc:-.3},
+ frontraise:{a:STD,b:'E64,26 W78,27',pul:[60,95],arc:.3},
  abduction:{sym:1,a:FRONT,b:'K41,72 F34,91'},
  adduction:{like:'abduction',swap:1},
  rotext:{sym:1,a:FRONT+' E43,41 W49,42',b:'W30,41',anc:[2,42]},
@@ -62,15 +62,15 @@ const PAT={
  balance:{a:STD+' E58,34 W68,38 k61,63 f57,80',b:'H51,14 E57,35 W68,36 k60,62 f58,79'},
  ohp:{a:STD+' E40,32 W48,26',b:'E50,13 W50,1'},
  facepull:{a:STD+' E62,28 W76,27',b:'E40,23 W52,18',pul:[97,27]},
- curl:{a:STD,b:'W58,26',pul:[66,93]},
- preacher:{a:'H47,20 N50,30 P46,58 K64,60 F64,88 E63,46 W77,58',b:'W61,30',props:['preacher']},
+ curl:{a:STD,b:'W58,26',pul:[66,93],arc:.35},
+ preacher:{a:'H47,20 N50,30 P46,58 K64,60 F64,88 E63,46 W77,58',b:'W61,30',props:['preacher'],arc:.35},
  pushdown:{a:STD+' E52,40 W60,28',b:'W55,57',pul:[62,-6]},
- skull:{a:LYING+' E30,52 W30,38',b:'W19,57',props:['bench']},
+ skull:{a:LYING+' E30,52 W30,38',b:'W19,57',props:['bench'],arc:-.3},
  ohext:{a:STD+' E52,10 W41,21',b:'W54,-5',pul:[50,95]},
  legpress:{a:'H22,52 N28,59 P48,78 K56,58 F72,60 E36,70 W44,76',b:'K65,66 F83,52',props:['lpseat','sled'],notoe:1,nohand:1},
- legext:{a:'H40,22 N40,32 P40,60 K58,60 F58,84 E42,46 W48,61',b:'F80,57',props:['seatback'],legm:1,notoe:1,nohand:1},
+ legext:{a:'H40,22 N40,32 P40,60 K58,60 F58,84 E42,46 W48,61',b:'F80,57',props:['seatback'],legm:1,notoe:1,nohand:1,arc:.3},
  legcurlseat:{like:'legext',swap:1},
- legcurl:{a:'H14,56 N22,60 P50,60 K72,60 F92,60 E22,70 W30,67',b:'F77,41',props:['lcbench'],legm:1,notoe:1,nohand:1},
+ legcurl:{a:'H14,56 N22,60 P50,60 K72,60 F92,60 E22,70 W30,67',b:'F77,41',props:['lcbench'],legm:1,notoe:1,nohand:1,arc:-.3},
  lunge:{a:STD+' k50,72 f50,92',b:'H50,26 N50,37 E50,52 W50,67 P50,64 K66,70 F64,92 k40,84 f26,90'},
  hipthrust:{a:'H16,56 N24,60 E30,72 W42,80 P42,84 K60,70 F66,92',b:'E32,62 W44,60 P44,62 K63,66',props:['hipbench'],bar:'P',off:[0,-4]},
  glutebridge:{a:'H12,86 N20,88 E27,90 W34,90 P44,90 K60,72 F68,92',b:'P44,74 K60,68'},
@@ -85,7 +85,80 @@ const PAT={
  rower:{a:'H58,52 N54,60 E64,66 W74,66 P42,82 K58,70 F72,84',b:'H38,50 N40,57 E30,64 W46,66 K60,80 F72,84',props:['lowrow'],notoe:1},
  boxjump:{a:'H38,40 N36,48 E30,58 W24,62 P24,62 K40,70 F34,92',b:'H74,22 N72,32 E80,40 W86,37 P70,58 K80,66 F74,74',props:['box']},
  jumpsquat:{a:'H60,38 N57,48 E62,54 W72,50 P37,63 K58,70 F50,92',b:'H50,4 N50,15 E54,3 W58,-8 P50,43 K51,62 F50,82'},
- nordic:{a:'F12,90 K32,90 P33,66 N35,42 H36,33 E40,54 W46,58',b:'P49,74 N67,59 H74,53 E72,68 W78,77',props:['nordic'],notoe:1}
+ nordic:{a:'F12,90 K32,90 P33,66 N35,42 H36,33 E40,54 W46,58',b:'P49,74 N67,59 H74,53 E72,68 W78,77',props:['nordic'],notoe:1,arc:.2},
+ /* --- v2.10 : poses plus précises --- */
+ seatedohp:{a:'H40,21 N40,32 P40,60 K58,61 F59,90 E45,45 W46,31',b:'E42,18 W42,4',props:['seatback']},
+ decline:{a:'H16,75 N25,72 P52,64 K66,62 F74,76 E27,58 W28,44',b:'E35,80 W31,66',props:['decline'],notoe:1},
+ flylying:{a:LYING+' E28,52 W29,38',b:'E25,78 W20,90',props:['bench'],arc:-.35},
+ inclinefly:{a:'H28,44 N34,51 P52,70 K70,72 F72,92 E35,37 W36,23',b:'E30,64 W24,74',props:['incline'],arc:-.35},
+ inclinecurl:{a:'H28,44 N34,51 P52,70 K70,72 F72,92 E32,66 W30,81',b:'W43,60',props:['incline'],arc:.35},
+ concentration:{a:'H58,35 N52,43 P36,63 K58,66 F58,91 E55,61 W55,77 k53,68 f49,91',b:'W61,46',props:['stool'],arc:.35},
+ reardelt:{sym:1,a:'H50,47 N50,40 S42,40 E41,54 W42,67 P50,52 Q45,55 K42,74 F45,92',b:'E28,44 W15,49',arc:-.3},
+ twist:{both:1,ball:1,mid:1,a:'H50,49 N50,61 P50,88 K40,74 F31,82 k60,74 f69,82 E42,72 W34,77 e46,74 w36,78',b:'H52,49 E58,72 W66,77 e54,74 w64,78',notoe:1,arc:-.25},
+ sideplank:{both:1,a:'H20,72 N28,76 P58,88 K72,90 F88,91 E28,91 W42,91 k72,89 f88,90 e28,62 w28,47',b:'H20,70 N28,75 P58,82 K72,87 k72,86',notoe:1,ak:'P',ao:[0,-8]},
+ copenhagen:{both:1,a:'H22,66 N30,72 P54,84 K72,76 F88,72 E31,91 W44,91 k64,88 f70,92 e32,57 w33,43',b:'H22,63 N30,69 P54,76 K72,73',props:['cbench'],notoe:1,ak:'P',ao:[0,-8]},
+ jumprope:{a:'H50,14 N50,25 E53,40 W59,50 P50,53 K51,72 F50,90 e47,40 w42,50 R50,104',b:'H50,7 N50,18 E53,33 W59,43 P50,46 K51,65 F50,83 e47,33 w42,43 R50,-18',props:['rope'],ak:'F'},
+ burpee:{a:'H18,54 N25,59 E26,74 W26,90 P56,75 K70,82 F86,90',b:'H52,3 N52,14 E54,1 W56,-9 P52,42 K53,62 F52,82',notoe:1,ak:'P',arc:-.3},
+ mountain:{a:'H20,50 N27,56 E28,72 W28,90 P56,70 K70,80 F86,90 k70,80 f86,90',b:'K46,66 F58,84',notoe:1},
+ sissy:{a:'H50,14 N50,25 E56,36 W66,38 P50,53 K51,72 F50,90 T58,93',b:'H33,30 N38,39 E50,42 W62,40 P53,60 K66,76',notoe:1,ak:'K'},
+ hack:{a:'H38,16 N41,27 P47,54 K53,73 F58,90 E47,33 W45,25',b:'H30,40 N34,51 P38,75 K60,70 E40,57 W38,49',props:['hackpad'],nohand:1,ak:'P'},
+ wristcurl:{a:'H58,31 N52,41 P38,64 K62,64 F62,91 E50,58 W64,60 X70,69',b:'X70,53',props:['stool2'],arc:.4},
+ farmer:{a:'H50,14 N50,25 E50,40 W50,55 P50,53 K57,72 F60,92 k44,72 f40,92',b:'K44,72 F40,92 k57,72 f60,92',noar:1},
+ highcurl:{sym:1,a:FRONT+' E30,28 W16,28',b:'E30,28 W33,13',pul:[4,24],arc:.4},
+ tibia:{a:'H41,14 N41,25 P41,53 K46,72 F51,90 T59,92 E43,40 W46,53',b:'T58,84',props:['wall'],notoe:1,ak:'T',ao:[4,-6]},
+ bicycle:{both:1,a:'H22,73 N28,80 P52,88 E22,66 W17,72 K44,72 F58,72 k70,84 f88,80',b:'H24,71 K70,84 F88,80 k44,72 f58,72',notoe:1,ak:'K'},
+ deadbug:{a:'H14,85 N22,87 P48,88 E24,74 W24,60 e24,74 w24,60 K50,72 F64,72 k50,72 f64,72',b:'E13,82 W1,80 K66,82 F84,82',notoe:1,ak:'F',arc:-.2},
+ birddog:{a:'H20,56 N28,62 P60,62 E28,76 W28,91 e28,76 w28,91 K60,91 F78,92 k60,91 f78,92',b:'E14,58 W1,56 K78,62 F96,60',notoe:1,ak:'F',arc:-.3},
+ hollow:{iso:1,a:'H22,80 N30,84 P54,90 K72,86 F90,82 E20,80 W6,78',b:'H22,78 N30,82 K72,84 F90,79 W6,75',notoe:1},
+ vup:{a:'H22,87 N30,89 P54,90 K72,90 F90,90 E18,89 W6,89',b:'H36,60 N42,68 E54,62 W66,56 K66,70 F76,54',notoe:1,arc:.3},
+ woodchop:{both:1,mid:1,a:'H50,14 N50,25 P50,53 K44,72 F40,92 k56,72 f60,92 E38,20 W28,12 e40,22 w30,14',b:'H52,16 E58,46 W68,62 e56,46 w66,60',pul:[6,2],arc:-.25,ak:'W'},
+ captain:{a:'H40,19 N40,30 P40,58 E42,44 W58,44 K42,76 F42,90',b:'K60,56 F62,74',props:['captain'],notoe:1,nohand:1,ak:'K',arc:.3},
+ situp:{a:'H14,84 N22,86 E28,80 W34,84 P50,88 K62,70 F74,92',b:'H42,48 N44,60 E52,66 W50,70',ak:'H',arc:-.3},
+ sidebend:{both:1,a:'H50,14 N50,25 P50,53 K46,72 F45,92 k54,72 f55,92 E43,39 W42,54 e58,40 w56,52',b:'H42,15 N45,26 E39,41 W37,57 e54,40 w55,52',notoe:1,ak:'H'},
+ skierg:{a:'H52,14 N50,25 P48,53 K50,72 F48,92 E56,12 W62,0',b:'H70,36 N63,42 P44,58 K56,72 E64,58 W54,70',props:['skierg'],arc:.3},
+ jacks:{sym:1,a:FRONT,b:'E37,15 W44,3 K40,73 F32,92',arc:-.3},
+ sledpush:{a:'H68,40 N62,46 E70,50 W80,54 P42,64 K54,74 F56,92 k34,76 f22,90',b:'K36,78 F26,92 k52,72 f56,90',props:['sledge'],noar:1},
+ ropes:{a:'H54,30 N52,41 P42,64 K58,72 F52,92 E62,52 W74,54 e60,54 w72,56',b:'E62,42 W74,36 e60,44 w72,38',props:['waves']},
+ highknees:{a:'H52,14 N52,25 E46,36 W52,44 e58,34 w64,26 P50,52 K66,56 F64,74 k50,72 f50,90',b:'K50,72 F50,90 k66,56 f64,74 E58,34 W64,26 e46,36 w52,44',notoe:1,noar:1},
+ slam:{ball:2,a:'H50,14 N50,25 E52,10 W52,-3 P50,53 K51,72 F50,92',b:'H66,42 N60,48 E66,62 W72,80 P40,60 K56,70',arc:.3},
+ rotthrow:{both:1,ball:2,mid:1,a:'H52,14 N52,25 P50,53 K44,72 F40,92 k56,72 f60,92 E62,40 W66,54 e60,42 w64,54',b:'H46,14 N47,25 E30,22 W14,18 e32,24 w16,20',props:['wallL'],arc:.25,ak:'W'},
+ broadjump:{a:'H60,40 N56,50 E44,56 W34,60 P38,64 K56,70 F48,92',b:'H76,22 N72,32 E84,26 W94,20 P60,54 K76,56 F82,72',ak:'P',arc:-.35},
+ pogo:{a:'H50,14 N50,25 E54,38 W58,48 P50,53 K51,72 F50,90',b:'H50,4 N50,15 E54,28 W58,38 P50,43 K51,62 F51,80',ak:'F',ao:[-10,0]},
+ snatch:{a:'H62,40 N57,46 E57,65 W57,83 P40,55 K55,72 F50,92',b:'H50,15 N50,26 E50,12 W50,-3 P50,54 K52,73',arc:.2},
+ pullapart:{sym:1,band:'hands',a:FRONT+' E42,32 W46,31',b:'E30,28 W14,28',ar2:0},
+ tuckjump:{a:'H60,38 N57,48 E62,54 W72,50 P37,63 K58,70 F50,92',b:'H48,6 N48,17 E58,22 W64,30 P46,42 K62,34 F56,50',ak:'K',arc:-.2},
+ skater:{both:1,a:'H32,24 N36,35 P42,58 K38,75 F36,92 k52,74 f60,84 E26,44 W22,56 e48,44 w54,52',b:'H68,24 N64,35 P58,58 K62,75 F64,92 k48,74 f40,84 E74,44 W78,56 e52,44 w46,52',notoe:1,ak:'P',arc:-.5},
+ pushpress:{a:'H52,18 N51,29 P46,57 K56,73 F50,92 E44,37 W49,28',b:'H50,14 N50,25 P50,53 K51,72 E50,12 W50,-1'},
+ pike:{a:'H24,60 N30,66 E30,79 W30,92 P58,36 K70,62 F82,90',b:'H28,82 N36,74 E46,80 W30,92 P62,42',notoe:1,ak:'H'},
+ pushupinc:{a:'H20,44 N27,50 E26,60 W24,70 P56,72 K72,82 F88,92',b:'H20,56 N28,62 E40,62',props:['boxL'],notoe:1,ak:'N',ao:[0,-6]},
+ clappush:{a:'H18,72 N25,78 E37,82 W26,90 P56,84 K70,87 F86,90',b:'H20,48 N27,54 E28,64 W34,72 P56,72 K70,81',notoe:1,ak:'N',ao:[0,-8]},
+ chestrow:{a:'H66,34 N60,40 P40,62 K36,78 F30,92 E61,56 W62,71',b:'E46,44 W52,54',props:['ytwb']},
+ ytw:{a:'H66,34 N60,40 P40,62 K36,78 F30,92 E61,56 W62,71',b:'E70,30 W80,20',props:['ytwb'],arc:-.3},
+ invrow:{a:'H22,70 N30,74 E31,60 W32,46 P56,80 K72,85 F88,90',b:'H22,54 N30,58 E44,58 P58,72 K74,82',props:['lowbar'],notoe:1,ak:'N',ao:[-6,0]},
+ superman:{a:'H16,85 N24,88 P52,89 K70,89 F88,89 E14,88 W4,88',b:'H18,78 N26,82 E14,74 W4,70 K70,87 F88,80',notoe:1,ar2:0},
+ sumo:{sym:1,a:'H50,34 N50,44 S45,45 E45,57 W46,69 P50,64 Q45,64 K34,74 F30,92',b:'H50,14 N50,25 S44,27 E44,40 W45,52 P50,53 Q45,54 K40,73 F32,92',ar2:0},
+ sumosquat:{sym:1,one:1,a:'H50,13 N50,25 S44,27 E44,40 W48,46 P50,53 Q45,54 K40,73 F32,92',b:'H50,32 N50,44 S44,46 E44,58 W48,64 P50,70 Q45,70 K32,72',ak:'Q',ar2:0,ao:[-18,0]},
+ wallsit:{iso:1,a:'H40,32 N40,43 P40,70 K62,70 F62,92 E46,56 W56,62',b:'H40,31',props:['wall']},
+ pistol:{both:1,a:'H50,14 N50,25 E58,34 W70,36 P50,53 K51,72 F50,92 k60,64 f72,70',b:'H62,48 N58,56 E68,62 W80,62 P44,78 K58,72 k62,80 f84,80',ak:'P',ao:[-6,0]},
+ sidelunge:{both:1,vert:1,a:'H50,14 N50,25 P50,53 K44,72 F38,92 k56,72 f62,92 E44,38 W50,44',b:'H40,36 N42,47 P42,70 K28,76 F24,92 k58,80 f70,92 E36,58 W44,64',notoe:1,ak:'P'},
+ revnordic:{a:'H50,28 N50,40 P50,66 K50,91 F72,92 E56,52 W50,56',b:'H16,40 N22,50 P36,71 E30,60 W26,56',notoe:1,ak:'H',arc:-.25},
+ sldl:{both:1,a:'H50,14 N50,25 E50,40 W50,55 P50,53 K51,72 F50,92 k47,72 f42,88',b:'H76,44 N68,46 E68,60 W68,74 P46,52 k30,50 f12,46',arc:.2,ak:'f'},
+ glutebridge1:{both:1,a:'H12,86 N20,88 E27,90 W34,90 P44,90 K60,72 F68,92 k58,74 f74,62',b:'P44,74 K60,68 k66,64 f84,58',notoe:1,ak:'P'},
+ clamshell:{band:'knees',a:'H18,72 N26,80 E22,90 W16,79 P52,86 K68,80 F82,90 k68,84 f82,92',b:'K63,64',notoe:1,ak:'K',ao:[4,0]},
+ bandwalk:{both:1,band:'knees',a:'H50,18 N50,29 P50,56 K44,73 F42,92 k56,73 f58,92 E44,42 W46,54 e56,42 w54,54',b:'H47,18 N47,29 P46,56 K38,73 F32,92 E41,42 W43,54 e53,42 w51,54',notoe:1,ak:'F',ao:[0,-6]},
+ donkey:{a:'H20,56 N28,62 P60,62 E28,76 W28,91 e28,76 w28,91 K60,91 F78,92 k60,91 f78,92',b:'K80,62 F82,42',notoe:1,ak:'F',arc:-.3},
+ pullthrough:{a:'H72,46 N65,50 P44,56 K50,73 F48,92 E54,66 W42,76',b:'H50,14 N50,25 P50,53 K51,72 F50,92 E52,40 W54,53',pul:[4,93],ak:'H',arc:-.25},
+ standcurl:{a:'H50,14 N50,25 E56,38 W62,46 P50,53 K51,72 F50,92 k49,72 f48,92',b:'F35,64',props:['standpad'],legm:1,nohand:1,notoe:1,arc:-.35},
+ revhyper:{a:'H18,46 N26,52 P54,55 E28,64 W32,72 K56,74 F56,90',b:'K74,50 F92,46',props:['hyperpad'],legm:1,notoe:1,nohand:1,arc:-.3},
+ latjump:{both:1,a:'H34,32 N34,43 P34,64 K26,74 F28,92 k42,74 f40,92 E26,52 W30,64 e42,52 w38,64',b:'H66,8 N66,19 P66,44 K60,62 F62,78 k72,62 f70,78 E58,14 W56,4 e74,14 w76,4',props:['cone'],notoe:1,ak:'P',arc:-.4},
+ bound:{a:'H44,18 N44,29 E36,38 W40,48 e52,36 w58,28 P44,56 K60,60 F70,74 k36,76 f24,90',b:'H68,12 N68,23 E76,32 W82,24 e60,36 w64,46 P66,50 K82,56 F92,68 k56,66 f44,76',ak:'P',arc:-.35,notoe:1},
+ elliptical:{a:'H52,12 N52,23 P50,50 K60,64 F62,82 k44,68 f38,84 E58,36 W64,28 e48,38 w44,30',b:'K44,68 F38,84 k60,64 f62,82 E48,38 W44,30 e58,36 w64,28',props:['ellip'],notoe:1,noar:1},
+ stairs:{a:'H44,12 N44,23 E48,36 W50,48 P44,50 K58,56 F62,68 k44,68 f40,80',b:'H58,0 N58,11 E62,24 W64,36 P60,38 K64,54 F62,68 k70,44 f76,56',props:['steps'],ak:'P'},
+ stepup:{a:'H40,16 N40,27 E40,42 W40,56 P40,54 K58,58 F68,75 k40,74 f40,92',b:'H66,0 N66,11 E66,26 W66,40 P66,38 K66,56 k58,58 f56,74',props:['box'],ak:'P',arc:-.2},
+ mbthrow:{ball:2,a:'H50,14 N50,25 E44,12 W38,3 P52,53 K56,72 F50,92',b:'H54,14 N52,25 E64,12 W78,6',arc:-.35},
+ straightarm:{a:'H58,22 N55,32 P44,58 K50,74 F48,92 E68,26 W80,22',b:'E60,48 W58,62',pul:[96,4],arc:.3},
+ pallof:{a:'H50,14 N50,25 E54,40 W60,36 P50,53 K46,72 F42,92 k56,72 f60,92',b:'E62,30 W76,30',pul:[4,34]},
+ calfpress:{a:'H22,52 N28,59 P48,78 K65,66 F82,53 E36,70 W44,76',b:'F88,47',props:['lpseat','sled'],notoe:1,nohand:1,ao:[4,4]}
 };
 function parsePose(s){const o={};String(s||'').replace(/([A-Za-z])(-?[\d.]+),(-?[\d.]+)/g,(m,k,x,y)=>{o[k]=[+x,+y]});return o}
 for(const k in PAT){const p=PAT[k];if(!p.like){p._a=parsePose(p.a);p._b={...p._a,...parsePose(p.b)}}}
@@ -111,46 +184,97 @@ const PROPS={
  lowrow:()=>'<path d="M28 86H54M73 74V92" class="p"/>',
  hipbench:()=>'<path d="M4 63H28M14 63V92" class="p"/>',
  lcbench:()=>'<path d="M12 66H78M18 66V92M72 66V92" class="p"/>',
- nordic:()=>'<path d="M4 86H20" class="p"/>'
+ nordic:()=>'<path d="M4 86H20" class="p"/>',
+ decline:()=>'<path d="M12 80L62 64M20 78V92M54 67V92" class="p"/><circle cx="76" cy="78" r="3.5" class="pt" style="stroke-width:3"/>',
+ stool:()=>'<path d="M22 68H46M34 68V92" class="p"/>',
+ stool2:()=>'<path d="M24 68H46M35 68V92" class="p"/>',
+ wall:()=>'<path d="M33 -4V92" class="p"/>',
+ wallL:()=>'<path d="M4 -4V92" class="p"/>',
+ cbench:()=>'<path d="M72 78H96M78 78V92M92 78V92" class="p"/>',
+ captain:()=>'<path d="M33 14V92M33 46H62M56 46V92" class="p"/>',
+ ytwb:()=>'<path d="M45 68L66 47M52 62V92M40 92H64" class="p"/>',
+ lowbar:()=>'<path d="M18 46H46" class="p"/><path d="M22 46V92M42 46V92" class="pt"/>',
+ boxL:()=>'<rect x="8" y="72" width="28" height="21" rx="2" class="p" style="stroke-width:4"/>',
+ hyperpad:()=>'<path d="M14 58H58M22 58V92M50 58V92" class="p"/>',
+ standpad:()=>'<path d="M60 28V64M60 64V92" class="p"/>',
+ cone:()=>'<path d="M46 93L50 84L54 93Z" class="eqf"/>',
+ steps:()=>'<path d="M14 92V80H36V68H58V56H96" class="p" style="stroke-width:4"/>',
+ sledge:()=>'<path d="M80 50V88M80 88H98M88 66H98" class="p"/>',
+ hackpad:q=>{const N=q.N,P=q.P,dx=P[0]-N[0],dy=P[1]-N[1],l=Math.hypot(dx,dy)||1,ox=-dy/l*-5.5,oy=dx/l*-5.5;return `<path d="M${fx(N[0]+ox-dx/l*4)} ${fx(N[1]+oy-dy/l*4)}L${fx(P[0]+ox)} ${fx(P[1]+oy)}" class="p"/><path d="M44 93L74 89" class="p"/>`},
+ rope:q=>{const W=q.W,w=q.w||W,y=q.R?q.R[1]:97;return `<path d="M${fx(W[0])} ${fx(W[1])}C${fx(W[0]+16)} ${fx(y)} ${fx(w[0]-16)} ${fx(y)} ${fx(w[0])} ${fx(w[1])}" class="cb" style="stroke-width:2"/>`},
+ waves:q=>{const W=q.W,a=(W[1]-46)*.9;return `<path d="M${fx(W[0])} ${fx(W[1])}Q${fx(W[0]+6)} ${fx(W[1]-a-6)} ${fx(W[0]+12)} ${fx(W[1]+12)}T${fx(W[0]+24)} ${fx(W[1]+26)}T96 88" class="cb" style="stroke-width:2.4"/>`},
+ skierg:q=>`<path d="M88 -6V92M80 92H96" class="p"/><line x1="86" y1="-2" x2="${fx(q.W[0])}" y2="${fx(q.W[1])}" class="cb"/>`,
+ ellip:q=>`<path d="M26 91H80" class="p"/><path d="M${fx(q.W[0])} ${fx(q.W[1])}L58 90M${fx(q.w[0])} ${fx(q.w[1])}L44 90" class="pt"/>`
 };
 function plate(c){return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="7.5" class="eq"/><circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2" class="eqf"/>`}
 function dumb(c){const x=c[0],y=c[1];return `<line x1="${(x-4).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+4).toFixed(1)}" y2="${y.toFixed(1)}" class="cb" style="stroke-width:2.5"/><rect x="${(x-6.5).toFixed(1)}" y="${(y-3.6).toFixed(1)}" width="3.6" height="7.2" rx="1" class="eqf"/><rect x="${(x+2.9).toFixed(1)}" y="${(y-3.6).toFixed(1)}" width="3.6" height="7.2" rx="1" class="eqf"/>`}
+function dumbV(c){const x=c[0],y=c[1];return `<line x1="${x.toFixed(1)}" y1="${(y-4).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(y+4).toFixed(1)}" class="cb" style="stroke-width:2.5"/><rect x="${(x-3.6).toFixed(1)}" y="${(y-6.5).toFixed(1)}" width="7.2" height="3.6" rx="1" class="eqf"/><rect x="${(x-3.6).toFixed(1)}" y="${(y+2.9).toFixed(1)}" width="7.2" height="3.6" rx="1" class="eqf"/>`}
 function kb(c){return `<circle cx="${c[0].toFixed(1)}" cy="${(c[1]+6).toFixed(1)}" r="4.6" class="eqf"/><path d="M${(c[0]-3).toFixed(1)} ${(c[1]+3).toFixed(1)}Q${c[0].toFixed(1)} ${(c[1]-2).toFixed(1)} ${(c[0]+3).toFixed(1)} ${(c[1]+3).toFixed(1)}" class="cb" style="stroke-width:2"/>`}
-function figSVG(ex,t){
-  const p=PAT[ex.pat]||PAT.squat,q=poseAt(p,t),eq=ex.eq;let s='<line x1="6" y1="94" x2="94" y2="94" class="g"/>';
-  (p.props||[]).forEach(k=>{s+=PROPS[k](q)});
-  const arm=(N,E,W,c)=>pl([N,E,W],c),leg=(P,K,F,c)=>pl([P,K,F],c);
-  const toe=F=>(!p.notoe&&!p.sym&&F[1]>=82)?ln(F,[F[0]+7,Math.min(93,F[1]+2.5)],'b'):'';
-  // cables & bands behind body
-  const hand=p.to==='F'?q.F:q.W;
-  if(eq==='P'||eq==='E'){const a=eq==='E'?(p.anc||[96,hand[1]]):(p.pul||[60,-6]);const cls=eq==='E'?'bd':'cb';
+/* flèche de mouvement + silhouette de départ (vignettes fixes) : on comprend le geste sans animation */
+const fx=n=>n.toFixed(1);
+function moveArrow(p,A,B,mirror){
+  const dist=k=>A[k]&&B[k]?Math.hypot(B[k][0]-A[k][0],B[k][1]-A[k][1]):0,keys=Object.keys(A).filter(k=>B[k]&&!/[NSQ]/.test(k)),mx=Math.max(0,...keys.map(dist));
+  const k=p.ak||['X','W','w','F','f','K','k','P','T','H'].find(k=>dist(k)>=mx*.55);
+  if(!k||!A[k]||!B[k])return '';const o=p.ao||[0,0];let a=[A[k][0]+o[0],A[k][1]+o[1]],b=[B[k][0]+o[0],B[k][1]+o[1]];
+  if(mirror){a=mir(a);b=mir(b)}
+  const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<7)return '';
+  const ux=dx/L,uy=dy/L,arc=(p.arc||0)*(mirror?-1:1),cx=(a[0]+b[0])/2-uy*L*arc,cy=(a[1]+b[1])/2+ux*L*arc;
+  const s0=[a[0]+ux*3,a[1]+uy*3],e0=[b[0]-ux*4,b[1]-uy*4];
+  let tx=e0[0]-cx,ty=e0[1]-cy;if(!arc){tx=ux;ty=uy}const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;
+  const h1=[e0[0]-tx*5.5-ty*3.6,e0[1]-ty*5.5+tx*3.6],h2=[e0[0]-tx*5.5+ty*3.6,e0[1]-ty*5.5-tx*3.6];
+  return `<path d="M${fx(s0[0])} ${fx(s0[1])}${arc?`Q${fx(cx)} ${fx(cy)} `:'L'}${fx(e0[0])} ${fx(e0[1])}" class="ar"/><path d="M${fx(h1[0])} ${fx(h1[1])}L${fx(e0[0]+tx*1.5)} ${fx(e0[1]+ty*1.5)}L${fx(h2[0])} ${fx(h2[1])}Z" class="arh"/>`;
+}
+function ghostSVG(p,A){
+  const g=(pts)=>pl(pts,'gh');let s='';
+  if(p.sym){const S=A.S||A.N,Q=A.Q||A.P;s+=g([A.E,S,mir(S),mir(A.E)])+g([S,A.E,A.W])+g([mir(S),mir(A.E),mir(A.W)])+g([Q,A.K,A.F])+g([mir(Q),mir(A.K),mir(A.F)])+ln(A.N,A.P,'gh')}
+  else{s+=ln(A.N,A.P,'gh')+g([A.P,A.K,A.F])+g(A.X?[A.N,A.E,A.W,A.X]:[A.N,A.E,A.W]);if(A.k)s+=g([A.P,A.k,A.f]);if(A.e)s+=g([A.N,A.e,A.w])}
+  return s+`<circle cx="${fx(A.H[0])}" cy="${fx(A.H[1])}" r="5.5" class="ghh"/>`;
+}
+function figSVG(ex,t,anim){
+  const p=PAT[ex.pat]||PAT.squat,q=poseAt(p,t),eq=ex.eq,still=!anim&&t===1&&!p.iso;let s='<line x1="6" y1="94" x2="94" y2="94" class="g"/>';
+  (p.props||[]).forEach(k=>{s+=PROPS[k](q,p)});
+  if(still)s+=ghostSVG(p,p._a);
+  const arm=(N,E,W,c,X)=>pl(X?[N,E,W,X]:[N,E,W],c),leg=(P,K,F,c)=>pl([P,K,F],c);
+  const toe=(F,T)=>T?ln(F,T,'b'):(!p.notoe&&!p.sym&&F[1]>=82)?ln(F,[F[0]+7,Math.min(93,F[1]+2.5)],'b'):'';
+  const hand=p.to==='F'?q.F:(q.X||q.W);
+  // câbles et élastiques derrière le corps
+  if((eq==='P'||eq==='E')&&!p.band){const a=eq==='E'?(p.anc||[96,hand[1]]):(p.pul||[60,-6]);const cls=eq==='E'?'bd':'cb';
     s+=ln(a,hand,cls)+(eq==='P'?`<circle cx="${a[0]}" cy="${a[1]}" r="2.6" class="eq" style="stroke-width:2"/>`:'');
-    if(p.sym){const m2=mir(hand),am=mir(a);s+=ln(am,m2,cls)+(eq==='P'?`<circle cx="${am[0]}" cy="${am[1]}" r="2.6" class="eq" style="stroke-width:2"/>`:'')}}
+    if(p.sym){const m2=mir(hand),am=mir(a);s+=ln(am,m2,cls)+(eq==='P'?`<circle cx="${am[0]}" cy="${am[1]}" r="2.6" class="eq" style="stroke-width:2"/>`:'')}
+    if(p.two&&q.w){s+=ln(a,q.w,cls)}}
   if(p.sym){
     const S=q.S||q.N,Q=q.Q||q.P;
     s+=ln(S,mir(S),'b')+ln(q.N,q.P,'b')+ln(Q,mir(Q),'b');
     s+=leg(Q,q.K,q.F,'b')+leg(mir(Q),mir(q.K),mir(q.F),'b');
     s+=arm(S,q.E,q.W,'b')+arm(mir(S),mir(q.E),mir(q.W),'b');
-    s+=`<circle cx="${q.H[0].toFixed(1)}" cy="${q.H[1].toFixed(1)}" r="6.5" class="h"/>`;
-    if(eq==='B'){const y=q.W[1],x1=q.W[0]-12,x2=100-q.W[0]+12;s+=`<line x1="${x1.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y.toFixed(1)}" class="cb" style="stroke-width:2.6"/><rect x="${(x1-2).toFixed(1)}" y="${(y-8).toFixed(1)}" width="4" height="16" rx="1.5" class="eqf"/><rect x="${(x2-2).toFixed(1)}" y="${(y-8).toFixed(1)}" width="4" height="16" rx="1.5" class="eqf"/>`}
+    s+=`<circle cx="${fx(q.H[0])}" cy="${fx(q.H[1])}" r="6.5" class="h"/>`;
+    if(p.band==='hands')s+=ln(q.W,mir(q.W),'bd');
+    if(p.band==='knees')s+=ln(q.K,mir(q.K),'bd');
+    if(p.ball)s+=`<circle cx="50" cy="${fx(q.W[1])}" r="6.5" class="eq"/>`;
+    else if(p.one){const c=[50,q.W[1]];s+=eq==='K'?kb(c):dumbV(c)}
+    else if(eq==='B'){const y=q.W[1],x1=q.W[0]-12,x2=100-q.W[0]+12;s+=`<line x1="${fx(x1)}" y1="${fx(y)}" x2="${fx(x2)}" y2="${fx(y)}" class="cb" style="stroke-width:2.6"/><rect x="${fx(x1-2)}" y="${fx(y-8)}" width="4" height="16" rx="1.5" class="eqf"/><rect x="${fx(x2-2)}" y="${fx(y-8)}" width="4" height="16" rx="1.5" class="eqf"/>`}
     else if(eq==='H')s+=dumb(q.W)+dumb(mir(q.W));
     else if(eq==='K')s+=kb(q.W)+kb(mir(q.W));
-    else if(eq==='M'||eq==='P'||eq==='E')s+=`<circle cx="${q.W[0].toFixed(1)}" cy="${q.W[1].toFixed(1)}" r="2.8" class="eqf"/><circle cx="${(100-q.W[0]).toFixed(1)}" cy="${q.W[1].toFixed(1)}" r="2.8" class="eqf"/>`;
+    else if(eq==='M'||eq==='P'||eq==='E')s+=`<circle cx="${fx(q.W[0])}" cy="${fx(q.W[1])}" r="2.8" class="eqf"/><circle cx="${fx(100-q.W[0])}" cy="${fx(q.W[1])}" r="2.8" class="eqf"/>`;
+    if(still&&!p.noar)s+=moveArrow(p,p._a,p._b)+(p.ar2===0?'':moveArrow(p,p._a,p._b,1));
     return `<svg viewBox="0 -10 100 106" aria-hidden="true">${s}</svg>`;
   }
-  if(q.k)s+=leg(q.P,q.k,q.f,'f');
-  if(q.e)s+=arm(q.N,q.e,q.w,'f');
-  s+=ln(q.N,q.P,'b')+leg(q.P,q.K,q.F,'b')+toe(q.F);
-  const bodyFirst=p.bar==='N';
+  const bk=p.both?'b':'f';
+  if(q.k)s+=leg(q.P,q.k,q.f,bk)+(p.both?toe(q.f,q.t):'');
+  if(q.e)s+=arm(q.N,q.e,q.w,bk);
+  s+=ln(q.N,q.P,'b')+leg(q.P,q.K,q.F,'b')+toe(q.F,q.T);
+  if(p.band==='knees'&&q.k)s+=ln(q.K,q.k,'bd');
   if(eq==='B'&&p.bar){const o=p.off||[0,0],c=q[p.bar];s+=plate([c[0]+o[0],c[1]+o[1]])}
-  s+=`<circle cx="${q.H[0].toFixed(1)}" cy="${q.H[1].toFixed(1)}" r="6.5" class="h"/>`;
-  s+=arm(q.N,q.E,q.W,'b');
-  if(eq==='B'&&!p.bar)s+=plate(q.W);
-  else if(eq==='H')s+=dumb(q.W);
-  else if(eq==='K')s+=kb(q.W);
-  else if(eq==='M'){if(p.legm)s+=`<circle cx="${q.F[0].toFixed(1)}" cy="${(q.F[1]-1).toFixed(1)}" r="3.6" class="eqf"/>`;else if(!p.nohand)s+=`<circle cx="${q.W[0].toFixed(1)}" cy="${q.W[1].toFixed(1)}" r="3" class="eqf"/>`}
-  else if((eq==='P'||eq==='E')&&p.to!=='F')s+=`<circle cx="${q.W[0].toFixed(1)}" cy="${q.W[1].toFixed(1)}" r="2.8" class="eqf"/>`;
-  void bodyFirst;
+  s+=`<circle cx="${fx(q.H[0])}" cy="${fx(q.H[1])}" r="6.5" class="h"/>`;
+  s+=arm(q.N,q.E,q.W,'b',q.X);
+  const at=q.X||(p.mid&&q.w?[(q.W[0]+q.w[0])/2,(q.W[1]+q.w[1])/2]:q.W);
+  if(p.ball)s+=`<circle cx="${fx(at[0])}" cy="${fx(at[1]+(p.ball===2?0:-1))}" r="6.5" class="eq"/>`;
+  else if(eq==='B'&&!p.bar)s+=plate(at);
+  else if(eq==='H')s+=p.vert?dumbV(at):dumb(at);
+  else if(eq==='K')s+=kb(at);
+  else if(eq==='M'){if(p.legm)s+=`<circle cx="${fx(q.F[0])}" cy="${fx(q.F[1]-1)}" r="3.6" class="eqf"/>`;else if(!p.nohand)s+=`<circle cx="${fx(at[0])}" cy="${fx(at[1])}" r="3" class="eqf"/>`}
+  else if((eq==='P'||eq==='E')&&p.to!=='F'&&!p.band)s+=`<circle cx="${fx(at[0])}" cy="${fx(at[1])}" r="2.8" class="eqf"/>`;
+  if(still&&!p.noar)s+=moveArrow(p,p._a,p._b);
   return `<svg viewBox="0 -10 100 106" aria-hidden="true">${s}</svg>`;
 }
 
@@ -162,36 +286,36 @@ const EXOS_RAW=`dc-barre|Développé couché barre|pecs|B|bench
 dc-halt|Développé couché haltères|pecs|H|bench
 di-barre|Développé incliné barre|pecs|B|incline
 di-halt|Développé incliné haltères|pecs|H|incline
-dd-barre|Développé décliné barre|pecs|B|bench
-dc-machine|Chest press machine|pecs|M|chestpress
-ecarte-halt|Écarté couché haltères|pecs|H|bench
+dd-barre|Développé décliné barre|pecs|B|decline
+dc-machine|Développé couché machine (chest press)|pecs|M|chestpress
+ecarte-halt|Écarté couché haltères|pecs|H|flylying
 pec-deck|Pec deck (butterfly)|pecs|M|fly
-vis-a-vis|Écarté poulie vis-à-vis|pecs|P|fly
+vis-a-vis|Écarté poulie vis-à-vis (cross-over)|pecs|P|fly
 pompes|Pompes|pecs|C|pushup
 dips-pecs|Dips buste penché|pecs|C|dips
 pullover|Pull-over haltère|pecs|H|pullover
-tractions|Tractions pronation|dos|C|pullup
-chin-up|Tractions supination|dos|C|pullup
+tractions|Tractions prise large (pronation)|dos|C|pullup
+chin-up|Tractions supination (chin-up)|dos|C|pullup
 tirage-vertical|Tirage vertical poulie haute|dos|P|pulldown
 tirage-serre|Tirage vertical prise serrée|dos|P|pulldown
 rowing-barre|Rowing barre|dos|B|row
-rowing-halt|Rowing haltère un bras (tirage bûcheron)|dos|H|row
+rowing-halt|Rowing haltère un bras|dos|H|row
 tirage-horiz|Tirage horizontal poulie basse|dos|P|seatedrow
 rowing-machine|Rowing machine prise neutre|dos|M|seatedrow
 t-bar|Rowing T-bar|dos|B|row
 souleve|Soulevé de terre|dos|B|deadlift
-pullover-poulie|Pull-over poulie bras tendus|dos|P|pushdown
+pullover-poulie|Tirage bras tendus poulie haute (pull-over poulie)|dos|P|straightarm
 lombaires|Extensions lombaires banc 45°|dos|C|backext
 shrug-barre|Shrugs barre|dos|B|shrug
 shrug-halt|Shrugs haltères|dos|H|shrug
-dm-barre|Développé militaire barre|epaules|B|ohp
-dm-halt|Développé épaules haltères|epaules|H|ohp
-dm-machine|Développé épaules machine|epaules|M|ohp
-arnold|Développé Arnold|epaules|H|ohp
+dm-barre|Développé militaire debout barre|epaules|B|ohp
+dm-halt|Développé militaire assis haltères|epaules|H|seatedohp
+dm-machine|Développé militaire machine (shoulder press)|epaules|M|seatedohp
+arnold|Développé Arnold|epaules|H|seatedohp
 elev-lat|Élévations latérales haltères|epaules|H|lateral
 elev-lat-poulie|Élévations latérales poulie|epaules|P|lateral
 elev-front|Élévations frontales|epaules|H|frontraise
-oiseau|Oiseau (deltoïdes arrière)|epaules|H|row
+oiseau|Oiseau buste penché haltères|epaules|H|reardelt
 reverse-pec|Reverse pec deck|epaules|M|revfly
 face-pull|Face pull|epaules|P|facepull
 tirage-menton|Tirage menton|epaules|B|upright
@@ -199,12 +323,12 @@ curl-barre|Curl barre|biceps|B|curl
 curl-ez|Curl barre EZ|biceps|B|curl
 curl-halt|Curl haltères|biceps|H|curl
 curl-marteau|Curl marteau|biceps|H|curl
-curl-incline|Curl incliné haltères|biceps|H|curl
+curl-incline|Curl incliné haltères|biceps|H|inclinecurl
 curl-pupitre|Curl pupitre|biceps|B|preacher
 curl-poulie|Curl poulie basse|biceps|P|curl
-curl-concentre|Curl concentré|biceps|H|preacher
-curl-poignets|Curl poignets barre|biceps|B|curl
-pushdown|Extension triceps poulie haute|triceps|P|pushdown
+curl-concentre|Curl concentré|biceps|H|concentration
+curl-poignets|Curl poignets (flexion)|biceps|B|wristcurl
+pushdown|Extension triceps poulie haute (barre)|triceps|P|pushdown
 pushdown-corde|Extension triceps à la corde|triceps|P|pushdown
 barre-front|Barre au front (skull crusher)|triceps|B|skull
 ext-nuque|Extension nuque haltère|triceps|H|ohext
@@ -217,12 +341,12 @@ squat|Squat barre|quadri|B|squat
 front-squat|Front squat|quadri|B|squat
 goblet|Goblet squat|quadri|H|squat
 presse|Presse à cuisses|quadri|M|legpress
-hack|Hack squat machine|quadri|M|squat
+hack|Hack squat machine|quadri|M|hack
 leg-ext|Leg extension|quadri|M|legext
 fentes|Fentes avant haltères|quadri|H|lunge
 fentes-marchees|Fentes marchées|quadri|H|lunge
 bulgare|Fentes bulgares|quadri|H|lunge
-step-up|Step-up sur banc|quadri|H|lunge
+step-up|Step-up sur banc|quadri|H|stepup
 sdt-roumain|Soulevé de terre roumain|ischios|B|deadlift
 sdt-jt|Soulevé de terre jambes tendues haltères|ischios|H|deadlift
 leg-curl-allonge|Leg curl allongé|ischios|M|legcurl
@@ -237,29 +361,29 @@ kb-swing|Kettlebell swing|ischios|K|swing
 mollets-debout|Mollets debout machine|mollets|M|calf
 mollets-assis|Mollets assis machine|mollets|M|calfseat
 mollets-halt|Mollets debout haltères|mollets|H|calf
-mollets-presse|Mollets à la presse|mollets|M|legpress
+mollets-presse|Mollets à la presse|mollets|M|calfpress
 crunch|Crunch|abdos|C|crunch
 crunch-poulie|Crunch à la poulie|abdos|P|crunch
 releve-jambes|Relevés de jambes suspendu|abdos|C|hangraise
 planche|Gainage planche|abdos|C|plank
-gainage-lat|Gainage latéral|abdos|C|plank
-russian|Russian twist|abdos|C|crunch
+gainage-lat|Gainage latéral|abdos|C|sideplank
+russian|Russian twist|abdos|C|twist
 roue|Roue abdominale|abdos|C|abwheel
 tapis|Tapis de course|cardio|X|run
 velo|Vélo|cardio|X|bike
 rameur|Rameur|cardio|X|rower
-elliptique|Vélo elliptique|cardio|X|run
-corde|Corde à sauter|cardio|X|calf
-burpees|Burpees|cardio|C|pushup
+elliptique|Vélo elliptique|cardio|X|elliptical
+corde|Corde à sauter|cardio|X|jumprope
+burpees|Burpees|cardio|C|burpee
 box-jump|Box jump|explo|C|boxjump
 squat-jump|Squat jump|explo|C|jumpsquat
 fentes-sautees|Fentes sautées|explo|C|lunge
 rot-ext|Rotation externe épaule élastique|explo|E|rotext
 rot-int|Rotation interne épaule élastique|explo|E|rotint
-ytw|Élévations Y-T-W|explo|H|lateral
+ytw|Élévations Y-T-W (banc incliné)|explo|H|ytw
 nordic|Nordic hamstring curl|explo|C|nordic
-copenhague|Gainage Copenhague (adducteurs)|explo|C|plank
-med-ball|Lancer médecine-ball au-dessus de la tête|explo|C|ohp
+copenhague|Gainage Copenhague (adducteurs)|explo|C|copenhagen
+med-ball|Lancer médecine-ball au-dessus de la tête|explo|C|mbthrow
 equilibre|Équilibre unipodal|explo|C|balance
 dc-smith|Développé couché Smith machine|pecs|M|bench
 pompes-declinees|Pompes déclinées|pecs|C|pushup
@@ -283,21 +407,21 @@ dips-machine|Dips machine|triceps|M|dips
 pompes-diamant|Pompes diamant|triceps|C|pushup
 jm-press|JM press|triceps|B|skull
 squat-smith|Squat Smith machine|quadri|M|squat
-sissy|Sissy squat|quadri|C|squat
-pendulum|Pendulum squat|quadri|M|squat
+sissy|Sissy squat|quadri|C|sissy
+pendulum|Pendulum squat|quadri|M|hack
 belt-squat|Belt squat|quadri|M|squat
 fentes-arriere|Fentes arrière haltères|ischios|H|lunge
 hip-thrust-machine|Hip thrust machine|ischios|M|hipthrust
 ghr|Glute ham raise|ischios|C|nordic
 mollets-unipodal|Mollets sur une jambe|mollets|H|calf
 crunch-machine|Crunch machine|abdos|M|crunch
-mountain|Mountain climbers|abdos|C|plank
-pallof|Pallof press|abdos|P|rotext
-escalier|Stairmaster (escalier)|cardio|X|lunge
+mountain|Mountain climbers|abdos|C|mountain
+pallof|Pallof press|abdos|P|pallof
+escalier|Stairmaster (escalier)|cardio|X|stairs
 assault-bike|Assault bike|cardio|X|bike
 drop-jump|Drop jump|explo|C|jumpsquat
-sauts-lateraux|Sauts latéraux|explo|C|jumpsquat
-bondissements|Bondissements|explo|C|run
+sauts-lateraux|Sauts latéraux|explo|C|latjump
+bondissements|Bondissements|explo|C|bound
 rot-ext-poulie|Rotation externe épaule poulie|explo|P|rotext
 power-clean|Power clean (épaulé)|explo|B|clean
 hang-clean|Hang clean (épaulé depuis les cuisses)|explo|B|clean
@@ -305,8 +429,72 @@ sdt-jt-barre|Soulevé de terre jambes tendues barre|ischios|B|deadlift
 iso-dos|Isométrie dos (rowing tenu)|dos|B|row
 iso-tractions|Isométrie tractions (maintien en haut)|dos|C|pullup
 releve-sol|Relevés de jambes au sol|abdos|C|legraise
-crunch-leste|Crunch lesté|abdos|H|crunch`;
-const ALIAS={'dc-barre':'bench press','dc-halt':'dumbbell bench press','di-halt':'incline dumbbell press','di-barre':'incline bench press','vis-a-vis':'cable crossover cable fly écarté poulie','ecarte-halt':'dumbbell fly','pec-deck':'butterfly','dips-pecs':'chest dips','tractions':'pull-up pull up','chin-up':'chin up','tirage-vertical':'lat pulldown','tirage-horiz':'seated cable row','rowing-barre':'barbell row','rowing-halt':'bûcheron one arm dumbbell row','souleve':'deadlift','sdt-roumain':'rdl romanian deadlift','sdt-jt':'stiff leg deadlift','sdt-jt-barre':'stiff leg deadlift','dm-barre':'military press overhead press','elev-lat':'lateral raise','face-pull':'face pull','curl-barre':'curl biceps barbell curl','curl-halt':'curl biceps dumbbell curl','curl-marteau':'hammer curl','pushdown':'curl triceps triceps pushdown','pushdown-corde':'curl triceps rope pushdown','barre-front':'skull crusher','ext-nuque':'overhead extension','squat':'back squat','front-squat':'front squat','goblet':'goblet squat','presse':'leg press','leg-ext':'leg extension','leg-curl-allonge':'lying leg curl ischios','leg-curl-assis':'seated leg curl','bulgare':'squat bulgare bulgarian split squat','hip-thrust':'hip thrust','mollets-debout':'standing calf raise','planche':'gainage plank','releve-jambes':'hanging leg raise','releve-sol':'lying leg raise','crunch-leste':'weighted crunch','kb-swing':'kettlebell swing','box-jump':'box jump','nordic':'nordic','power-clean':'power clean épaulé haltérophilie','iso-dos':'isométrie isometric','iso-tractions':'isométrie dead hang'};
+crunch-leste|Crunch lesté|abdos|H|crunch
+dd-halt|Développé décliné haltères|pecs|H|decline
+di-smith|Développé incliné Smith machine|pecs|M|incline
+ecarte-incline|Écarté incliné haltères|pecs|H|inclinefly
+pompes-inclinees|Pompes inclinées (mains surélevées)|pecs|C|pushupinc
+rowing-halt-2|Rowing haltères deux bras buste penché|dos|H|row
+rowing-incline|Rowing poitrine appuyée banc incliné|dos|H|chestrow
+australian|Tractions australiennes (rowing inversé)|dos|C|invrow
+tractions-neutre|Tractions prise neutre|dos|C|pullup
+tractions-lestees|Tractions lestées|dos|C|pullup
+superman|Superman (extensions au sol)|dos|C|superman
+sdt-sumo|Soulevé de terre sumo|dos|B|sumo
+dm-barre-assis|Développé militaire assis barre|epaules|B|seatedohp
+dm-halt-debout|Développé militaire debout haltères|epaules|H|ohp
+dm-smith|Développé militaire Smith machine|epaules|M|seatedohp
+push-press|Push press|epaules|B|pushpress
+elev-front-poulie|Élévations frontales poulie|epaules|P|frontraise
+pike|Pompes piquées (pike push-up)|epaules|C|pike
+curl-marteau-corde|Curl marteau à la corde|biceps|P|curl
+curl-zottman|Curl Zottman|biceps|H|curl
+curl-poulie-haute|Curl poulie haute (double biceps)|biceps|P|highcurl
+ext-poignets|Extension des poignets (reverse wrist curl)|biceps|B|wristcurl
+farmer|Marche du fermier (farmer walk)|biceps|H|farmer
+ext-couche-halt|Extension triceps couché haltères|triceps|H|skull
+kickback-poulie|Kickback triceps poulie|triceps|P|kickback
+squat-pdc|Squat au poids du corps|quadri|C|squat
+squat-sumo|Squat sumo haltère|quadri|H|sumosquat
+fentes-barre|Fentes avant barre|quadri|B|lunge
+fentes-laterales|Fentes latérales|quadri|H|sidelunge
+pistol|Pistol squat (squat sur une jambe)|quadri|C|pistol
+chaise|Chaise contre le mur (wall sit)|quadri|C|wallsit
+reverse-nordic|Reverse nordic|quadri|C|revnordic
+sdt-unijambe|Soulevé de terre roumain sur une jambe|ischios|H|sldl
+pont-unijambe|Pont fessier sur une jambe|ischios|C|glutebridge1
+pull-through|Pull-through à la poulie|ischios|P|pullthrough
+leg-curl-debout|Leg curl debout machine|ischios|M|standcurl
+reverse-hyper|Reverse hyperextension|ischios|M|revhyper
+donkey-kick|Donkey kick (kickback à quatre pattes)|ischios|C|donkey
+clamshell|Clamshell élastique|ischios|E|clamshell
+marche-laterale|Marche latérale élastique (monster walk)|ischios|E|bandwalk
+tibial|Relevés de pointes de pieds (tibial raise)|mollets|C|tibia
+crunch-velo|Crunch vélo (bicycle crunch)|abdos|C|bicycle
+sit-up|Sit-up (relevé de buste complet)|abdos|C|situp
+v-up|V-up|abdos|C|vup
+releve-chaise|Relevés de genoux à la chaise romaine|abdos|C|captain
+dead-bug|Dead bug|abdos|C|deadbug
+bird-dog|Bird dog|abdos|C|birddog
+hollow|Hollow body (gainage creux)|abdos|C|hollow
+woodchop|Rotation bûcheron à la poulie (woodchop)|abdos|P|woodchop
+flexion-laterale|Flexions latérales haltère (obliques)|abdos|H|sidebend
+ski-erg|SkiErg|cardio|X|skierg
+sprint|Sprint|cardio|C|run
+montees-genoux|Montées de genoux|cardio|C|highknees
+jumping-jacks|Jumping jacks|cardio|C|jacks
+battle-ropes|Battle ropes (cordes ondulatoires)|cardio|X|ropes
+sled-push|Poussée de traîneau (sled push)|cardio|X|sledpush
+slam-ball|Slam ball (médecine-ball au sol)|explo|C|slam
+med-ball-rot|Lancer médecine-ball en rotation contre le mur|explo|C|rotthrow
+pompes-claquees|Pompes claquées (pompes pliométriques)|explo|C|clappush
+saut-longueur|Saut en longueur sans élan (broad jump)|explo|C|broadjump
+tuck-jump|Sauts genoux-poitrine (tuck jump)|explo|C|tuckjump
+pogo|Pogo jumps (sauts de chevilles)|explo|C|pogo
+skater|Bonds latéraux (skater jumps)|explo|C|skater
+power-snatch|Power snatch (arraché)|explo|B|snatch
+band-pull-apart|Écartés élastique (band pull-apart)|explo|E|pullapart`;
+const ALIAS={'dc-barre':'bench press dc','dc-halt':'dumbbell bench press dc','di-barre':'incline bench press di','di-halt':'incline dumbbell press di','dd-barre':'decline bench press','dd-halt':'decline dumbbell press','dc-machine':'chest press machine','dc-smith':'smith bench press','di-smith':'smith incline press','di-machine':'incline chest press','ecarte-halt':'dumbbell fly ecartes','ecarte-incline':'incline fly','pec-deck':'butterfly pec fly machine','vis-a-vis':'cable crossover cable fly ecarte poulie haute','ecarte-poulie-basse':'low cable fly','pompes':'push-up pushup','pompes-declinees':'decline push-up pieds sureleves','pompes-inclinees':'incline push-up','pompes-diamant':'diamond push-up pompes serrees','pompes-claquees':'clap push-up','dips-pecs':'chest dips','pullover':'dumbbell pullover','tractions':'pull-up pull up','chin-up':'chin up traction supination','tractions-neutre':'neutral grip pull-up','tractions-lestees':'weighted pull-up','tractions-assistees':'assisted pull-up','australian':'inverted row body row','tirage-vertical':'lat pulldown tirage poitrine','tirage-serre':'close grip pulldown','tirage-inverse':'reverse grip pulldown','tirage-un-bras':'single arm pulldown','tirage-horiz':'seated cable row tirage assis','rowing-barre':'barbell row bent over row','rowing-halt':'bucheron one arm dumbbell row tirage bucheron','rowing-halt-2':'dumbbell bent over row','rowing-incline':'chest supported row seal row','rowing-machine':'machine row','t-bar':'t-bar row','pendlay':'pendlay row','souleve':'deadlift sdt','sdt-sumo':'sumo deadlift','trap-bar':'trap bar deadlift hex bar','rack-pull':'rack pull','pullover-poulie':'straight arm pulldown pull-over poulie','lombaires':'back extension hyperextension','superman':'superman','shrug-barre':'shrug haussements epaules','shrug-halt':'dumbbell shrug haussements','dm-barre':'military press overhead press ohp developpe epaules','dm-barre-assis':'seated barbell press ohp','dm-halt':'seated dumbbell shoulder press developpe epaules halteres','dm-halt-debout':'standing dumbbell press','dm-machine':'shoulder press machine developpe epaules','dm-smith':'smith shoulder press','arnold':'arnold press','push-press':'push press','pike':'pike push-up handstand','landmine':'landmine press','elev-lat':'lateral raise elevations laterales','elev-lat-poulie':'cable lateral raise','elev-lat-machine':'machine lateral raise','elev-front':'front raise','elev-front-poulie':'cable front raise','oiseau':'rear delt fly bent over reverse fly','reverse-pec':'reverse fly machine','oiseau-poulie':'cable rear delt','face-pull':'face pull','tirage-menton':'upright row','ytw':'y raise t raise w raise','curl-barre':'barbell curl biceps','curl-ez':'ez bar curl','curl-halt':'dumbbell curl biceps','curl-marteau':'hammer curl','curl-marteau-corde':'rope hammer curl','curl-incline':'incline dumbbell curl','curl-pupitre':'preacher curl larry scott','curl-pupitre-machine':'machine preacher curl','curl-poulie':'cable curl','curl-concentre':'concentration curl','curl-araignee':'spider curl','curl-bayesian':'bayesian curl','curl-inverse':'reverse curl','curl-zottman':'zottman curl','curl-poulie-haute':'high cable curl','curl-poignets':'wrist curl avant-bras','ext-poignets':'reverse wrist curl avant-bras','farmer':'farmer walk farmers carry avant-bras grip','pushdown':'triceps pushdown extension poulie','pushdown-corde':'rope pushdown','ext-un-bras':'single arm pushdown','barre-front':'skull crusher barre au front','ext-couche-halt':'dumbbell skull crusher lying extension','ext-nuque':'overhead extension french press','ext-nuque-poulie':'cable overhead extension','dips':'dips triceps','dips-banc':'bench dips','dips-machine':'machine dips','kickback':'triceps kickback','kickback-poulie':'cable kickback','dc-serre':'close grip bench press','jm-press':'jm press','squat':'back squat','squat-pdc':'air squat bodyweight squat','front-squat':'front squat','goblet':'goblet squat','squat-sumo':'sumo squat','squat-smith':'smith squat','presse':'leg press','hack':'hack squat','sissy':'sissy squat','pendulum':'pendulum squat','belt-squat':'belt squat','leg-ext':'leg extension','fentes':'lunge','fentes-barre':'barbell lunge','fentes-marchees':'walking lunge','fentes-laterales':'side lunge lateral lunge','bulgare':'squat bulgare bulgarian split squat','step-up':'step up','pistol':'pistol squat','chaise':'wall sit chaise','reverse-nordic':'reverse nordic','sdt-roumain':'rdl romanian deadlift','sdt-jt':'stiff leg deadlift','sdt-jt-barre':'stiff leg deadlift','sdt-unijambe':'single leg rdl','leg-curl-allonge':'lying leg curl ischios','leg-curl-assis':'seated leg curl','leg-curl-debout':'standing leg curl','hip-thrust':'hip thrust','hip-thrust-machine':'hip thrust machine','pont-fessier':'glute bridge','pont-unijambe':'single leg glute bridge','good-morning':'good morning','abducteurs':'abduction machine','adducteurs':'adduction machine','kickback-fessier':'glute kickback','donkey-kick':'donkey kick','pull-through':'cable pull through','reverse-hyper':'reverse hyper','clamshell':'clamshell','marche-laterale':'monster walk band walk','kb-swing':'kettlebell swing','fentes-arriere':'reverse lunge','ghr':'glute ham raise','mollets-debout':'standing calf raise','mollets-assis':'seated calf raise','mollets-halt':'dumbbell calf raise','mollets-presse':'leg press calf raise','mollets-unipodal':'single leg calf raise','tibial':'tibialis raise','crunch':'crunch','crunch-poulie':'cable crunch','crunch-machine':'machine crunch','crunch-leste':'weighted crunch','crunch-velo':'bicycle crunch','sit-up':'sit up','v-up':'v up','releve-jambes':'hanging leg raise','releve-sol':'lying leg raise','releve-chaise':'captain chair knee raise','planche':'gainage plank','gainage-lat':'side plank','russian':'russian twist','roue':'ab wheel rollout','mountain':'mountain climbers','pallof':'pallof press anti-rotation','dead-bug':'dead bug','bird-dog':'bird dog','hollow':'hollow hold','woodchop':'woodchop cable','flexion-laterale':'side bend','tapis':'treadmill course','velo':'bike','rameur':'rowing machine rower','elliptique':'elliptical','corde':'jump rope','burpees':'burpee','escalier':'stairmaster','assault-bike':'air bike','ski-erg':'ski erg','sprint':'sprint course','montees-genoux':'high knees','jumping-jacks':'jumping jack','battle-ropes':'battle rope','sled-push':'prowler sled','box-jump':'box jump','squat-jump':'jump squat','drop-jump':'depth jump','fentes-sautees':'jumping lunge','bondissements':'bounds','sauts-lateraux':'lateral jumps','skater':'skater jump','tuck-jump':'tuck jump','pogo':'pogo hops','saut-longueur':'broad jump','slam-ball':'medicine ball slam','med-ball':'medicine ball throw','med-ball-rot':'rotational throw','power-clean':'power clean epaule halterophilie','hang-clean':'hang clean','power-snatch':'power snatch arrache halterophilie','rot-ext':'external rotation','rot-int':'internal rotation','rot-ext-poulie':'cable external rotation','band-pull-apart':'band pull apart','nordic':'nordic','copenhague':'copenhagen plank','equilibre':'single leg balance proprioception','iso-dos':'isometrie isometric','iso-tractions':'isometrie dead hang'};
 const EXOS=EXOS_RAW.split('\n').map(l=>{const[id,name,cat,eq,pat]=l.split('|');return{id,name,cat,eq,pat,al:ALIAS[id]||''}});
 const EXMAP=Object.fromEntries(EXOS.map(e=>[e.id,e]));
 function allExos(){return EXOS.concat(S.custom)}
@@ -598,7 +786,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.9.0';let delAsk=false;
+const APP_VERSION='2.10.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -664,7 +852,7 @@ function exoRow(e,mode,sel){
 }
 function browseRes(B,mode){
   const sel=mode==='pick'?pick.sel:null;
-  if(B.q.trim()){const q=norm(B.q.trim());const r=allExos().filter(e=>norm(e.name).includes(q)||norm(e.al||'').includes(q)||norm(EQ[e.eq]||'').includes(q));
+  if(B.q.trim()){const qw=norm(B.q.trim()).split(/[\s,'’-]+/).filter(Boolean);const r=allExos().filter(e=>{const h=norm(e.name+' '+(e.al||'')+' '+(EQ[e.eq]||''));return qw.every(w=>h.includes(w))});
     return r.length?`<div class="list">${r.map(e=>exoRow(e,mode,sel&&sel.has(e.id))).join('')}</div>`:`<p class="muted">Aucun exercice ne correspond. Tu peux le créer depuis l'onglet Exercices.</p>`}
   if(B.folder){const c=CATS.find(c=>c.id===B.folder);const r=allExos().filter(e=>e.cat===B.folder);
     return `<button class="back" data-act="${mode}-folder" data-id="">${ICON.back}Tous les dossiers</button><div class="folder-title">${esc(c.name)}</div><div class="list">${r.map(e=>exoRow(e,mode,sel&&sel.has(e.id))).join('')}</div>`}
@@ -943,7 +1131,7 @@ function renderEditor(){
   const el=openSheet('editor',h);el.querySelector('.sheet-b').scrollTop=sc;
 }
 const LIM={sets:[1,10,1],reps:[1,100,1],dur:[5,14400,5],restSet:[0,600,15],restExo:[0,600,15]};
-const TIMEIDS=new Set(['planche','gainage-lat','copenhague','iso-dos','iso-tractions','equilibre','corde','tapis','velo','rameur','elliptique','escalier','assault-bike']);
+const TIMEIDS=new Set(['planche','gainage-lat','copenhague','iso-dos','iso-tractions','equilibre','corde','tapis','velo','rameur','elliptique','escalier','assault-bike','chaise','hollow','ski-erg','battle-ropes','sled-push','farmer','montees-genoux','jumping-jacks']);
 const newItem=id=>{const st=S.settings,t=TIMEIDS.has(id);return{exoId:id,sets:3,reps:10,mode:t?'time':'reps',dur:t?60:60,restSet:st.restSet,restExo:st.restExo}};
 const modeOf=it=>it.mode||'reps';
 const uniOk=it=>!!it.uni&&modeOf(it)!=='time',uniS=it=>uniOk(it)?' / côté':'';
@@ -965,7 +1153,7 @@ let animEls=[];
 function openExo(id){
   const e=exo(id),x=IDX[id],cat=CATS.find(c=>c.id===e.cat);const isCustom=!EXMAP[id];
   let h=sheetHead(e.name,'exo-close')+`<div class="sheet-b"><div class="wrap" style="display:flex;flex-direction:column;gap:14px">
-   <div class="fig lg anim" data-ex="${id}">${figSVG(e,0)}</div>
+   <div class="fig lg anim" data-ex="${id}">${figSVG(e,reduceMotion?1:0)}</div>
    <div class="chips" style="justify-content:flex-start"><span class="chip">${esc(cat?cat.name:'')}</span><span class="chip">${EQ[e.eq]||''}</span>${isCustom?'<span class="chip">Perso</span>':''}</div>
    <div class="stats3"><div class="st rec"><span class="lbl">Record</span><b>${x?fmtKg(x.rec.w):'—'}</b><small>${x?dfr(x.rec.t):'pas encore'}</small></div><div class="st"><span class="lbl">Dernière fois</span><b>${x?fmtKg(x.last.w):'—'}</b><small>${x?ago(x.last.t):'jamais faite'}</small></div><div class="st"><span class="lbl">Séances</span><b>${x?x.hist.length:0}</b><small>avec cet exo</small></div></div>`;
   if(x&&x.hist.length>1)h+=`<div class="card"><div class="chart-h"><b>Progression</b><span class="small muted">poids max par séance</span></div><canvas class="chart" id="c-detail"></canvas></div>`;
@@ -986,7 +1174,7 @@ function openCustom(){
   $('#cu-cat').addEventListener('change',()=>{$('#cu-pat').value=CATS.find(c=>c.id===$('#cu-cat').value).pat;upd()});['#cu-eq','#cu-pat'].forEach(s=>$(s).addEventListener('change',upd));
   $('#cu-pat').value='bench';upd();
 }
-const PATLIST=[['bench','Développé allongé'],['incline','Développé incliné'],['chestpress','Poussée assise'],['fly','Écarté'],['pushup','Pompe'],['dips','Dips'],['pullup','Traction'],['pulldown','Tirage vertical'],['row','Rowing buste penché'],['seatedrow','Tirage assis'],['deadlift','Soulevé de terre'],['shrug','Shrug'],['ohp','Développé au-dessus de la tête'],['lateral','Élévation latérale'],['frontraise','Élévation frontale'],['facepull','Face pull'],['curl','Curl'],['preacher','Curl pupitre'],['pushdown','Extension poulie haute'],['skull','Barre au front'],['ohext','Extension nuque'],['squat','Squat'],['lunge','Fente'],['legpress','Presse'],['legext','Leg extension'],['legcurl','Leg curl allongé'],['hipthrust','Hip thrust'],['glutebridge','Pont fessier'],['abduction','Abduction'],['calf','Mollets debout'],['crunch','Crunch'],['plank','Gainage'],['hangraise','Relevé de jambes'],['run','Course'],['bike','Vélo'],['rower','Rameur'],['boxjump','Saut sur box'],['rotext','Rotation d\'épaule'],['nordic','Nordic']];
+const PATLIST=[['bench','Développé allongé'],['incline','Développé incliné'],['chestpress','Poussée assise'],['fly','Écarté'],['pushup','Pompe'],['dips','Dips'],['pullup','Traction'],['pulldown','Tirage vertical'],['row','Rowing buste penché'],['seatedrow','Tirage assis'],['deadlift','Soulevé de terre'],['shrug','Shrug'],['ohp','Développé au-dessus de la tête'],['lateral','Élévation latérale'],['frontraise','Élévation frontale'],['facepull','Face pull'],['curl','Curl'],['preacher','Curl pupitre'],['pushdown','Extension poulie haute'],['skull','Barre au front'],['ohext','Extension nuque'],['squat','Squat'],['lunge','Fente'],['legpress','Presse'],['legext','Leg extension'],['legcurl','Leg curl allongé'],['hipthrust','Hip thrust'],['glutebridge','Pont fessier'],['abduction','Abduction'],['calf','Mollets debout'],['crunch','Crunch'],['plank','Gainage'],['hangraise','Relevé de jambes'],['run','Course'],['bike','Vélo'],['rower','Rameur'],['boxjump','Saut sur box'],['rotext','Rotation d\'épaule'],['nordic','Nordic'],['seatedohp','Développé assis au-dessus de la tête'],['decline','Développé décliné'],['flylying','Écarté couché'],['inclinecurl','Curl incliné'],['concentration','Curl concentré'],['wristcurl','Curl poignets'],['reardelt','Oiseau buste penché'],['straightarm','Tirage bras tendus'],['chestrow','Rowing poitrine appuyée'],['invrow','Rowing inversé'],['sumo','Soulevé de terre sumo'],['pushpress','Push press'],['pike','Pompe piquée'],['highcurl','Curl poulie haute'],['farmer','Marche du fermier'],['hack','Hack squat'],['sissy','Sissy squat'],['pistol','Squat une jambe'],['sidelunge','Fente latérale'],['wallsit','Chaise'],['stepup','Step-up'],['sldl','Soulevé roumain une jambe'],['pullthrough','Pull-through'],['clamshell','Clamshell'],['bandwalk','Marche latérale élastique'],['donkey','Donkey kick'],['twist','Rotation du buste'],['sideplank','Gainage latéral'],['mountain','Mountain climber'],['deadbug','Dead bug'],['birddog','Bird dog'],['vup','V-up'],['situp','Sit-up'],['woodchop','Bûcheron poulie'],['sidebend','Flexion latérale'],['jumprope','Corde à sauter'],['burpee','Burpee'],['jacks','Jumping jack'],['skierg','SkiErg'],['ropes','Battle ropes'],['sledpush','Poussée de traîneau'],['slam','Slam ball'],['broadjump','Saut en longueur'],['tuckjump','Saut genoux-poitrine'],['latjump','Saut latéral'],['snatch','Arraché']];
 
 /* history detail */
 function openHist(id){
@@ -1025,7 +1213,7 @@ function sessCard(it,i,cur){
   const e=exo(it.exoId,it.name),rec=recOf(it.exoId),last=lastOf(it.exoId);
   const all=it.done.every(Boolean),w=parseW(it.weight),isPR=w!=null&&rec&&w>rec.w;
   return `<article class="sc ${all?'done':''} ${cur?'cur':''}" id="sc-${i}">
-   <div class="sc-head"><div class="fig ${cur?'anim':''}" data-ex="${it.exoId}">${figSVG(e,cur?0:1)}</div>
+   <div class="sc-head"><div class="fig ${cur?'anim':''}" data-ex="${it.exoId}">${figSVG(e,cur&&!reduceMotion?0:1)}</div>
     <div class="sc-title"><h3>${esc(e.name)}</h3><p>${volTxt(it)} · repos ${mmss(it.restSet)}${all?' · terminé':''}</p></div>
     <button class="icon-btn" data-act="sx-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.more}</button></div>
    ${menuOpen===i?`<div class="sc-menu"><button class="btn ghost" data-act="sx-move" data-i="${i}" data-d="-1" ${i===0?'disabled':''}>Monter</button><button class="btn ghost" data-act="sx-move" data-i="${i}" data-d="1" ${i===S.active.items.length-1?'disabled':''}>Descendre</button><button class="btn ghost" data-act="sx-addset" data-i="${i}">+1 série</button><button class="btn ghost" data-act="sx-delset" data-i="${i}" ${it.done.length<=1?'disabled':''}>−1 série</button><button class="btn danger" data-act="sx-del" data-i="${i}">Retirer</button></div>`:''}
@@ -1141,7 +1329,7 @@ function registerAnim(){animEls=[...document.querySelectorAll('.fig.anim[data-ex
 function animLoop(ts){
   animEls=animEls.filter(el=>el.isConnected);if(!animEls.length){animRAF=null;return}
   const per=2600,ph=(ts%per)/per;let t;if(ph<.15)t=0;else if(ph<.5)t=(1-Math.cos((ph-.15)/.35*Math.PI))/2;else if(ph<.65)t=1;else t=(1+Math.cos((ph-.65)/.35*Math.PI))/2;
-  const vh=window.innerHeight;for(const el of animEls){if(el.dataset.hum){const b=el.getBoundingClientRect();if(b.bottom<-50||b.top>vh+50)continue;el.innerHTML=figHuman(exo(el.dataset.ex),t)}else el.innerHTML=figSVG(exo(el.dataset.ex),t)}
+  const vh=window.innerHeight;for(const el of animEls){if(el.dataset.hum){const b=el.getBoundingClientRect();if(b.bottom<-50||b.top>vh+50)continue;el.innerHTML=figHuman(exo(el.dataset.ex),t)}else el.innerHTML=figSVG(exo(el.dataset.ex),t,1)}
   animRAF=requestAnimationFrame(animLoop);
 }
 
