@@ -89,10 +89,6 @@ section{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .fig .eqf{fill:var(--accent)}
 .fig .cb{stroke:var(--accent);stroke-width:1.6;fill:none}
 .fig .bd{stroke:var(--accent);stroke-width:2;fill:none;stroke-dasharray:3 3}
-.fig .gh{stroke:var(--ink);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:.2}
-.fig .ghh{fill:var(--ink);opacity:.2}
-.fig .ar{stroke:var(--pr);stroke-width:2.6;stroke-linecap:round;fill:none}
-.fig .arh{fill:var(--pr);stroke:var(--pr);stroke-width:1;stroke-linejoin:round}
 
 /* home */
 .banner{display:flex;align-items:center;gap:12px;background:var(--brand);color:var(--on-accent);border-radius:var(--r);padding:14px}

@@ -210,30 +210,10 @@ function plate(c){return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}
 function dumb(c){const x=c[0],y=c[1];return `<line x1="${(x-4).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+4).toFixed(1)}" y2="${y.toFixed(1)}" class="cb" style="stroke-width:2.5"/><rect x="${(x-6.5).toFixed(1)}" y="${(y-3.6).toFixed(1)}" width="3.6" height="7.2" rx="1" class="eqf"/><rect x="${(x+2.9).toFixed(1)}" y="${(y-3.6).toFixed(1)}" width="3.6" height="7.2" rx="1" class="eqf"/>`}
 function dumbV(c){const x=c[0],y=c[1];return `<line x1="${x.toFixed(1)}" y1="${(y-4).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(y+4).toFixed(1)}" class="cb" style="stroke-width:2.5"/><rect x="${(x-3.6).toFixed(1)}" y="${(y-6.5).toFixed(1)}" width="7.2" height="3.6" rx="1" class="eqf"/><rect x="${(x-3.6).toFixed(1)}" y="${(y+2.9).toFixed(1)}" width="7.2" height="3.6" rx="1" class="eqf"/>`}
 function kb(c){return `<circle cx="${c[0].toFixed(1)}" cy="${(c[1]+6).toFixed(1)}" r="4.6" class="eqf"/><path d="M${(c[0]-3).toFixed(1)} ${(c[1]+3).toFixed(1)}Q${c[0].toFixed(1)} ${(c[1]-2).toFixed(1)} ${(c[0]+3).toFixed(1)} ${(c[1]+3).toFixed(1)}" class="cb" style="stroke-width:2"/>`}
-/* flèche de mouvement + silhouette de départ (vignettes fixes) : on comprend le geste sans animation */
 const fx=n=>n.toFixed(1);
-function moveArrow(p,A,B,mirror){
-  const dist=k=>A[k]&&B[k]?Math.hypot(B[k][0]-A[k][0],B[k][1]-A[k][1]):0,keys=Object.keys(A).filter(k=>B[k]&&!/[NSQ]/.test(k)),mx=Math.max(0,...keys.map(dist));
-  const k=p.ak||['X','W','w','F','f','K','k','P','T','H'].find(k=>dist(k)>=mx*.55);
-  if(!k||!A[k]||!B[k])return '';const o=p.ao||[0,0];let a=[A[k][0]+o[0],A[k][1]+o[1]],b=[B[k][0]+o[0],B[k][1]+o[1]];
-  if(mirror){a=mir(a);b=mir(b)}
-  const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<7)return '';
-  const ux=dx/L,uy=dy/L,arc=(p.arc||0)*(mirror?-1:1),cx=(a[0]+b[0])/2-uy*L*arc,cy=(a[1]+b[1])/2+ux*L*arc;
-  const s0=[a[0]+ux*3,a[1]+uy*3],e0=[b[0]-ux*4,b[1]-uy*4];
-  let tx=e0[0]-cx,ty=e0[1]-cy;if(!arc){tx=ux;ty=uy}const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;
-  const h1=[e0[0]-tx*5.5-ty*3.6,e0[1]-ty*5.5+tx*3.6],h2=[e0[0]-tx*5.5+ty*3.6,e0[1]-ty*5.5-tx*3.6];
-  return `<path d="M${fx(s0[0])} ${fx(s0[1])}${arc?`Q${fx(cx)} ${fx(cy)} `:'L'}${fx(e0[0])} ${fx(e0[1])}" class="ar"/><path d="M${fx(h1[0])} ${fx(h1[1])}L${fx(e0[0]+tx*1.5)} ${fx(e0[1]+ty*1.5)}L${fx(h2[0])} ${fx(h2[1])}Z" class="arh"/>`;
-}
-function ghostSVG(p,A){
-  const g=(pts)=>pl(pts,'gh');let s='';
-  if(p.sym){const S=A.S||A.N,Q=A.Q||A.P;s+=g([A.E,S,mir(S),mir(A.E)])+g([S,A.E,A.W])+g([mir(S),mir(A.E),mir(A.W)])+g([Q,A.K,A.F])+g([mir(Q),mir(A.K),mir(A.F)])+ln(A.N,A.P,'gh')}
-  else{s+=ln(A.N,A.P,'gh')+g([A.P,A.K,A.F])+g(A.X?[A.N,A.E,A.W,A.X]:[A.N,A.E,A.W]);if(A.k)s+=g([A.P,A.k,A.f]);if(A.e)s+=g([A.N,A.e,A.w])}
-  return s+`<circle cx="${fx(A.H[0])}" cy="${fx(A.H[1])}" r="5.5" class="ghh"/>`;
-}
 function figSVG(ex,t,anim){
-  const p=PAT[ex.pat]||PAT.squat,q=poseAt(p,t),eq=ex.eq,still=!anim&&t===1&&!p.iso;let s='<line x1="6" y1="94" x2="94" y2="94" class="g"/>';
+  const p=PAT[ex.pat]||PAT.squat,q=poseAt(p,t),eq=ex.eq;let s='<line x1="6" y1="94" x2="94" y2="94" class="g"/>';
   (p.props||[]).forEach(k=>{s+=PROPS[k](q,p)});
-  if(still)s+=ghostSVG(p,p._a);
   const arm=(N,E,W,c,X)=>pl(X?[N,E,W,X]:[N,E,W],c),leg=(P,K,F,c)=>pl([P,K,F],c);
   const toe=(F,T)=>T?ln(F,T,'b'):(!p.notoe&&!p.sym&&F[1]>=82)?ln(F,[F[0]+7,Math.min(93,F[1]+2.5)],'b'):'';
   const hand=p.to==='F'?q.F:(q.X||q.W);
@@ -256,7 +236,6 @@ function figSVG(ex,t,anim){
     else if(eq==='H')s+=dumb(q.W)+dumb(mir(q.W));
     else if(eq==='K')s+=kb(q.W)+kb(mir(q.W));
     else if(eq==='M'||eq==='P'||eq==='E')s+=`<circle cx="${fx(q.W[0])}" cy="${fx(q.W[1])}" r="2.8" class="eqf"/><circle cx="${fx(100-q.W[0])}" cy="${fx(q.W[1])}" r="2.8" class="eqf"/>`;
-    if(still&&!p.noar)s+=moveArrow(p,p._a,p._b)+(p.ar2===0?'':moveArrow(p,p._a,p._b,1));
     return `<svg viewBox="0 -10 100 106" aria-hidden="true">${s}</svg>`;
   }
   const bk=p.both?'b':'f';
@@ -274,7 +253,6 @@ function figSVG(ex,t,anim){
   else if(eq==='K')s+=kb(at);
   else if(eq==='M'){if(p.legm)s+=`<circle cx="${fx(q.F[0])}" cy="${fx(q.F[1]-1)}" r="3.6" class="eqf"/>`;else if(!p.nohand)s+=`<circle cx="${fx(at[0])}" cy="${fx(at[1])}" r="3" class="eqf"/>`}
   else if((eq==='P'||eq==='E')&&p.to!=='F'&&!p.band)s+=`<circle cx="${fx(at[0])}" cy="${fx(at[1])}" r="2.8" class="eqf"/>`;
-  if(still&&!p.noar)s+=moveArrow(p,p._a,p._b);
   return `<svg viewBox="0 -10 100 106" aria-hidden="true">${s}</svg>`;
 }
 
@@ -286,9 +264,9 @@ const EXOS_RAW=`dc-barre|Développé couché barre|pecs|B|bench
 dc-halt|Développé couché haltères|pecs|H|bench
 di-barre|Développé incliné barre|pecs|B|incline
 di-halt|Développé incliné haltères|pecs|H|incline
-dd-barre|Développé décliné barre|pecs|B|decline
+dd-barre|Développé décliné barre|pecs|B|bench
 dc-machine|Développé couché machine (chest press)|pecs|M|chestpress
-ecarte-halt|Écarté couché haltères|pecs|H|flylying
+ecarte-halt|Écarté couché haltères|pecs|H|bench
 pec-deck|Pec deck (butterfly)|pecs|M|fly
 vis-a-vis|Écarté poulie vis-à-vis (cross-over)|pecs|P|fly
 pompes|Pompes|pecs|C|pushup
@@ -304,18 +282,18 @@ tirage-horiz|Tirage horizontal poulie basse|dos|P|seatedrow
 rowing-machine|Rowing machine prise neutre|dos|M|seatedrow
 t-bar|Rowing T-bar|dos|B|row
 souleve|Soulevé de terre|dos|B|deadlift
-pullover-poulie|Tirage bras tendus poulie haute (pull-over poulie)|dos|P|straightarm
+pullover-poulie|Tirage bras tendus poulie haute (pull-over poulie)|dos|P|pushdown
 lombaires|Extensions lombaires banc 45°|dos|C|backext
 shrug-barre|Shrugs barre|dos|B|shrug
 shrug-halt|Shrugs haltères|dos|H|shrug
 dm-barre|Développé militaire debout barre|epaules|B|ohp
-dm-halt|Développé militaire assis haltères|epaules|H|seatedohp
-dm-machine|Développé militaire machine (shoulder press)|epaules|M|seatedohp
-arnold|Développé Arnold|epaules|H|seatedohp
+dm-halt|Développé militaire assis haltères|epaules|H|ohp
+dm-machine|Développé militaire machine (shoulder press)|epaules|M|ohp
+arnold|Développé Arnold|epaules|H|ohp
 elev-lat|Élévations latérales haltères|epaules|H|lateral
 elev-lat-poulie|Élévations latérales poulie|epaules|P|lateral
 elev-front|Élévations frontales|epaules|H|frontraise
-oiseau|Oiseau buste penché haltères|epaules|H|reardelt
+oiseau|Oiseau buste penché haltères|epaules|H|row
 reverse-pec|Reverse pec deck|epaules|M|revfly
 face-pull|Face pull|epaules|P|facepull
 tirage-menton|Tirage menton|epaules|B|upright
@@ -323,11 +301,11 @@ curl-barre|Curl barre|biceps|B|curl
 curl-ez|Curl barre EZ|biceps|B|curl
 curl-halt|Curl haltères|biceps|H|curl
 curl-marteau|Curl marteau|biceps|H|curl
-curl-incline|Curl incliné haltères|biceps|H|inclinecurl
+curl-incline|Curl incliné haltères|biceps|H|curl
 curl-pupitre|Curl pupitre|biceps|B|preacher
 curl-poulie|Curl poulie basse|biceps|P|curl
-curl-concentre|Curl concentré|biceps|H|concentration
-curl-poignets|Curl poignets (flexion)|biceps|B|wristcurl
+curl-concentre|Curl concentré|biceps|H|preacher
+curl-poignets|Curl poignets (flexion)|biceps|B|curl
 pushdown|Extension triceps poulie haute (barre)|triceps|P|pushdown
 pushdown-corde|Extension triceps à la corde|triceps|P|pushdown
 barre-front|Barre au front (skull crusher)|triceps|B|skull
@@ -341,12 +319,12 @@ squat|Squat barre|quadri|B|squat
 front-squat|Front squat|quadri|B|squat
 goblet|Goblet squat|quadri|H|squat
 presse|Presse à cuisses|quadri|M|legpress
-hack|Hack squat machine|quadri|M|hack
+hack|Hack squat machine|quadri|M|squat
 leg-ext|Leg extension|quadri|M|legext
 fentes|Fentes avant haltères|quadri|H|lunge
 fentes-marchees|Fentes marchées|quadri|H|lunge
 bulgare|Fentes bulgares|quadri|H|lunge
-step-up|Step-up sur banc|quadri|H|stepup
+step-up|Step-up sur banc|quadri|H|lunge
 sdt-roumain|Soulevé de terre roumain|ischios|B|deadlift
 sdt-jt|Soulevé de terre jambes tendues haltères|ischios|H|deadlift
 leg-curl-allonge|Leg curl allongé|ischios|M|legcurl
@@ -361,29 +339,29 @@ kb-swing|Kettlebell swing|ischios|K|swing
 mollets-debout|Mollets debout machine|mollets|M|calf
 mollets-assis|Mollets assis machine|mollets|M|calfseat
 mollets-halt|Mollets debout haltères|mollets|H|calf
-mollets-presse|Mollets à la presse|mollets|M|calfpress
+mollets-presse|Mollets à la presse|mollets|M|legpress
 crunch|Crunch|abdos|C|crunch
 crunch-poulie|Crunch à la poulie|abdos|P|crunch
 releve-jambes|Relevés de jambes suspendu|abdos|C|hangraise
 planche|Gainage planche|abdos|C|plank
-gainage-lat|Gainage latéral|abdos|C|sideplank
-russian|Russian twist|abdos|C|twist
+gainage-lat|Gainage latéral|abdos|C|plank
+russian|Russian twist|abdos|C|crunch
 roue|Roue abdominale|abdos|C|abwheel
 tapis|Tapis de course|cardio|X|run
 velo|Vélo|cardio|X|bike
 rameur|Rameur|cardio|X|rower
-elliptique|Vélo elliptique|cardio|X|elliptical
-corde|Corde à sauter|cardio|X|jumprope
-burpees|Burpees|cardio|C|burpee
+elliptique|Vélo elliptique|cardio|X|run
+corde|Corde à sauter|cardio|X|calf
+burpees|Burpees|cardio|C|pushup
 box-jump|Box jump|explo|C|boxjump
 squat-jump|Squat jump|explo|C|jumpsquat
 fentes-sautees|Fentes sautées|explo|C|lunge
 rot-ext|Rotation externe épaule élastique|explo|E|rotext
 rot-int|Rotation interne épaule élastique|explo|E|rotint
-ytw|Élévations Y-T-W (banc incliné)|explo|H|ytw
+ytw|Élévations Y-T-W (banc incliné)|explo|H|lateral
 nordic|Nordic hamstring curl|explo|C|nordic
-copenhague|Gainage Copenhague (adducteurs)|explo|C|copenhagen
-med-ball|Lancer médecine-ball au-dessus de la tête|explo|C|mbthrow
+copenhague|Gainage Copenhague (adducteurs)|explo|C|plank
+med-ball|Lancer médecine-ball au-dessus de la tête|explo|C|ohp
 equilibre|Équilibre unipodal|explo|C|balance
 dc-smith|Développé couché Smith machine|pecs|M|bench
 pompes-declinees|Pompes déclinées|pecs|C|pushup
@@ -407,21 +385,21 @@ dips-machine|Dips machine|triceps|M|dips
 pompes-diamant|Pompes diamant|triceps|C|pushup
 jm-press|JM press|triceps|B|skull
 squat-smith|Squat Smith machine|quadri|M|squat
-sissy|Sissy squat|quadri|C|sissy
-pendulum|Pendulum squat|quadri|M|hack
+sissy|Sissy squat|quadri|C|squat
+pendulum|Pendulum squat|quadri|M|squat
 belt-squat|Belt squat|quadri|M|squat
 fentes-arriere|Fentes arrière haltères|ischios|H|lunge
 hip-thrust-machine|Hip thrust machine|ischios|M|hipthrust
 ghr|Glute ham raise|ischios|C|nordic
 mollets-unipodal|Mollets sur une jambe|mollets|H|calf
 crunch-machine|Crunch machine|abdos|M|crunch
-mountain|Mountain climbers|abdos|C|mountain
-pallof|Pallof press|abdos|P|pallof
-escalier|Stairmaster (escalier)|cardio|X|stairs
+mountain|Mountain climbers|abdos|C|plank
+pallof|Pallof press|abdos|P|rotext
+escalier|Stairmaster (escalier)|cardio|X|lunge
 assault-bike|Assault bike|cardio|X|bike
 drop-jump|Drop jump|explo|C|jumpsquat
-sauts-lateraux|Sauts latéraux|explo|C|latjump
-bondissements|Bondissements|explo|C|bound
+sauts-lateraux|Sauts latéraux|explo|C|jumpsquat
+bondissements|Bondissements|explo|C|run
 rot-ext-poulie|Rotation externe épaule poulie|explo|P|rotext
 power-clean|Power clean (épaulé)|explo|B|clean
 hang-clean|Hang clean (épaulé depuis les cuisses)|explo|B|clean
@@ -786,7 +764,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.10.0';let delAsk=false;
+const APP_VERSION='2.10.1';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
