@@ -444,13 +444,13 @@ const okId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,48}$/.test(v);
 const cStr=(v,max)=>typeof v==='string'?v.replace(/[\u0000-\u001f\u007f]/g,'').slice(0,max):'';
 const cNum=(v,min,max,def)=>{const n=Number(v);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):def};
 const MODES=['reps','max','time'];
-function cTplItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||undefined,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),restSet:Math.round(cNum(it.restSet,0,600,90)),restExo:Math.round(cNum(it.restExo,0,600,120))}}
+function cTplItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||undefined,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),restSet:Math.round(cNum(it.restSet,0,600,90)),restExo:Math.round(cNum(it.restExo,0,600,120)),...(it.uni===true?{uni:true}:{})}}
 function cTemplate(t){if(!t||!okId(t.id))return null;return{id:t.id,name:cStr(t.name,60)||'Ma séance',items:(Array.isArray(t.items)?t.items:[]).slice(0,40).map(cTplItem).filter(Boolean)}}
 function cCustom(e){if(!e||!okId(e.id))return null;return{id:e.id,name:cStr(e.name,60)||'Exercice',cat:CATS.some(c=>c.id===e.cat)?e.cat:'pecs',eq:EQ[e.eq]?e.eq:'C',pat:PAT[e.pat]?e.pat:'squat'}}
 function cSession(x){if(!x||!okId(x.id))return null;
   const items=(Array.isArray(x.items)?x.items:[]).slice(0,60).map(it=>{if(!it||!okId(it.exoId))return null;const done=Math.round(cNum(it.done,0,20,0));
     return{exoId:it.exoId,name:cStr(it.name,80),weight:it.weight==null?null:cNum(it.weight,0,2000,0),sets:Math.round(cNum(it.sets,1,20,1)),reps:Math.round(cNum(it.reps,0,100,0)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:it.dur==null?null:Math.round(cNum(it.dur,0,14400,60)),
-      repsDone:Array.isArray(it.repsDone)?it.repsDone.slice(0,20).map(v=>Math.round(cNum(v,0,999,0))):null,totalReps:Math.round(cNum(it.totalReps,0,20000,0)),done}}).filter(Boolean);
+      repsDone:Array.isArray(it.repsDone)?it.repsDone.slice(0,20).map(v=>Math.round(cNum(v,0,999,0))):null,totalReps:Math.round(cNum(it.totalReps,0,20000,0)),done,...(it.uni===true?{uni:true}:{})}}).filter(Boolean);
   const prs=(Array.isArray(x.prs)?x.prs:[]).slice(0,60).filter(p=>p&&okId(p.exoId)).map(p=>({exoId:p.exoId,name:cStr(p.name,80),w:cNum(p.w,0,2000,0),prev:cNum(p.prev,0,2000,0)}));
   return{id:x.id,tplId:okId(x.tplId)?x.tplId:null,name:cStr(x.name,60)||'Séance',date:cNum(x.date,946684800000,4102444800000,Date.now()),dur:Math.round(cNum(x.dur,0,86400,0)),items,tonnage:cNum(x.tonnage,0,1e7,0),prs}}
 function cSettings(o){o=o&&typeof o==='object'?o:{};const r={restSet:Math.round(cNum(o.restSet,0,600,90)),restExo:Math.round(cNum(o.restExo,0,600,120)),sound:o.sound!==false};
@@ -598,7 +598,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.8.0';let delAsk=false;
+const APP_VERSION='2.9.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -935,7 +935,7 @@ function renderEditor(){
       <button class="icon-btn" data-act="ed-move" data-i="${i}" data-d="-1" aria-label="Monter" ${i===0?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></button>
       <button class="icon-btn" data-act="ed-move" data-i="${i}" data-d="1" aria-label="Descendre" ${i===ed.items.length-1?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
       <button class="icon-btn" data-act="ed-del" data-i="${i}" aria-label="Retirer">${ICON.close}</button></div>
-      <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="ed-mode" data-i="${i}" data-m="${m}" aria-pressed="${modeOf(it)===m}">${l}</button>`).join('')}</div>
+      <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="ed-mode" data-i="${i}" data-m="${m}" aria-pressed="${modeOf(it)===m}">${l}</button>`).join('')}</div>${uniRow(it,'ed-uni',i)}
       <div class="ed-grid">${stepper('Séries',it.sets,'ed-stp',i,'sets','n')}${modeOf(it)==='reps'?stepper('Reps',it.reps,'ed-stp',i,'reps','n'):modeOf(it)==='time'?stepper('Durée',it.dur||60,'ed-stp',i,'dur'):'<div class="ed-note">Tu noteras tes reps à chaque série</div>'}${stepper('Repos entre séries',it.restSet,'ed-stp',i,'restSet')}${stepper('Repos après l\'exo',it.restExo,'ed-stp',i,'restExo')}</div></div>`});
   h+=`<button class="btn line" data-act="ed-add">+ Ajouter des exercices</button>`;
   if(!ed.isNew)h+=edConfirm?`<div class="confirm"><p>Supprimer « ${esc(ed.name||'cette séance')} » ? L'historique déjà enregistré est conservé.</p><div class="r"><button class="btn ghost" data-act="ed-del-no">Annuler</button><button class="btn danger" data-act="ed-del-yes">Supprimer</button></div></div>`:`<button class="btn danger" data-act="ed-del-tpl">Supprimer cette séance</button>`;
@@ -946,7 +946,9 @@ const LIM={sets:[1,10,1],reps:[1,100,1],dur:[5,14400,5],restSet:[0,600,15],restE
 const TIMEIDS=new Set(['planche','gainage-lat','copenhague','iso-dos','iso-tractions','equilibre','corde','tapis','velo','rameur','elliptique','escalier','assault-bike']);
 const newItem=id=>{const st=S.settings,t=TIMEIDS.has(id);return{exoId:id,sets:3,reps:10,mode:t?'time':'reps',dur:t?60:60,restSet:st.restSet,restExo:st.restExo}};
 const modeOf=it=>it.mode||'reps';
-function volTxt(it){const m=modeOf(it);return m==='time'?`${it.sets} × ${mmss(it.dur||60)}`:m==='max'?`${it.sets} × max`:`${it.sets} × ${it.reps} reps`}
+const uniOk=it=>!!it.uni&&modeOf(it)!=='time',uniS=it=>uniOk(it)?' / côté':'';
+function uniRow(it,act,i){if(modeOf(it)==='time')return '';return `<div class="uni-row"><div><div class="t">Un côté à la fois</div><div class="small muted">Une jambe ou un bras : les reps comptent pour chaque côté (×2 dans le poids soulevé)</div></div><button class="toggle" data-act="${act}" data-i="${i}" aria-pressed="${!!it.uni}" aria-label="Un côté à la fois"></button></div>`}
+function volTxt(it){const m=modeOf(it);return m==='time'?`${it.sets} × ${mmss(it.dur||60)}`:m==='max'?`${it.sets} × max${uniS(it)}`:`${it.sets} × ${it.reps} reps${uniS(it)}`}
 
 /* picker */
 function openPicker(target){pick={sel:new Set(),folder:null,q:'',target};renderPicker()}
@@ -995,7 +997,7 @@ function renderHist(){
   
   let h=sheetHead(s.name,'hist-close')+`<div class="sheet-b"><div class="wrap" style="display:flex;flex-direction:column;gap:12px">
    <div class="card" style="display:flex;gap:14px;align-items:center"><div style="font-size:44px">🏋️</div><div><div class="small muted" style="text-transform:capitalize">${new Date(s.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div><div style="font-family:var(--f-display);font-size:28px;font-weight:700" class="num">${fmtKg(s.tonnage)}</div><div class="small muted">${Math.round(s.dur/60)} min · ${s.items.reduce((n,i)=>n+i.done,0)} séries</div></div></div>
-   <div class="list">${s.items.map(it=>{const e=exo(it.exoId,it.name);const pr=(s.prs||[]).some(p=>p.exoId===it.exoId);return `<div class="row"><div class="fig sm">${figSVG(e,1)}</div><div class="m"><div>${esc(e.name)}</div><small>${it.mode==='max'?`${it.done}/${it.sets} séries max : ${(it.repsDone||[]).join(', ')} reps`:it.mode==='time'?`${it.done}/${it.sets} séries × ${mmss(it.dur||60)}`:`${it.done}/${it.sets} séries × ${it.reps} reps`}${pr?' · <b>record</b>':''}</small></div><div class="t num" style="font-family:var(--f-display);font-weight:700;font-size:19px">${it.weight!=null?fmtKg(it.weight):'—'}</div></div>`}).join('')}</div>`;
+   <div class="list">${s.items.map(it=>{const e=exo(it.exoId,it.name);const pr=(s.prs||[]).some(p=>p.exoId===it.exoId);return `<div class="row"><div class="fig sm">${figSVG(e,1)}</div><div class="m"><div>${esc(e.name)}</div><small>${it.mode==='max'?`${it.done}/${it.sets} séries max : ${(it.repsDone||[]).join(', ')} reps${it.uni?' / côté':''}`:it.mode==='time'?`${it.done}/${it.sets} séries × ${mmss(it.dur||60)}`:`${it.done}/${it.sets} séries × ${it.reps} reps${it.uni?' / côté':''}`}${pr?' · <b>record</b>':''}</small></div><div class="t num" style="font-family:var(--f-display);font-weight:700;font-size:19px">${it.weight!=null?fmtKg(it.weight):'—'}</div></div>`}).join('')}</div>`;
   h+=histOpen.confirm?`<div class="confirm"><p>Supprimer cette séance de l'historique ? Les records seront recalculés.</p><div class="r"><button class="btn ghost" data-act="hist-del-no">Annuler</button><button class="btn danger" data-act="hist-del-yes">Supprimer</button></div></div>`:`<button class="btn danger" data-act="hist-del">Supprimer cette séance</button>`;
   h+=`</div></div>`;openSheet('hist',h);
 }
@@ -1026,7 +1028,7 @@ function sessCard(it,i,cur){
    <div class="sc-head"><div class="fig ${cur?'anim':''}" data-ex="${it.exoId}">${figSVG(e,cur?0:1)}</div>
     <div class="sc-title"><h3>${esc(e.name)}</h3><p>${volTxt(it)} · repos ${mmss(it.restSet)}${all?' · terminé':''}</p></div>
     <button class="icon-btn" data-act="sx-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.more}</button></div>
-   ${menuOpen===i?`<div class="sc-menu"><button class="btn ghost" data-act="sx-move" data-i="${i}" data-d="-1" ${i===0?'disabled':''}>Monter</button><button class="btn ghost" data-act="sx-move" data-i="${i}" data-d="1" ${i===S.active.items.length-1?'disabled':''}>Descendre</button><button class="btn ghost" data-act="sx-addset" data-i="${i}">+1 série</button><button class="btn danger" data-act="sx-del" data-i="${i}">Retirer</button></div>`:''}
+   ${menuOpen===i?`<div class="sc-menu"><button class="btn ghost" data-act="sx-move" data-i="${i}" data-d="-1" ${i===0?'disabled':''}>Monter</button><button class="btn ghost" data-act="sx-move" data-i="${i}" data-d="1" ${i===S.active.items.length-1?'disabled':''}>Descendre</button><button class="btn ghost" data-act="sx-addset" data-i="${i}">+1 série</button><button class="btn ghost" data-act="sx-delset" data-i="${i}" ${it.done.length<=1?'disabled':''}>−1 série</button><button class="btn danger" data-act="sx-del" data-i="${i}">Retirer</button></div>`:''}
    <div class="stats3">
     <div class="st rec"><span class="lbl">Record</span><b class="num">${rec?fmtKg(rec.w):'—'}</b><small>${rec?dfr(rec.t):'pas encore'}</small></div>
     <div class="st"><span class="lbl">Dernière fois</span><b class="num">${last?fmtKg(last.w):'—'}</b><small>${last?ago(last.t):'première fois'}</small></div>
@@ -1037,9 +1039,9 @@ function sessCard(it,i,cur){
 }
 function setHTML(it,i,j,d){
   const m=modeOf(it),t=S.active.timer,run=t&&t.kind==='work'&&t.i===i&&t.j===j;
-  if(m==='max'){const v=(it.repsDone||[])[j]??'';return `<div class="set max ${d?'on':''}"><span class="sn">Série ${j+1}</span><input id="r-${i}-${j}" data-ri="${i}" data-rj="${j}" inputmode="numeric" placeholder="reps" value="${esc(v)}" autocomplete="off" aria-label="Reps faites série ${j+1}"><button class="ck" data-act="set" data-i="${i}" data-j="${j}" aria-pressed="${d}" aria-label="Valider la série ${j+1}">✓</button></div>`}
+  if(m==='max'){const v=(it.repsDone||[])[j]??'';return `<div class="set max ${d?'on':''}"><span class="sn">Série ${j+1}</span><input id="r-${i}-${j}" data-ri="${i}" data-rj="${j}" inputmode="numeric" placeholder="${uniOk(it)?'reps / côté':'reps'}" value="${esc(v)}" autocomplete="off" aria-label="Reps faites série ${j+1}${uniOk(it)?' par côté':''}"><button class="ck" data-act="set" data-i="${i}" data-j="${j}" aria-pressed="${d}" aria-label="Valider la série ${j+1}">✓</button></div>`}
   if(m==='time')return `<button class="set ${d?'on':''} ${run?'run':''}" data-act="set" data-i="${i}" data-j="${j}" aria-pressed="${d}"><span class="sn">${run?'En cours':'Série '+(j+1)}</span><span class="sr">${d?mmss(it.dur||60):run?'…':'▶ '+mmss(it.dur||60)}</span><span class="ck">✓</span></button>`;
-  return `<button class="set ${d?'on':''}" data-act="set" data-i="${i}" data-j="${j}" aria-pressed="${d}"><span class="sn">Série ${j+1}</span><span class="sr">${it.reps} reps</span><span class="ck">✓</span></button>`;
+  return `<button class="set ${d?'on':''}" data-act="set" data-i="${i}" data-j="${j}" aria-pressed="${d}"><span class="sn">Série ${j+1}</span><span class="sr">${it.reps} reps${uniS(it)}</span><span class="ck">✓</span></button>`;
 }
 function afterSetDone(i){
   const a=S.active,it=a.items[i],all=it.done.every(Boolean);
@@ -1101,8 +1103,8 @@ function finishSession(){
   const prs=[];
   const items=a.items.map(it=>{const n=it.done.filter(Boolean).length;const w=parseW(it.weight);const m=modeOf(it);
     const rd=m==='max'?it.done.map((d,j)=>d?(parseInt((it.repsDone||[])[j],10)||0):null).filter(x=>x!=null):null;
-    const totalReps=m==='max'?rd.reduce((a,b)=>a+b,0):m==='time'?0:it.reps*n;
-    return{exoId:it.exoId,name:exo(it.exoId,it.name).name,weight:n?(w??0):null,sets:it.sets,reps:it.reps,mode:m,dur:it.dur||null,repsDone:rd,totalReps,done:n}});
+    const uni=uniOk(it),totalReps=(m==='max'?rd.reduce((a,b)=>a+b,0):m==='time'?0:it.reps*n)*(uni?2:1);
+    return{exoId:it.exoId,name:exo(it.exoId,it.name).name,weight:n?(w??0):null,sets:it.sets,reps:it.reps,mode:m,dur:it.dur||null,repsDone:rd,totalReps,done:n,...(uni?{uni:true}:{})}});
   const seen=new Set();
   for(const it of items){if(!it.done||seen.has(it.exoId))continue;const r=recOf(it.exoId);const best=Math.max(...items.filter(x=>x.exoId===it.exoId&&x.done).map(x=>x.weight));seen.add(it.exoId);
     if(r&&best>r.w)prs.push({exoId:it.exoId,name:it.name,w:best,prev:r.w})}
@@ -1353,6 +1355,7 @@ const ACT={
   'dur-pick':d=>{if(d.src==='ed-stp'&&ed){const it=ed.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderEditor()})}else if(d.src==='pe-stp'&&typeof PE!=='undefined'&&PE){progVals();const it=PE.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderProgEdit()})}},
   'dur-q':d=>durSet(+d.v,true),
   'dur-ok':()=>{const v=Math.max(5,durRead()),cb=durCb;durCb=null;closeModal();if(cb)cb(v)},
+  'ed-uni':d=>{const it=ed.items[+d.i];if(it.uni)delete it.uni;else it.uni=true;renderEditor()},
   'ed-mode':d=>{const it=ed.items[+d.i];it.mode=d.m;if(d.m==='time'&&!it.dur)it.dur=60;renderEditor()},
   'ed-move':d=>{const i=+d.i,j=i+(+d.d);if(j<0||j>=ed.items.length)return;[ed.items[i],ed.items[j]]=[ed.items[j],ed.items[i]];renderEditor()},
   'ed-del':d=>{ed.items.splice(+d.i,1);renderEditor()},
@@ -1384,6 +1387,7 @@ const ACT={
   'sx-menu':d=>{menuOpen=menuOpen===+d.i?-1:+d.i;renderSession()},
   'sx-move':d=>{const a=S.active.items,i=+d.i,j=i+(+d.d);if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];menuOpen=j;touchActive();renderSession()},
   'sx-addset':d=>{const it=S.active.items[+d.i];it.done.push(false);(it.repsDone||(it.repsDone=[])).push('');it.sets=it.done.length;touchActive();renderSession()},
+  'sx-delset':d=>{const a=S.active,i=+d.i,it=a.items[i];if(!it||it.done.length<=1)return;const j=it.done.length-1;it.done.pop();if(it.repsDone)it.repsDone.length=Math.min(it.repsDone.length,it.done.length);it.sets=it.done.length;const t=a.timer;if(t&&t.kind==='work'&&t.i===i&&t.j===j)a.timer=null;touchActive();renderSession()},
   'sx-del':d=>{S.active.items.splice(+d.i,1);menuOpen=-1;touchActive();renderSession()},
   'rest-adj':d=>{const t=S.active.timer;if(!t)return;if(t.fired){t.fired=false;t.end=Date.now()}t.end=Math.max(Date.now()+1000,t.end+(+d.d)*1000);t.total=Math.max(t.total,(t.end-Date.now())/1000);touchActive();updateRest()},
   'rest-skip':()=>{const t=S.active.timer;if(t&&t.kind==='work'){const it=S.active.items[t.i];S.active.timer=null;if(it){it.done[t.j]=true;afterSetDone(t.i)}return}S.active.timer=null;touchActive();updateRest()},

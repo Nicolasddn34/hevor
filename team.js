@@ -21,7 +21,7 @@ const RPE_L=['','Très facile','Facile','Facile','Modéré','Assez dur','Dur','D
 /* ---------- nettoyage des données lues ---------- */
 const cIds=a=>(Array.isArray(a)?a:[]).filter(x=>typeof x==='string'&&x.length<=128).slice(0,200);
 function cEvent(id,d){d=d||{};return{id,type:EVT[d.type]?d.type:'training',title:cStr(d.title,80)||EVT[d.type]||'Créneau',start:cNum(d.start,0,4102444800000,0),dur:Math.round(cNum(d.dur,0,1440,60)),place:cStr(d.place,80),invitees:cIds(d.invitees),video:okUrl(d.video)?d.video:'',by:cStr(d.by,128)}}
-function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120),restSet:Math.round(cNum(it.restSet,0,600,0)),restExo:Math.round(cNum(it.restExo,0,600,0))}}
+function cPItem(it){if(!it||!okId(it.exoId))return null;return{exoId:it.exoId,name:cStr(it.name,80)||exo(it.exoId).name,sets:Math.round(cNum(it.sets,1,10,3)),reps:Math.round(cNum(it.reps,1,100,10)),mode:MODES.includes(it.mode)?it.mode:'reps',dur:Math.round(cNum(it.dur,5,14400,60)),lt:['free','pct','kg'].includes(it.lt)?it.lt:'free',lv:cNum(it.lv,0,2000,0),note:cStr(it.note,120),restSet:Math.round(cNum(it.restSet,0,600,0)),restExo:Math.round(cNum(it.restExo,0,600,0)),...(it.uni===true?{uni:true}:{})}}
 function cProgram(id,d){d=d||{};return{id,title:cStr(d.title,80)||'Programme',date:cNum(d.date,0,4102444800000,0),eventId:okId(d.eventId)?d.eventId:'',items:(Array.isArray(d.items)?d.items:[]).slice(0,40).map(cPItem).filter(Boolean),invitees:cIds(d.invitees),note:cStr(d.note,300),by:cStr(d.by,128)}}
 const avgOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 /* questionnaires créés par les coachs du club : matin, soir ou après une séance */
@@ -356,7 +356,7 @@ async function delEvent(tid,eid){try{await subCol(tid,'events').doc(eid).delete(
 function recordsClub(tid){const r={};for(const l of dataOf(tid).logs)if(l.uid===UID)for(const it of l.items||[])if(it.weight!=null&&it.done>0)r[it.exoId]=Math.max(r[it.exoId]||0,it.weight);return r}
 const round05=x=>Math.round(x*2)/2;
 function loadTxt(it,rec){if(it.lt==='kg')return fmtKg(it.lv);if(it.lt==='pct'){const r=rec&&rec[it.exoId];return `${fmtN(it.lv)} % du record${r?' · '+fmtKg(round05(r*it.lv/100)):''}`}return ''}
-const pVol=it=>it.mode==='time'?`${it.sets} × ${mmss(it.dur)}`:it.mode==='max'?`${it.sets} × max`:`${it.sets} × ${it.reps}`;
+const pVol=it=>it.mode==='time'?`${it.sets} × ${mmss(it.dur)}`:it.mode==='max'?`${it.sets} × max${uniS(it)}`:`${it.sets} × ${it.reps}${uniS(it)}`;
 const PSUB={};
 function viewPrograms(tid){
   const T=SP.T[tid],D=dataOf(tid),role=T.me.role,now=Date.now();
@@ -448,7 +448,7 @@ function renderProgEdit(){
     h+=`<div class="card ed-item"><div class="ed-top"><div class="fig sm">${figSVG(e,1)}</div><div class="nm">${esc(it.name||e.name)}<small>${EQ[e.eq]||''}</small></div>
      <button class="icon-btn" data-act="pe-move" data-i="${i}" data-d="-1" aria-label="Monter" ${i===0?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></button>
      <button class="icon-btn" data-act="pe-del" data-i="${i}" aria-label="Retirer">${ICON.close}</button></div>
-     <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="pe-mode" data-i="${i}" data-m="${m}" aria-pressed="${it.mode===m}">${l}</button>`).join('')}</div>
+     <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="pe-mode" data-i="${i}" data-m="${m}" aria-pressed="${it.mode===m}">${l}</button>`).join('')}</div>${uniRow(it,'pe-uni',i)}
      <div class="ed-grid">${stepper('Séries',it.sets,'pe-stp',i,'sets','n')}${it.mode==='reps'?stepper('Reps',it.reps,'pe-stp',i,'reps','n'):it.mode==='time'?stepper('Durée',it.dur,'pe-stp',i,'dur'):'<div class="ed-note">Le joueur note ses reps</div>'}${stepper('Repos entre séries',it.restSet||0,'pe-stp',i,'restSet')}${stepper('Repos après l\'exo',it.restExo||0,'pe-stp',i,'restExo')}</div>
      <div class="seg" role="group" aria-label="Charge">${[['free','Libre'],['pct','% du record'],['kg','Kg fixe']].map(([m,l])=>`<button data-act="pe-lt" data-i="${i}" data-m="${m}" aria-pressed="${it.lt===m}">${l}</button>`).join('')}</div>
      ${it.lt!=='free'?`<div class="field"><label for="pe-v-${i}">${it.lt==='pct'?'Pourcentage du record du joueur':'Charge en kg'}</label><input id="pe-v-${i}" inputmode="decimal" value="${it.lv?numStr(it.lv):''}" placeholder="${it.lt==='pct'?'80':'20'}"></div>`:''}
@@ -468,7 +468,7 @@ async function saveProg(btn){
   progVals();const date=PE.club?(PE.at0||Date.now()):fromIso(PE.date,'12:00');
   if(!PE.items.length){toast('Ajoute au moins un exercice');return}if(!date){toast('Indique une date');return}
   const invitees=PE.club?[]:progDest();if(!PE.club&&!invitees.length){toast('Choisis au moins un destinataire');return}
-  const doc={title:(PE.title||'').trim().slice(0,80)||'Programme',date,eventId:PE.eventId||'',items:PE.items.map(it=>({exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),sets:it.sets,reps:it.reps,mode:it.mode,dur:it.dur,lt:it.lt,lv:it.lv||0,note:(it.note||'').slice(0,120),restSet:it.restSet||0,restExo:it.restExo||0})),invitees,note:(PE.note||'').trim().slice(0,300),by:UID,at:Date.now()};
+  const doc={title:(PE.title||'').trim().slice(0,80)||'Programme',date,eventId:PE.eventId||'',items:PE.items.map(it=>({exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),sets:it.sets,reps:it.reps,mode:it.mode,dur:it.dur,lt:it.lt,lv:it.lv||0,note:(it.note||'').slice(0,120),restSet:it.restSet||0,restExo:it.restExo||0,...(it.uni&&it.mode!=='time'?{uni:true}:{})})),invitees,note:(PE.note||'').trim().slice(0,300),by:UID,at:Date.now()};
   btn.disabled=true;const id=PE.id||gid();
   try{await subCol(PE.tid,'programs').doc(id).set(doc);const D=dataOf(PE.tid);const club=PE.club;D.programs=D.programs.filter(p=>p.id!==id).concat(cProgram(id,doc)).sort((a,b)=>club?b.date-a.date:a.date-b.date);
     closeSheet('tm-ped');closeSheet('tm-prog');const n=invitees.length;PE=null;render();toast(club?'Programme publié · visible par tous les joueurs':`Programme envoyé à ${n} client${n>1?'s':''}`)}
@@ -500,7 +500,7 @@ function renderRun(){
     h+=`<article class="sc ${all?'done':''}"><div class="sc-head"><div class="fig">${figSVG(e,1)}</div><div class="sc-title"><h3>${esc(it.name||e.name)}</h3><p>${pVol(it)}${loadTxt(it,rec)?' · '+esc(loadTxt(it,rec)):''}</p>${it.note?`<p class="sp-cons">${esc(it.note)}</p>`:''}</div></div>
      <div class="stats3"><div class="st rec"><span class="lbl">Record club</span><b class="num">${r?fmtKg(r):'—'}</b><small>dans cet espace</small></div><div class="st"><span class="lbl">Objectif</span><b class="num">${it.lt==='kg'?fmtKg(it.lv):it.lt==='pct'&&r?fmtKg(round05(r*it.lv/100)):'—'}</b><small>${it.lt==='pct'?fmtN(it.lv)+' %':it.lt==='kg'?'fixé par le coach':'libre'}</small></div>
      <label class="st in" for="rw-${i}"><span class="lbl">Aujourd'hui</span><span class="inrow"><input id="rw-${i}" data-rwi="${i}" inputmode="decimal" placeholder="0" value="${esc(it.w)}" autocomplete="off" aria-label="Poids en kg"><span>kg</span></span><small>${r&&parseW(it.w)>r?'<span class="prtag">Nouveau record !</span>':'&nbsp;'}</small></label></div>
-     <div class="sets">${it.done.map((d,j)=>it.mode==='max'?`<div class="set max ${d?'on':''}"><span class="sn">Série ${j+1}</span><input data-rri="${i}" data-rrj="${j}" inputmode="numeric" placeholder="reps" value="${esc(it.rd[j])}" aria-label="Reps série ${j+1}"><button class="ck" data-act="run-set" data-i="${i}" data-j="${j}" aria-pressed="${d}" aria-label="Valider la série ${j+1}">✓</button></div>`:`<button class="set ${d?'on':''}" data-act="run-set" data-i="${i}" data-j="${j}" aria-pressed="${d}"><span class="sn">Série ${j+1}</span><span class="sr">${it.mode==='time'?mmss(it.dur):it.reps+' reps'}</span><span class="ck">✓</span></button>`).join('')}</div></article>`});
+     <div class="sets">${it.done.map((d,j)=>it.mode==='max'?`<div class="set max ${d?'on':''}"><span class="sn">Série ${j+1}</span><input data-rri="${i}" data-rrj="${j}" inputmode="numeric" placeholder="${uniOk(it)?'reps / côté':'reps'}" value="${esc(it.rd[j])}" aria-label="Reps série ${j+1}${uniOk(it)?' par côté':''}"><button class="ck" data-act="run-set" data-i="${i}" data-j="${j}" aria-pressed="${d}" aria-label="Valider la série ${j+1}">✓</button></div>`:`<button class="set ${d?'on':''}" data-act="run-set" data-i="${i}" data-j="${j}" aria-pressed="${d}"><span class="sn">Série ${j+1}</span><span class="sr">${it.mode==='time'?mmss(it.dur):it.reps+' reps'+uniS(it)}</span><span class="ck">✓</span></button>`).join('')}</div></article>`});
   h+=`<p class="small muted" style="margin:0">Cette séance est enregistrée dans l'espace de l'équipe, pas dans « Moi ».</p>${RUN.timer?'<div style="height:170px"></div>':''}</div></div><div id="run-rest-slot"></div>`;
   const el=openSheet('tm-run',h);el.querySelector('.sheet-b').scrollTop=sc;runRestUpdate();
 }
@@ -532,7 +532,7 @@ function runSet(i,j){const it=RUN.items[i];if(!it)return;
     else{const ni=RUN.items.findIndex(x=>!x.done.every(Boolean));if(ni>=0)runStartRest('exo',it.restExo||0,exo(RUN.items[ni].exoId,RUN.items[ni].name).name);else RUN.timer=null}}
   runSave();renderRun()}
 function runFinish(){
-  const items=RUN.items.map(it=>{const n=it.done.filter(Boolean).length,w=parseW(it.w);return{exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),weight:n?(w??0):null,done:n,sets:it.sets,reps:it.mode==='max'?it.rd.reduce((a,v,j)=>a+(it.done[j]?(parseInt(v,10)||0):0),0):it.mode==='time'?0:it.reps*n}});
+  const items=RUN.items.map(it=>{const n=it.done.filter(Boolean).length,w=parseW(it.w);return{exoId:it.exoId,name:(it.name||exo(it.exoId).name).slice(0,80),weight:n?(w??0):null,done:n,sets:it.sets,reps:(it.mode==='max'?it.rd.reduce((a,v,j)=>a+(it.done[j]?(parseInt(v,10)||0):0),0):it.mode==='time'?0:it.reps*n)*(uniOk(it)?2:1)}});
   if(!items.some(x=>x.done)){toast('Valide au moins une série');return}
   const dur=Math.min(600,Math.max(5,Math.round((Date.now()-RUN.start)/60000)));
   if(SP.T[RUN.tid]?.team.kind==='club')return saveClubRun(dur,items);
@@ -777,6 +777,7 @@ Object.assign(ACT,{
   'pe-add':()=>pickForProgram(),
   'pe-del':d=>{progVals();PE.items.splice(+d.i,1);renderProgEdit()},
   'pe-move':d=>{progVals();const i=+d.i,j=i+(+d.d);if(j<0||j>=PE.items.length)return;[PE.items[i],PE.items[j]]=[PE.items[j],PE.items[i]];renderProgEdit()},
+  'pe-uni':d=>{progVals();const it=PE.items[+d.i];if(it.uni)delete it.uni;else it.uni=true;renderProgEdit()},
   'pe-mode':d=>{progVals();PE.items[+d.i].mode=d.m;renderProgEdit()},
   'pe-lt':d=>{progVals();const it=PE.items[+d.i];it.lt=d.m;if(d.m==='pct'&&!it.lv)it.lv=75;renderProgEdit()},
   'pe-stp':d=>{progVals();const it=PE.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=d.k==='dur'?durBump(it.dur,+d.d):Math.min(mx,Math.max(mn,(it[d.k]??0)+st*(+d.d)));renderProgEdit()},

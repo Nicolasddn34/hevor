@@ -21,7 +21,8 @@ function renderCoachSpace(tid){
 
 /* ---------- stats : comme dans « Moi », à partir des séances faites dans l'espace Coaching ---------- */
 const CST={},CSX={};
-const logTon=l=>(l.items||[]).reduce((a,it)=>a+(it.weight||0)*(it.done||0)*(it.reps||0),0);
+/* reps = total des reps faites sur l'exercice (déjà multiplié par le nombre de séries) */
+const logTon=l=>(l.items||[]).reduce((a,it)=>a+(it.weight||0)*(it.reps||0),0);
 /* historique par exercice : charge max de chaque séance, record et départ */
 function exoHist(L){const X={};
   for(const l of L)for(const it of l.items||[]){if(it.weight==null||!(it.done>0))continue;const x=X[it.exoId]||(X[it.exoId]={n:it.name,hist:[]}),last=x.hist[x.hist.length-1];

@@ -99,7 +99,10 @@ function watchPending(){
 /* ---------- espaces utilisés et bascule ---------- */
 function spacesUsed(){const u=[];if(S.templates.length||S.sessions.length||S.active)u.push('moi');if(teamsOf('club').length)u.push('club');if(teamsOf('coach').length)u.push('coach');return u}
 const SPACE_L={moi:'Moi',club:'Club',coach:'Coaching'};
+/* le sélecteur n'apparaît qu'à partir de deux espaces : Moi + au moins une équipe (club ou coaching) */
+const spMulti=()=>teamsOf('club').length>0||teamsOf('coach').length>0;
 function spPill(){
+  if(!spMulti())return '';
   return `<button class="sp-pill" data-act="sp-sheet" aria-label="Changer d'espace (espace actuel : ${SPACE_L[SP.cur]})"><span class="sp-pill-ic">${SP.cur==='moi'?SPICON.user:SP.cur==='club'?SPICON.shield:SPICON.team}</span>${SPACE_L[SP.cur]}${SPICON.down}</button>`;
 }
 function setSpace(sp,tid){
@@ -201,6 +204,7 @@ function setTabs(list,cur){
 }
 const teamLogo=(T,cls)=>T&&T.logo?`<span class="tlogo ${cls||''}"><img src="${T.logo}" alt=""></span>`:`<span class="tlogo ${cls||''} none" aria-hidden="true">${SPICON.shield}</span>`;
 function spTop(title,sub,logo,back){
+  if(!back&&!spMulti()&&SP.cur!=='moi')back='sp-account';
   return `<header class="top">${back?`<button class="icon-btn backb" data-act="${back}" aria-label="Retour">${ICON.back}</button>`:''}<div class="logo-row" style="min-width:0">${logo||''}<div style="min-width:0"><div class="brand sp-brand">${esc(title)}</div>${sub?`<div class="sub sp-sub">${esc(sub)}</div>`:''}</div></div>${spPill()}</header>`;
 }
 
