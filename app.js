@@ -764,7 +764,7 @@ function installHint(){
 }
 
 /* ---------- UI state ---------- */
-const APP_VERSION='2.10.2';let delAsk=false;
+const APP_VERSION='2.11.0';let delAsk=false;
 let navStack=[];
 function pushNav(){try{history.pushState({hevor:1},'')}catch(e){}}
 const backBtn=()=>navStack.length?`<button class="icon-btn backb" data-act="go-back" aria-label="Retour">${ICON.back}</button>`:'';
@@ -1096,18 +1096,19 @@ function renderEditor(){
   let h=sheetHead(ed.isNew?'Nouvelle séance':'Modifier la séance','ed-close')+`<div class="sheet-b"><div class="wrap" style="display:flex;flex-direction:column;gap:12px">
    <div class="field"><label for="ed-name">Nom de la séance</label><input id="ed-name" value="${esc(ed.name)}" placeholder="Ex. Push, Haut du corps, Jambes" autocomplete="off"></div>`;
   if(!ed.items.length)h+=`<p class="muted" style="margin:4px 0">Ajoute des exercices depuis la bibliothèque. Tu régleras ensuite séries, reps et repos pour chacun.</p>`;
-  ed.items.forEach((it,i)=>{const e=exo(it.exoId,it.name);
-    h+=`<div class="card ed-item"><div class="ed-top"><div class="fig sm">${figSVG(e,1)}</div><div class="nm">${esc(e.name)}<small>${EQ[e.eq]||''}</small></div>
-      <button class="icon-btn" data-act="ed-move" data-i="${i}" data-d="-1" aria-label="Monter" ${i===0?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></button>
-      <button class="icon-btn" data-act="ed-move" data-i="${i}" data-d="1" aria-label="Descendre" ${i===ed.items.length-1?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <button class="icon-btn" data-act="ed-del" data-i="${i}" aria-label="Retirer">${ICON.close}</button></div>
-      <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="ed-mode" data-i="${i}" data-m="${m}" aria-pressed="${modeOf(it)===m}">${l}</button>`).join('')}</div>${uniRow(it,'ed-uni',i)}
-      <div class="ed-grid">${stepper('Séries',it.sets,'ed-stp',i,'sets','n')}${modeOf(it)==='reps'?stepper('Reps',it.reps,'ed-stp',i,'reps','n'):modeOf(it)==='time'?stepper('Durée',it.dur||60,'ed-stp',i,'dur'):'<div class="ed-note">Tu noteras tes reps à chaque série</div>'}${stepper('Repos entre séries',it.restSet,'ed-stp',i,'restSet')}${stepper('Repos après l\'exo',it.restExo,'ed-stp',i,'restExo')}</div></div>`});
+  ed.items.forEach((it,i)=>{h+=itemCard(it,i,ed.items.length,'ed')});
   h+=`<button class="btn line" data-act="ed-add">+ Ajouter des exercices</button>`;
   if(!ed.isNew)h+=edConfirm?`<div class="confirm"><p>Supprimer « ${esc(ed.name||'cette séance')} » ? L'historique déjà enregistré est conservé.</p><div class="r"><button class="btn ghost" data-act="ed-del-no">Annuler</button><button class="btn danger" data-act="ed-del-yes">Supprimer</button></div></div>`:`<button class="btn danger" data-act="ed-del-tpl">Supprimer cette séance</button>`;
   h+=`</div></div><div class="sheet-f"><div class="in"><button class="btn primary" data-act="ed-save">Enregistrer</button></div></div>`;
   const el=openSheet('editor',h);el.querySelector('.sheet-b').scrollTop=sc;
 }
+function itemCard(it,i,n,P){const e=exo(it.exoId,it.name);
+  return `<div class="card ed-item"><div class="ed-top"><div class="fig sm">${figSVG(e,1)}</div><div class="nm">${esc(e.name)}<small>${EQ[e.eq]||''}</small></div>
+      <button class="icon-btn" data-act="${P}-move" data-i="${i}" data-d="-1" aria-label="Monter" ${i===0?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="icon-btn" data-act="${P}-move" data-i="${i}" data-d="1" aria-label="Descendre" ${i===n-1?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="icon-btn" data-act="${P}-del" data-i="${i}" aria-label="Retirer">${ICON.close}</button></div>
+      <div class="seg" role="group" aria-label="Type de série">${[['reps','Reps'],['max','Max'],['time','Durée']].map(([m,l])=>`<button data-act="${P}-mode" data-i="${i}" data-m="${m}" aria-pressed="${modeOf(it)===m}">${l}</button>`).join('')}</div>${uniRow(it,P+'-uni',i)}
+      <div class="ed-grid">${stepper('Séries',it.sets,P+'-stp',i,'sets','n')}${modeOf(it)==='reps'?stepper('Reps',it.reps,P+'-stp',i,'reps','n'):modeOf(it)==='time'?stepper('Durée',it.dur||60,P+'-stp',i,'dur'):'<div class="ed-note">Tu noteras tes reps à chaque série</div>'}${stepper('Repos entre séries',it.restSet,P+'-stp',i,'restSet')}${stepper('Repos après l\'exo',it.restExo,P+'-stp',i,'restExo')}</div></div>`}
 const LIM={sets:[1,10,1],reps:[1,100,1],dur:[5,14400,5],restSet:[0,600,15],restExo:[0,600,15]};
 const TIMEIDS=new Set(['planche','gainage-lat','copenhague','iso-dos','iso-tractions','equilibre','corde','tapis','velo','rameur','elliptique','escalier','assault-bike','chaise','hollow','ski-erg','battle-ropes','sled-push','farmer','montees-genoux','jumping-jacks']);
 const newItem=id=>{const st=S.settings,t=TIMEIDS.has(id);return{exoId:id,sets:3,reps:10,mode:t?'time':'reps',dur:t?60:60,restSet:st.restSet,restExo:st.restExo}};
@@ -1115,6 +1116,22 @@ const modeOf=it=>it.mode||'reps';
 const uniOk=it=>!!it.uni&&modeOf(it)!=='time',uniS=it=>uniOk(it)?' / côté':'';
 function uniRow(it,act,i){if(modeOf(it)==='time')return '';return `<div class="uni-row"><div><div class="t">Un côté à la fois</div><div class="small muted">Une jambe ou un bras : les reps comptent pour chaque côté (×2 dans le poids soulevé)</div></div><button class="toggle" data-act="${act}" data-i="${i}" aria-pressed="${!!it.uni}" aria-label="Un côté à la fois"></button></div>`}
 function volTxt(it){const m=modeOf(it);return m==='time'?`${it.sets} × ${mmss(it.dur||60)}`:m==='max'?`${it.sets} × max${uniS(it)}`:`${it.sets} × ${it.reps} reps${uniS(it)}`}
+
+/* réglage des exercices ajoutés pendant une séance */
+let sadd=null;
+function renderSessAdd(){
+  if(!sadd)return;const n=sadd.items.length;
+  const sc=document.querySelector('#sheet-sadd .sheet-b')?.scrollTop||0;
+  let h=sheetHead(n>1?'Régler les exercices':'Régler l\'exercice','sa-close')+`<div class="sheet-b"><div class="wrap" style="display:flex;flex-direction:column;gap:12px">`;
+  sadd.items.forEach((it,i)=>{h+=itemCard(it,i,n,'sa')});
+  h+=`</div></div><div class="sheet-f"><div class="in" style="display:flex;gap:8px"><button class="btn ghost" style="flex:1" data-act="sa-close">Annuler</button><button class="btn primary" style="flex:2" data-act="sa-ok" ${n?'':'disabled'}>Valider</button></div></div>`;
+  const el=openSheet('sadd',h);el.querySelector('.sheet-b').scrollTop=sc;
+}
+function sessAddOk(){
+  if(!sadd||!S.active)return;
+  sadd.items.forEach(it=>S.active.items.push({...it,mode:modeOf(it),name:exo(it.exoId).name,weight:'',done:Array(it.sets).fill(false),repsDone:Array(it.sets).fill('')}));
+  const k=sadd.items.length;sadd=null;closeSheet('sadd');touchActive(0);renderSession();toast(k>1?`${k} exercices ajoutés à la séance`:'Exercice ajouté à la séance');
+}
 
 /* picker */
 function openPicker(target){pick={sel:new Set(),folder:null,q:'',target};renderPicker()}
@@ -1256,8 +1273,14 @@ let AC=null;
 function unlockAudio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
 function ding(){
   if(!S.settings.sound)return;
-  try{navigator.vibrate&&navigator.vibrate([250,120,250,120,400])}catch(e){}
-  try{if(!AC)return;const t0=AC.currentTime;[0,.22,.44].forEach((d,k)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=k===2?1320:880;g.gain.setValueAtTime(0,t0+d);g.gain.linearRampToValueAtTime(.35,t0+d+.02);g.gain.exponentialRampToValueAtTime(.001,t0+d+.18);o.connect(g).connect(AC.destination);o.start(t0+d);o.stop(t0+d+.2)})}catch(e){}
+  try{navigator.vibrate&&navigator.vibrate([500,150,500,150,500,150,900])}catch(e){}
+  try{if(!AC)return;if(AC.state==='suspended')AC.resume();const t0=AC.currentTime+.02;
+    const out=AC.createDynamicsCompressor();out.threshold.value=-10;out.knee.value=0;out.ratio.value=12;out.attack.value=.002;out.release.value=.1;
+    const master=AC.createGain();master.gain.value=1;out.connect(master).connect(AC.destination);
+    /* 2 salves de 3 bips, son carré plus perçant que le sinus, volume au maximum */
+    [0,.2,.4,.75,.95,1.15].forEach((d,k)=>{const o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain();o.type='square';o2.type='triangle';const f=k%3===2?1760:1320;o.frequency.value=f;o2.frequency.value=f*1.5;
+      g.gain.setValueAtTime(0,t0+d);g.gain.linearRampToValueAtTime(.9,t0+d+.01);g.gain.setValueAtTime(.9,t0+d+.13);g.gain.exponentialRampToValueAtTime(.001,t0+d+.17);
+      o.connect(g);o2.connect(g);g.connect(out);o.start(t0+d);o2.start(t0+d);o.stop(t0+d+.18);o2.stop(t0+d+.18)})}catch(e){}
 }
 function endConfirm(){
   const a=S.active,done=a.items.reduce((n,it)=>n+it.done.filter(Boolean).length,0),tot=a.items.reduce((n,it)=>n+it.done.length,0);
@@ -1518,7 +1541,7 @@ const ACT={
   start:d=>startSession(d.id), resume:()=>openSession(),
   'ed-close':()=>{closeSheet('editor');ed=null},
   'ed-stp':d=>{const it=ed.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=d.k==='dur'?durBump(it.dur,+d.d):Math.min(mx,Math.max(mn,(it[d.k]??0)+st*(+d.d)));renderEditor()},
-  'dur-pick':d=>{if(d.src==='ed-stp'&&ed){const it=ed.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderEditor()})}else if(d.src==='pe-stp'&&typeof PE!=='undefined'&&PE){progVals();const it=PE.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderProgEdit()})}},
+  'dur-pick':d=>{if(d.src==='ed-stp'&&ed){const it=ed.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderEditor()})}else if(d.src==='sa-stp'&&sadd){const it=sadd.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderSessAdd()})}else if(d.src==='pe-stp'&&typeof PE!=='undefined'&&PE){progVals();const it=PE.items[+d.i];if(it)openDurPicker(it.dur,v=>{it.dur=v;renderProgEdit()})}},
   'dur-q':d=>durSet(+d.v,true),
   'dur-ok':()=>{const v=Math.max(5,durRead()),cb=durCb;durCb=null;closeModal();if(cb)cb(v)},
   'ed-uni':d=>{const it=ed.items[+d.i];if(it.uni)delete it.uni;else it.uni=true;renderEditor()},
@@ -1530,12 +1553,19 @@ const ACT={
   'ed-del-yes':()=>{S.templates=S.templates.filter(t=>t.id!==ed.id);touchMeta();closeSheet('editor');ed=null;render();toast('Séance supprimée')},
   'ed-save':()=>{if(!ed.items.length){toast('Ajoute au moins un exercice');return}const name=(ed.name||'').trim()||'Ma séance';const t={id:ed.id,name,items:ed.items};
     const k=S.templates.findIndex(x=>x.id===t.id);if(k>=0)S.templates[k]=t;else S.templates.push(t);touchMeta();closeSheet('editor');ed=null;render();toast('Séance enregistrée')},
+  'sa-close':()=>{closeSheet('sadd');sadd=null},
+  'sa-ok':()=>sessAddOk(),
+  'sa-stp':d=>{const it=sadd.items[+d.i],[mn,mx,st]=LIM[d.k];it[d.k]=d.k==='dur'?durBump(it.dur,+d.d):Math.min(mx,Math.max(mn,(it[d.k]??0)+st*(+d.d)));renderSessAdd()},
+  'sa-uni':d=>{const it=sadd.items[+d.i];if(it.uni)delete it.uni;else it.uni=true;renderSessAdd()},
+  'sa-mode':d=>{const it=sadd.items[+d.i];it.mode=d.m;if(d.m==='time'&&!it.dur)it.dur=60;renderSessAdd()},
+  'sa-move':d=>{const i=+d.i,j=i+(+d.d);if(j<0||j>=sadd.items.length)return;[sadd.items[i],sadd.items[j]]=[sadd.items[j],sadd.items[i]];renderSessAdd()},
+  'sa-del':d=>{sadd.items.splice(+d.i,1);if(!sadd.items.length){closeSheet('sadd');sadd=null}else renderSessAdd()},
   'pick-close':()=>{closeSheet('picker');pick=null},
   'pick-folder':d=>{pick.folder=d.id||null;renderPicker();document.querySelector('#sheet-picker .sheet-b').scrollTop=0},
   'pick-toggle':d=>{pick.sel.has(d.id)?pick.sel.delete(d.id):pick.sel.add(d.id);renderPicker()},
   'pick-done':()=>{const ids=[...pick.sel],st=S.settings;
     if(pick.target==='editor'){ids.forEach(id=>ed.items.push(newItem(id)));closeSheet('picker');pick=null;renderEditor()}
-    else{ids.forEach(id=>S.active.items.push({...newItem(id),name:exo(id).name,weight:'',done:[false,false,false],repsDone:['','','']}));closeSheet('picker');pick=null;touchActive(0);renderSession()}},
+    else{sadd={items:ids.map(newItem)};closeSheet('picker');pick=null;renderSessAdd()}},
   'lib-folder':d=>{libB.folder=d.id||null;$('#lib-res').innerHTML=browseRes(libB,'lib');window.scrollTo(0,0)},
   'exo-open':d=>openExo(d.id), 'exo-close':()=>closeSheet('exo'),
   'custom-new':()=>openCustom(), 'custom-close':()=>closeSheet('custom'),
